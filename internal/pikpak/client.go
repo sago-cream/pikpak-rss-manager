@@ -128,10 +128,10 @@ func Classify(err error) *Error {
 	switch {
 	case strings.Contains(text, "401") || strings.Contains(text, "unauthorized") || strings.Contains(text, "token expired") || strings.Contains(text, "invalid_token"):
 		return &Error{"auth", "PikPak 授權失效，請更新 PAT"}
+	case strings.Contains(text, "quota") || strings.Contains(text, "space not enough") || strings.Contains(text, "not enough space") || strings.Contains(text, "storage_limit") || strings.Contains(text, "storage_space_limit") || strings.Contains(text, "cloud_download_limit") || strings.Contains(text, "空间不足") || strings.Contains(text, "空間不足"):
+		return &Error{"quota", "PikPak 配額不足；任務已暫停"}
 	case strings.Contains(text, "403") || strings.Contains(text, "permission") || strings.Contains(text, "scope"):
 		return &Error{"auth", "PikPak 權限不足，請確認檔案讀寫及雲端下載權限"}
-	case strings.Contains(text, "quota") || strings.Contains(text, "space not enough") || strings.Contains(text, "storage_limit") || strings.Contains(text, "cloud_download_limit"):
-		return &Error{"quota", "PikPak 配額不足；任務已暫停"}
 	case strings.Contains(text, "429") || strings.Contains(text, "rate limit") || strings.Contains(text, "too many"):
 		return &Error{"rate", "PikPak 請求受到限流，稍後重試"}
 	default:

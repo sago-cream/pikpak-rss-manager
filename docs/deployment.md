@@ -62,7 +62,7 @@ secrets:
 
 ## 更新、固定版本與備份
 
-`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.1.0` 或已驗證 digest。更新：
+`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.1.1` 或已驗證 digest。更新：
 
 ```sh
 docker compose pull

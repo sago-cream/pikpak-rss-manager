@@ -83,7 +83,7 @@ func TestProgressAndErrorClassification(t *testing.T) {
 			t.Fatal("invalid percentage")
 		}
 	}
-	for text, want := range map[string]string{"HTTP 401 private token": "auth", "quota exceeded": "quota", "429 throttled": "rate", "connection lost private url": "transient"} {
+	for text, want := range map[string]string{"HTTP 401 private token": "auth", "quota exceeded": "quota", "403 cloud download quota exceeded": "quota", "403 storage_space_limit": "quota", "not enough space": "quota", "空間不足": "quota", "429 throttled": "rate", "connection lost private url": "transient"} {
 		if got := Classify(errors.New(text)); got.Kind != want || got.Message == text {
 			t.Fatal("classification leaked raw response", got)
 		}

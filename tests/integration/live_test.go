@@ -16,6 +16,8 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/worker"
 )
 
+const fixtureBase = "https://raw.githubusercontent.com/webtorrent/webtorrent-fixtures/bab825076af799eeb37a729de06f2e58bd02557a/fixtures/"
+
 // These tests never run in CI. They intentionally preserve the created cloud
 // content. All mutations are confined to a new dedicated test directory.
 func TestLivePikPak(t *testing.T) {
@@ -53,7 +55,7 @@ func TestLivePikPak(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Only torrent metadata is fetched locally, never the resource contents.
-	resource, err := feed.New(false).Resolve(ctx, "https://raw.githubusercontent.com/webtorrent/webtorrent-fixtures/master/fixtures/alice.torrent")
+	resource, err := feed.New(false).Resolve(ctx, fixtureBase+"alice.torrent")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +80,7 @@ func TestLivePikPak(t *testing.T) {
 		}
 		job.ID = store.ID()
 		job.ResourceKey = "live-http:" + run
-		job.ResourceURL = "https://raw.githubusercontent.com/webtorrent/webtorrent-fixtures/master/fixtures/alice.txt"
+		job.ResourceURL = fixtureBase + "alice.txt"
 		job.Title = "Alice S01E02"
 		job.State = "queued"
 		if _, err := db.Enqueue(ctx, job, "http-fixture"); err != nil {

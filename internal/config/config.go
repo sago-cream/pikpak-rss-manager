@@ -33,7 +33,7 @@ func Load() (Config, error) {
 	}
 	if c.PublicURL != "" {
 		u, err := url.Parse(c.PublicURL)
-		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.User != nil {
+		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || strings.Contains(c.PublicURL, "#") {
 			return c, errors.New("APP_PUBLIC_URL 必須是沒有路徑的 http/https 網站來源")
 		}
 	}
@@ -43,6 +43,9 @@ func Load() (Config, error) {
 			return c, errors.New("無法讀取 PikPak 權杖檔案")
 		}
 		c.Token, c.TokenSource = strings.TrimSpace(string(b)), "file"
+		if c.Token == "" {
+			return c, errors.New("PikPak 權杖檔案為空；不會改用其他帳號的已保存權杖")
+		}
 	} else if t := strings.TrimSpace(os.Getenv("PIKPAK_TOKEN")); t != "" {
 		c.Token, c.TokenSource = t, "environment"
 	}

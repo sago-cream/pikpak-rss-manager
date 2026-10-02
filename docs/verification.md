@@ -12,6 +12,8 @@ Linux CI 加跑 `go test -race ./...`；容器建置後使用 `scripts/container
 
 自動化測試涵蓋 RSS／Atom、相對 torrent enclosure、Magnet hex／base32／v2、原始 bencode infohash、資料大小／私人網路限制、中文命名、補零、實際副檔名、RE2 限制、首次基準、補抓、跨訂閱去重、多檔歧義、附屬檔案、名稱衝突、提交回應遺失、重啟恢復、部分 rename／move、授權／配額／限流、換帳號與 HTTP 登入／CSRF／私密欄位隔離。
 
+修正版亦涵蓋含 403 的配額錯誤、網站來源不得含 query／fragment、明確配置的空白 PAT 檔案不得回退至其他憑證，以及新帳號補抓不沿用舊帳號的已處理 fingerprint／雲端 ID。選擇性實測資源固定至上游 commit，避免未來 master 變更擴大測試內容。
+
 ## 真實 PikPak 實測（2026-10-03，台灣時間）
 
 用本機使用者提供的 PAT 透過官方 MCP 實測，PAT 不進入測試輸出、Git 或 Actions。測試目錄：`_pikpak-rss-manager-test/run-20261002T201936-d8752c`。所有測試 mutation 僅限本專案建立的測試目錄；測試檔案與任務保留供核對，未刪除既有內容。

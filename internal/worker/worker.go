@@ -155,11 +155,11 @@ func (w *Worker) Check(ctx context.Context, id int64, backfill bool) error {
 	}
 	created, duplicates := 0, 0
 	for _, item := range items {
-		seen, baseline, err := w.DB.Seen(ctx, id, item.Fingerprint)
+		seen, _, err := w.DB.Seen(ctx, id, item.Fingerprint)
 		if err != nil {
 			return err
 		}
-		if seen && (!backfill || !baseline) {
+		if seen && !backfill {
 			continue
 		}
 		resource, err := w.Feeds.Resolve(ctx, item.URL)

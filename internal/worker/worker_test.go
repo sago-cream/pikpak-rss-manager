@@ -273,3 +273,31 @@ func TestDifferentAccountCannotResume(t *testing.T) {
 		t.Fatal("allowed retry for another account")
 	}
 }
+func TestExplicitBackfillUsesCurrentAccountDedup(t *testing.T) {
+	w, c, _, f, sub, _ := setup(t)
+	ctx := context.Background()
+	f.items = []feed.Item{{Fingerprint: "same-guid", Title: "作品 S01E01", URL: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"}}
+	if err := w.Check(ctx, sub.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Check(ctx, sub.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	jobs, _ := w.DB.Jobs(ctx, 10)
+	if len(jobs) != 1 {
+		t.Fatal("same account backfill repeated a task")
+	}
+	c.AccountID = "new-account"
+	if err := w.Check(ctx, sub.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	jobs, _ = w.DB.Jobs(ctx, 10)
+	if len(jobs) != 2 {
+		t.Fatal("new account's explicit backfill was suppressed by old feed fingerprints")
+	}
+	for _, j := range jobs {
+		if j.AccountID == "new-account" && (j.TaskID != "" || j.FileID != "" || j.StagingID != "") {
+			t.Fatal("new account reused another account's cloud identifiers")
+		}
+	}
+}
