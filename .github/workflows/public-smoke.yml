@@ -1,0 +1,28 @@
+name: Public image smoke
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published GHCR tag to test without registry credentials
+        required: true
+        default: latest
+        type: string
+permissions:
+  contents: read
+jobs:
+  anonymous-compose:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Anonymous pull
+        run: |
+          docker logout ghcr.io || true
+          docker pull "$IMAGE"
+      - name: Compose startup and persisted data from the published image
+        run: python3 scripts/container-smoke.py "$IMAGE"
+      - name: Both architectures available anonymously
+        run: |
+          docker buildx imagetools inspect "$IMAGE" --raw > manifest.json
+          python3 -c 'import json; m=json.load(open("manifest.json"))["manifests"]; p={(x.get("platform",{}).get("os"),x.get("platform",{}).get("architecture")) for x in m}; assert {("linux","amd64"),("linux","arm64")} <= p, p'
