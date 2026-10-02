@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.secrets/
+.local/
+data/
+dist/
+coverage/
+*.db
+*.db-*
+*.sqlite*
+*.key
+*.pem
+*.log
+*.exe
+/pikpak-rss-manager
+**/pikpak-pat.txt

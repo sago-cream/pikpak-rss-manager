@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+.secrets
+.local
+data
+dist
+coverage
+*.db*
+*.sqlite*
+*.key
+*.pem
+*.log
+*.exe
+**/pikpak-pat.txt
