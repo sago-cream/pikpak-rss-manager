@@ -39,12 +39,14 @@ Remove-Item Env:PIKPAK_LIVE_TEST
 
 | 驗證 | 結果／證據 |
 |---|---|
-| Linux race、vet、Go build、Docker build、Compose 啟動／持久化 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37063074121) |
-| GHCR 多架構發布、main/latest/提交標籤、manifest 核對 | [發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37061951099) |
-| 無 GHCR 登入的實際拉取、兩種架構啟動、登入／健康／資料保留 | [Public image smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37063075302) |
+| Linux race、vet、Go build、Docker build、Compose 啟動／持久化 | [v0.1.1 程式碼 CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37066105759) |
+| GHCR 多架構發布、版本／提交標籤、manifest 核對 | [v0.1.1 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37066109017)；[main/latest 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37066106170) |
+| 無 GHCR 登入的實際拉取、兩種架構啟動、登入／健康／資料保留 | [v0.1.1 Public image smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37066855304) |
 | 套件公開權限與匿名 manifest | [套件頁](https://github.com/wade00754/pikpak-rss-manager/pkgs/container/pikpak-rss-manager) 顯示 Public；以無 GitHub 憑證的 pull grant 取得兩種架構 |
 
 `amd64` 在 Linux Runner 原生執行；`arm64` 透過 QEMU 執行實際容器，亦通過 Compose 重建與加密資料持久化。這不代表已在使用者的 ARM VPS 上部署。Go／Docker／公開映像的驗證工作流保留在 `.github/workflows`，公開映像 smoke 可指定 Tag 手動重跑。
+
+交付版本為 [`v0.1.1`](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.1.1)，映像 `ghcr.io/wade00754/pikpak-rss-manager:v0.1.1`；上述驗證對應 commit `a93bb3b`。`latest` 跟隨 main；正式部署如需固定版本，可把 Compose 的映像標籤改為 `v0.1.1`。
 
 瀏覽器已驗證登入／手機登出、兩筆訂閱的獨立規則保存、重載後資料、中文命名預覽與實際 `.mp4` 副檔名；在 1280px 與 390px 寬度檢查排版，手機沒有頁面橫向溢出。使用停用的測試訂閱與獨立本機資料目錄，不觸發新的雲端下載。畫面記錄：`docs/screenshots/subscriptions.jpg`、`docs/screenshots/mobile.jpg`。
 
