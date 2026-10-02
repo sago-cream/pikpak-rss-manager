@@ -54,7 +54,10 @@ with tempfile.TemporaryDirectory() as directory:
     override = os.path.join(directory, "override.yml")
     with open(override, "w", encoding="utf-8") as stream:
         # JSON is valid YAML, and safely quotes even digest-based image names.
-        json.dump({"services": {"pikpak-rss-manager": {"image": image}}}, stream)
+        service = {"image": image}
+        if os.environ.get("SMOKE_PLATFORM"):
+            service["platform"] = os.environ["SMOKE_PLATFORM"]
+        json.dump({"services": {"pikpak-rss-manager": service}}, stream)
     command = ["docker", "compose", "-p", project, "-f", "docker-compose.yml", "-f", override]
 
     def compose(*args):

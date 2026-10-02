@@ -12,14 +12,19 @@ permissions:
 jobs:
   anonymous-compose:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [amd64, arm64]
     env:
       IMAGE: ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+      SMOKE_PLATFORM: linux/${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - name: Anonymous pull
         run: |
           docker logout ghcr.io || true
-          docker pull "$IMAGE"
+          docker pull --platform "$SMOKE_PLATFORM" "$IMAGE"
       - name: Compose startup and persisted data from the published image
         run: python3 scripts/container-smoke.py "$IMAGE"
       - name: Both architectures available anonymously
