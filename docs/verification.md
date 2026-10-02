@@ -33,8 +33,17 @@ Remove-Item Env:PIKPAK_LIVE_TEST
 
 ## 發布與介面驗證
 
-本機沒有 Docker。本機 `go test ./...` 與 `go vet ./...` 已通過。Docker／Compose、race 與兩種架構驗證由 GitHub Actions 執行；最終結果與匿名 GHCR 驗證會在發布完成後更新於此。
+本機沒有 Docker。本機 `go test ./...` 與 `go vet ./...` 已通過，以下 GitHub Actions 驗證亦已成功：
 
-瀏覽器已驗證登入、兩筆訂閱的獨立規則保存、重載後資料、中文命名預覽與實際 `.mp4` 副檔名；在 1280px 與 390px 寬度檢查排版，手機沒有頁面橫向溢出。使用停用的測試訂閱與獨立本機資料目錄，不觸發新的雲端下載。畫面記錄：`docs/screenshots/subscriptions.jpg`、`docs/screenshots/mobile.jpg`。
+| 驗證 | 結果／證據 |
+|---|---|
+| Linux race、vet、Go build、Docker build、Compose 啟動／持久化 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37063074121) |
+| GHCR 多架構發布、main/latest/提交標籤、manifest 核對 | [發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37061951099) |
+| 無 GHCR 登入的實際拉取、兩種架構啟動、登入／健康／資料保留 | [Public image smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37063075302) |
+| 套件公開權限與匿名 manifest | [套件頁](https://github.com/wade00754/pikpak-rss-manager/pkgs/container/pikpak-rss-manager) 顯示 Public；以無 GitHub 憑證的 pull grant 取得兩種架構 |
+
+`amd64` 在 Linux Runner 原生執行；`arm64` 透過 QEMU 執行實際容器，亦通過 Compose 重建與加密資料持久化。這不代表已在使用者的 ARM VPS 上部署。Go／Docker／公開映像的驗證工作流保留在 `.github/workflows`，公開映像 smoke 可指定 Tag 手動重跑。
+
+瀏覽器已驗證登入／手機登出、兩筆訂閱的獨立規則保存、重載後資料、中文命名預覽與實際 `.mp4` 副檔名；在 1280px 與 390px 寬度檢查排版，手機沒有頁面橫向溢出。使用停用的測試訂閱與獨立本機資料目錄，不觸發新的雲端下載。畫面記錄：`docs/screenshots/subscriptions.jpg`、`docs/screenshots/mobile.jpg`。
 
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。

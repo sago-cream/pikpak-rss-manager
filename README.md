@@ -4,6 +4,9 @@
 
 Go 1.27.1、SQLite、原生 JavaScript/CSS；單一執行檔，無需 rclone、PikPak CLI、LLM、MySQL、Redis 或前端建置工具。MIT 授權。
 
+[![CI](https://github.com/wade00754/pikpak-rss-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/wade00754/pikpak-rss-manager/actions/workflows/ci.yml)
+[![Docker publish](https://github.com/wade00754/pikpak-rss-manager/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/wade00754/pikpak-rss-manager/actions/workflows/docker-publish.yml)
+
 ## 功能
 
 - 繁體中文管理面板、手機介面、單一管理員登入。
@@ -91,6 +94,8 @@ Windows 可用 `./scripts/dev.ps1` 與 `./scripts/verify.ps1`。測試預設不�
 ## 發布、更新與備份
 
 GitHub Actions 在推送 `main` 或 Tag 時，先執行測試、vet 及 Compose 啟動／資料持久化測試，再發布兩種架構。`main` 產生 `latest`、`main`、`sha-...`；Tag 產生對應 Tag、版本與提交標籤。使用 `GITHUB_TOKEN`，不需自行保存 GHCR 發布權杖。[GitHub 官方 GHCR 文件](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)。
+
+公開映像另以未登入 GHCR 的 Runner 驗證匿名拉取、Compose 啟動與重建後資料保留；包含 amd64 與 QEMU arm64。驗證結果與真實 PikPak 實測限制記錄於 [verification.md](docs/verification.md)。
 
 ```sh
 docker compose pull
