@@ -591,13 +591,16 @@ func (w *Worker) organize(ctx context.Context, api pikpak.API, j *model.Job) err
 			return e
 		}
 		collision := false
+		blockedFolder := false
 		for _, target := range targets {
 			if target.ID != a.FileID && strings.EqualFold(target.Name, a.TargetName) {
 				collision = true
-				break
+				if target.Folder() {
+					blockedFolder = true
+				}
 			}
 		}
-		if collision {
+		if collision && (!j.Overwrite || blockedFolder) {
 			a.State = "review"
 			a.Error = "目標已有同名檔案，保留原名；不覆寫"
 			review = true
@@ -605,6 +608,11 @@ func (w *Worker) organize(ctx context.Context, api pikpak.API, j *model.Job) err
 				return err
 			}
 			continue
+		}
+		if j.Overwrite {
+			if err := w.replaceTargets(ctx, api, j, &a, targets); err != nil {
+				return err
+			}
 		}
 		if current.Name != a.TargetName {
 			if err := api.Rename(ctx, a.FileID, a.TargetName); err != nil {
@@ -637,4 +645,51 @@ func (w *Worker) organize(ctx context.Context, api pikpak.API, j *model.Job) err
 		return err
 	}
 	return w.DB.Event(ctx, j.ID, j.SubscriptionID, "info", map[bool]string{true: "雲端整理完成，部分檔案待處理", false: "離線下載與雲端整理完成"}[review])
+}
+
+// Persist the backup plan before moving old files. A restart or uncertain move
+// rechecks file IDs/parents rather than repeating a destructive action by name.
+func (w *Worker) replaceTargets(ctx context.Context, api pikpak.API, j *model.Job, a *model.FileAction, targets []pikpak.File) error {
+	known := map[string]bool{}
+	for _, id := range a.ReplacementIDs {
+		known[id] = true
+	}
+	for _, target := range targets {
+		if target.ID != a.FileID && strings.EqualFold(target.Name, a.TargetName) && !known[target.ID] {
+			a.ReplacementIDs = append(a.ReplacementIDs, target.ID)
+			known[target.ID] = true
+		}
+	}
+	if len(a.ReplacementIDs) == 0 {
+		return nil
+	}
+	if j.StagingID == "" {
+		return &pikpak.Error{Kind: "permanent", Message: "覆蓋備份目錄無法定位，請檢查任務"}
+	}
+	if a.BackupID == "" {
+		id, err := ensurePath(ctx, api, j.StagingID, "_Replaced/"+a.FileID)
+		if err != nil {
+			return err
+		}
+		a.BackupID = id
+	}
+	if err := w.DB.SaveAction(ctx, *a); err != nil {
+		return err
+	}
+	for _, id := range a.ReplacementIDs {
+		old, err := api.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if old.ParentID == a.BackupID {
+			continue
+		}
+		if old.Folder() || old.ParentID != a.DestinationID || !strings.EqualFold(old.Name, a.TargetName) {
+			return &pikpak.Error{Kind: "permanent", Message: "同名舊檔已變更，請檢查覆蓋備份"}
+		}
+		if err := api.Move(ctx, id, a.BackupID); err != nil {
+			return err
+		}
+	}
+	return nil
 }

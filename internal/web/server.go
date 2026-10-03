@@ -41,6 +41,8 @@ type CloudManager interface {
 	Bind(context.Context, string) error
 }
 type Server struct {
+	backfillMu sync.Mutex
+	backfills  map[string]*backfillPlan
 	DB         *store.Store
 	Manager    CloudManager
 	Worker     *worker.Worker
@@ -240,13 +242,19 @@ func (s *Server) Handler() http.Handler {
 			failure(w, err)
 			return
 		}
-		if err := s.Worker.Check(r.Context(), id, in.Backfill); err != nil {
+		if in.Backfill {
+			failure(w, errors.New("請先讀取補抓清單並勾選下載項目"))
+			return
+		}
+		if err := s.Worker.Check(r.Context(), id, false); err != nil {
 			failure(w, err)
 			return
 		}
 		JSON(w, 200, map[string]bool{"ok": true})
 	}))
 	mux.HandleFunc("POST /api/feeds/samples", s.protected(s.sourceSamples))
+	mux.HandleFunc("POST /api/subscriptions/{id}/backfill/preview", s.protected(s.previewBackfill))
+	mux.HandleFunc("POST /api/subscriptions/{id}/backfill", s.protected(s.confirmBackfill))
 	mux.HandleFunc("POST /api/rules/preview", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Rule     model.Rule `json:"rule"`

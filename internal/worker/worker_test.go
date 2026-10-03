@@ -122,8 +122,8 @@ func TestBaselineBackfillAndCrossSubscriptionDedup(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs, _ = w.DB.Jobs(ctx, 10)
-	if len(jobs) != 1 || c.Calls["submit"] != 0 {
-		t.Fatal("same-account duplicate enqueued")
+	if len(jobs) != 4 || c.Calls["submit"] != 0 {
+		t.Fatal("explicit repeat downloads suppressed")
 	}
 	// Changing the feed resets its initial baseline, including colliding GUIDs.
 	sub.RSSURL = "https://new.test"
@@ -364,7 +364,7 @@ func TestDifferentAccountCannotResume(t *testing.T) {
 		t.Fatal("allowed retry for another account")
 	}
 }
-func TestExplicitBackfillUsesCurrentAccountDedup(t *testing.T) {
+func TestExplicitBackfillAllowsRepeatDownloads(t *testing.T) {
 	w, c, _, f, sub, _ := setup(t)
 	ctx := context.Background()
 	f.items = []feed.Item{{Fingerprint: "same-guid", Title: "作品 S01E01", URL: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"}}
@@ -375,15 +375,15 @@ func TestExplicitBackfillUsesCurrentAccountDedup(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs, _ := w.DB.Jobs(ctx, 10)
-	if len(jobs) != 1 {
-		t.Fatal("same account backfill repeated a task")
+	if len(jobs) != 2 {
+		t.Fatal("same account backfill suppressed a repeat task")
 	}
 	c.AccountID = "new-account"
 	if err := w.Check(ctx, sub.ID, true); err != nil {
 		t.Fatal(err)
 	}
 	jobs, _ = w.DB.Jobs(ctx, 10)
-	if len(jobs) != 2 {
+	if len(jobs) != 3 {
 		t.Fatal("new account's explicit backfill was suppressed by old feed fingerprints")
 	}
 	for _, j := range jobs {

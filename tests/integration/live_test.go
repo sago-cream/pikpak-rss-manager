@@ -64,10 +64,10 @@ func TestLivePikPak(t *testing.T) {
 		t.Fatalf("enqueue: %v", err)
 	}
 	duplicate := job
-	duplicate.ID = store.ID()
+	// Retrying the same persisted request ID must remain idempotent.
 	added, err = db.Enqueue(ctx, duplicate, "same-infohash-other-feed-item")
 	if err != nil || added {
-		t.Fatal("same-account infohash deduplication failed")
+		t.Fatal("same-request idempotency failed")
 	}
 	t.Log("Account read succeeded; scoped test root:", cloudRoot)
 	magnetComplete := finishLive(ctx, t, w, db, job.ID, 90*time.Second)
@@ -108,9 +108,9 @@ func TestLivePikPak(t *testing.T) {
 	if file.Size != "163783" {
 		t.Fatal("unexpected test resource size; refusing further mutations")
 	}
-	t.Log("Verified cloud completion, real filename extension, rename, move and duplicate-source suppression using", transport)
+	t.Log("Verified cloud completion, real filename extension, rename, move and same-request idempotency using", transport)
 	// Only non-sensitive aggregate facts are recorded for the delivery report.
-	report := map[string]any{"tested_at": time.Now().UTC().Format(time.RFC3339), "cloud_root": cloudRoot, "transport": transport, "magnet_complete": magnetComplete, "rename_move_verified": true, "dedup_verified": true, "bytes": 163783}
+	report := map[string]any{"tested_at": time.Now().UTC().Format(time.RFC3339), "cloud_root": cloudRoot, "transport": transport, "magnet_complete": magnetComplete, "rename_move_verified": true, "idempotency_verified": true, "bytes": 163783}
 	b, _ := json.MarshalIndent(report, "", "  ")
 	reportDir := filepath.Join("..", "..", ".local")
 	_ = os.MkdirAll(reportDir, 0700)

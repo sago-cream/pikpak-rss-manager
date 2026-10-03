@@ -45,6 +45,7 @@ type SubscriptionRecord struct {
 }
 
 type Job struct {
+	Overwrite      bool    `json:"overwrite,omitempty"`
 	ID             string  `json:"id"`
 	SubscriptionID int64   `json:"subscription_id"`
 	AccountID      string  `json:"-"`
@@ -76,14 +77,16 @@ type JobRecord struct {
 }
 
 type FileAction struct {
-	JobID         string `json:"job_id"`
-	FileID        string `json:"file_id"`
-	OriginalName  string `json:"original_name"`
-	RelativePath  string `json:"relative_path"`
-	TargetName    string `json:"target_name"`
-	DestinationID string `json:"destination_id"`
-	State         string `json:"state"`
-	Error         string `json:"error"`
+	BackupID       string   `json:"backup_id,omitempty"`
+	ReplacementIDs []string `json:"replacement_ids,omitempty"`
+	JobID          string   `json:"job_id"`
+	FileID         string   `json:"file_id"`
+	OriginalName   string   `json:"original_name"`
+	RelativePath   string   `json:"relative_path"`
+	TargetName     string   `json:"target_name"`
+	DestinationID  string   `json:"destination_id"`
+	State          string   `json:"state"`
+	Error          string   `json:"error"`
 }
 
 type Event struct {

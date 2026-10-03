@@ -9,15 +9,15 @@ One Go process, one administrator, one active PikPak account and one SQLite data
 | internal/rename | Shared regex/template renderer and filename normalization |
 | internal/pikpak | Typed official MCP adapter and folder operations |
 | internal/worker | Durable queue, reconciliation, file actions and bounded retry |
-| internal/store | SQLite migrations, baseline, per-account deduplication, encryption |
+| internal/store | SQLite migrations, baseline, repeat-download migration, encryption |
 
 ## Workflow
 
-Subscriptions establish a baseline on first check; backfill is explicit. Manual tasks have subscription_id 0 and never modify feed baselines. Torrent tasks share normalized infohash deduplication with RSS; direct download URLs use an exact-URL SHA-256 resource key.
+Subscriptions establish a baseline on first check; backfill is explicit. Manual tasks have subscription_id 0 and never modify feed baselines. Torrent tasks retain normalized infohashes as resource identifiers; direct download URLs use an exact-URL SHA-256 key. Resource identity does not suppress repeated explicit downloads. Automatic checks skip previously seen feed fingerprints.
 
 The worker saves queued → submitting before the cloud request, then stores the task ID and polls downloading → organizing → complete. Unconfirmed submissions become submission_unknown and reconcile the dedicated staging folder without submitting again. Authorization/quota failures pause jobs; transient failures back off from 30 seconds to two hours, with review after six attempts.
 
-New staging folders live under the destination; persisted staging IDs always retain their location. File actions persist before rename/move and resume by file ID. Name collisions retain originals for review. Regex replacement works on actual filenames; legacy episode fallback is permitted only for one primary file. Auxiliary files retain their names/subdirectories under `_附件/<jobID>`.
+New staging folders live under the destination; persisted staging IDs always retain their location. File actions persist before rename/move and resume by file ID. Ordinary name collisions retain originals for review. Backfill preview reads one RSS snapshot and each distinct torrent URL once, with bounded concurrency and metadata/output budgets. Session/account-bound plans expire after 15 minutes. Confirmations validate the subscription and destination again, then atomically queue selected torrents using stable job IDs. Confirmed backfills persist their overwrite flag and backup action plan before moving matching old files into `<staging>/_Replaced/<new-file-ID>`; restarts reconcile moves by file ID. Same-name folders and ambiguous action plans still require review. Regex replacement works on actual filenames; legacy episode fallback is permitted only for one primary file. Auxiliary files retain their names/subdirectories under `_附件/<jobID>`.
 
 ## Limits and security
 
@@ -40,13 +40,15 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | POST /api/login, /api/logout | Session lifecycle |
 | GET/POST /api/subscriptions | List/create |
 | PUT/DELETE /api/subscriptions/{id} | Update/delete |
-| POST /api/subscriptions/{id}/check | Check; optional backfill |
+| POST /api/subscriptions/{id}/check | Check new items; backfill requires selection |
 | GET /api/pikpak/folders?parent_id=…&token=… | Browse with account_ref |
 | POST /api/pikpak/folders | Create with parent_id, name, account_ref |
+| POST /api/subscriptions/{id}/backfill/preview | Read downloadable torrents and filenames; no queue/baseline/cloud mutations |
+| POST /api/subscriptions/{id}/backfill | Confirm token, selected IDs and overwrite; atomically queue downloads |
 | POST /api/feeds/samples | url, subscription_id, all:true; metadata preview |
 | POST /api/rules/preview | rule, title, filename; shared renderer |
 | GET /api/jobs, /api/jobs/{id} | Latest 200 jobs / file actions |
-| POST /api/jobs | url, destination, optional name/source_type/destination_id/destination_account_ref; 201 queued, 409 duplicate |
+| POST /api/jobs | url, destination, optional name/source_type/destination_id/destination_account_ref; 201 queued; repeated sources allowed |
 | POST /api/jobs/{id}/retry | Resume/reconcile safely |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |

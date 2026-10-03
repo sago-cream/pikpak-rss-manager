@@ -1,5 +1,13 @@
 # Verification
 
+## Selected backfill and repeat downloads (2026-10-04)
+
+Passed locally: `go test ./...`, `go vet ./...`, JavaScript syntax/localization checks, `git diff --check`, and a `-buildvcs=false -trimpath` application build reporting `v1.0.0`. The standard verification build was interrupted after its VCS metadata lookup could not write the shared module cache; the explicit build passed using the workspace-local cache.
+
+Regression coverage includes version-2 migration retaining encrypted jobs, staging/task IDs and partial file actions; repeat resource downloads; atomic/idempotent selection batches; authentication/CSRF; subscription, account and expiry checks; preview without baseline/queue/cloud mutations; one feed snapshot and distinct torrent read; v2 filenames, metadata-size protection and mismatched provenance; and recovery after an uncertain backup move. Ordinary collisions and same-name folders still require review.
+
+Headless Edge used `.local/v100-backfill-ui-data` with a mocked account only. Both languages passed the 72-filename list, empty selection, cancelled/accepted confirmation, selected-only queue insertion, repeat source downloads, new naming defaults, and 1280/390/320-pixel layouts without overflow or JavaScript errors. The desktop fixture screenshot was visually inspected. No real PikPak operation was performed; container/race/publishing validation runs in Actions after all requested changes are complete.
+
 ## New subscription replacement defaults (2026-10-04)
 
 New subscriptions default to `\[(\d+)\]` and `S01E$1`. Existing saved rules, including empty replacements, retain their values. Passed JavaScript syntax and localization checks.

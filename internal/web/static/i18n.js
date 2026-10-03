@@ -57,7 +57,28 @@ const translations = {
   '請先綁定 PikPak PAT':'Connect a PikPak PAT first.','PikPak 帳號或連線已更新，請重新開啟資料夾選擇器':'Account or connection changed. Reopen the folder browser.','PikPak 帳號或連線已更新，請重新選取目標資料夾':'Account or connection changed. Reselect the destination.','一次讀取全部種子檔名不使用續讀位置':'Full filename reads do not accept a cursor.',
   '下載連結必須為 1–8192 位元組':'Download URL must be 1–8,192 bytes.','不支援的下載連結類型':'Unsupported link type.','PikPak 帳號已更換，請重新建立任務':'Account changed. Create the task again.','無法建立任務':'Could not create the task.','此來源已存在任務':'A task already exists for this source.',
   '資料金鑰長度不正確；請保留原金鑰':'Invalid data key length. Preserve the original key.','資料庫由較新版本建立，請使用對應版本服務':'Database requires a newer service version.','未加密的私密設定':'Private setting is not encrypted.','私密設定損毀':'Private setting is damaged.','私密設定無法解密；請保留原金鑰':'Could not decrypt private settings. Preserve the original key.',
-  '無法初始化帳號參照':'Could not initialize the account reference.','無法讀取管理員設定':'Could not read administrator settings.','找不到項目':'Item not found.','請使用 application/json':'Use application/json.','請求資料格式不正確或過大':'Request is invalid or too large.','請求只能包含單一 JSON 物件':'Request must contain one JSON object.','無法讀取訂閱':'Could not read subscriptions.','訂閱 ID 無效':'Invalid subscription ID.','無法刪除訂閱':'Could not delete subscription.','無法讀取任務':'Could not read tasks.','找不到任務':'Task not found.','無法讀取逐檔紀錄':'Could not read file actions.','無法讀取日誌':'Could not read logs.','請先登入':'Sign in first.','請求驗證失敗，請重新整理頁面':'Request validation failed. Refresh the page.','檢查間隔必須為 1–10080 分鐘':'Interval must be 1–10,080 minutes.','無法保存訂閱':'Could not save subscription.'
+  '無法初始化帳號參照':'Could not initialize the account reference.','無法讀取管理員設定':'Could not read administrator settings.','找不到項目':'Item not found.','請使用 application/json':'Use application/json.','請求資料格式不正確或過大':'Request is invalid or too large.','請求只能包含單一 JSON 物件':'Request must contain one JSON object.','無法讀取訂閱':'Could not read subscriptions.','訂閱 ID 無效':'Invalid subscription ID.','無法刪除訂閱':'Could not delete subscription.','無法讀取任務':'Could not read tasks.','找不到任務':'Task not found.','無法讀取逐檔紀錄':'Could not read file actions.','無法讀取日誌':'Could not read logs.','請先登入':'Sign in first.','請求驗證失敗，請重新整理頁面':'Request validation failed. Refresh the page.','檢查間隔必須為 1–10080 分鐘':'Interval must be 1–10,080 minutes.','無法保存訂閱':'Could not save subscription.',
+  "補抓下載":"Backfill downloads",
+  "勾選要下載的種子；多檔種子會下載整筆內容。完成後覆蓋目標資料夾的同名檔案，舊檔移至任務備份目錄。":"Select torrents to download. Multi-file torrents download in full. Matching destination files are replaced after completion; originals move to the task backup folder.",
+  "下載並覆蓋":"Download and replace",
+  "正在讀取下載清單…":"Reading download list\u2026",
+  "無法取得種子檔名":"Torrent filenames unavailable.",
+  "RSS 中沒有可下載的項目":"No downloadable items in this feed.",
+  "下載所選項目並覆蓋目標資料夾的同名檔案？舊檔會移至任務備份目錄。":"Download selected items and replace matching destination files? Originals will move to the task backup folder.",
+  "已排入下載佇列：%d 筆":"Queued %d downloads.",
+  "訂閱已變更，請重新讀取補抓清單":"Subscription changed. Reload the backfill list.",
+  "補抓清單過多，請稍後再試":"Too many backfill lists. Try again later.",
+  "請選擇下載項目並確認覆蓋":"Select downloads and confirm replacement.",
+  "補抓清單已失效，請重新讀取":"Backfill list expired. Reload it.",
+  "補抓選取項目無效":"Invalid backfill selection.",
+  "此補抓清單已送出，請重新讀取":"This selection was submitted. Reload the backfill list.",
+  "PikPak 帳號已更換，請重新讀取補抓清單":"Account changed. Reload the backfill list.",
+  "已確認下載與覆蓋，離線任務已排入佇列":"Download and replacement confirmed. Offline task queued.",
+  "請先讀取補抓清單並勾選下載項目":"Read the backfill list and select downloads first.",
+  "種子中繼資料與下載來源不一致":"Torrent metadata does not match the download source.",
+  "覆蓋備份目錄無法定位，請檢查任務":"Could not locate the replacement backup folder. Check the task.",
+  "同名舊檔已變更，請檢查覆蓋備份":"Original file changed. Check the replacement backup.",
+  "首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載與覆蓋。Regex 不匹配時保留原名。":"First check sets a baseline. Use Backfill to select existing releases and confirm downloading and replacement. Nonmatches keep their names."
 };
 const escapePattern=value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const literalPattern=new RegExp(Object.keys(translations).filter(key=>!/%[ds]/.test(key)).sort((a,b)=>b.length-a.length).map(escapePattern).join('|'),'g');

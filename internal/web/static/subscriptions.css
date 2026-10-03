@@ -39,3 +39,10 @@
   .folder-actions>.button { flex:1; min-width:120px; justify-content:center; }
   .rename-preview-row { grid-template-columns:1fr; gap:4px; }
 }
+
+#backfill-list { max-height:50vh; overflow-y:auto; }
+.backfill-choice { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); cursor:pointer; }
+.backfill-choice input { flex-shrink:0; margin-top:5px; }
+.backfill-choice span { min-width:0; }
+.backfill-choice strong,.backfill-choice code,.backfill-choice small { display:block; overflow-wrap:anywhere; }
+.backfill-choice code { font-size:12px; margin-top:5px; }

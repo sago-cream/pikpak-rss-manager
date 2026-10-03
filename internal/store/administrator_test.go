@@ -74,7 +74,7 @@ func TestAdministratorAtomicSetupAndMigration(t *testing.T) {
 	if err := s.db.QueryRow("SELECT COUNT(*) FROM events WHERE message='legacy-event'").Scan(&count); err != nil || count != 1 {
 		t.Fatal("migration lost existing state")
 	}
-	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 2 {
+	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 3 {
 		t.Fatal("migration version incorrect")
 	}
 }

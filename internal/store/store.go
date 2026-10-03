@@ -25,6 +25,9 @@ var migration string
 //go:embed migrations/002_web_setup.sql
 var webSetupMigration string
 
+//go:embed migrations/003_repeat_downloads.sql
+var repeatDownloadsMigration string
+
 type Store struct {
 	db   *sql.DB
 	aead cipher.AEAD
@@ -78,7 +81,7 @@ func Open(dir string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
-	if schemaVersion > 2 {
+	if schemaVersion > 3 {
 		db.Close()
 		return nil, errors.New("資料庫由較新版本建立，請使用對應版本服務")
 	}
@@ -89,6 +92,9 @@ func Open(dir string) (*Store, error) {
 	}
 	if schemaVersion < 2 {
 		statements = append(statements, webSetupMigration)
+	}
+	if schemaVersion < 3 {
+		statements = append(statements, "PRAGMA foreign_keys=OFF", repeatDownloadsMigration, "PRAGMA foreign_keys=ON")
 	}
 	for _, statement := range statements {
 		if _, err := db.Exec(statement); err != nil {
@@ -270,15 +276,42 @@ func (s *Store) decodeJob(p string) (model.Job, error) {
 	return r.Job, err
 }
 func (s *Store) Enqueue(ctx context.Context, j model.Job, fingerprint string) (bool, error) {
-	p, err := s.jobPayload(j)
-	if err != nil {
-		return false, err
-	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	defer tx.Rollback()
+	added, err := s.enqueueTx(ctx, tx, j, fingerprint)
+	if err != nil {
+		return false, err
+	}
+	return added, tx.Commit()
+}
+
+// EnqueueBatch commits a confirmed selection atomically. Stable job IDs make
+// retries of the same confirmation idempotent without suppressing redownloads.
+func (s *Store) EnqueueBatch(ctx context.Context, jobs []model.Job, fingerprints []string) error {
+	if len(jobs) != len(fingerprints) {
+		return errors.New("無法建立任務")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for i, j := range jobs {
+		if _, err := s.enqueueTx(ctx, tx, j, fingerprints[i]); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *Store) enqueueTx(ctx context.Context, tx *sql.Tx, j model.Job, fingerprint string) (bool, error) {
+	p, err := s.jobPayload(j)
+	if err != nil {
+		return false, err
+	}
 	r, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO jobs(id,account_id,resource_key,subscription_id,state,next_attempt,created_at,payload) VALUES(?,?,?,?,?,?,?,?)", j.ID, j.AccountID, j.ResourceKey, j.SubscriptionID, j.State, j.NextAttempt, j.CreatedAt, string(p))
 	if err != nil {
 		return false, err
@@ -293,7 +326,7 @@ func (s *Store) Enqueue(ctx context.Context, j model.Job, fingerprint string) (b
 	if err != nil {
 		return false, err
 	}
-	return n > 0, tx.Commit()
+	return n > 0, nil
 }
 func (s *Store) SaveJob(ctx context.Context, j *model.Job) error {
 	j.UpdatedAt = time.Now().Unix()

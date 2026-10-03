@@ -51,7 +51,7 @@ func TestOptionalRenamingAndFolderIdentitySurviveRestart(t *testing.T) {
 	}
 }
 
-func TestEncryptedPersistenceAndDeduplication(t *testing.T) {
+func TestEncryptedPersistenceAndRepeatDownloads(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
 	s, err := Open(dir)
@@ -77,8 +77,8 @@ func TestEncryptedPersistenceAndDeduplication(t *testing.T) {
 	}
 	j.ID = ID()
 	added, err = s.Enqueue(ctx, j, "two")
-	if err != nil || added {
-		t.Fatal("duplicate resource was enqueued")
+	if err != nil || !added {
+		t.Fatal("repeat resource was suppressed")
 	}
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
@@ -110,7 +110,7 @@ func TestEncryptedPersistenceAndDeduplication(t *testing.T) {
 		t.Fatal("initial baseline lost")
 	}
 	jobs, err := s.Jobs(ctx, 10)
-	if err != nil || len(jobs) != 1 || jobs[0].AccountID != "account" || jobs[0].ResourceURL != j.ResourceURL {
+	if err != nil || len(jobs) != 2 || jobs[0].AccountID != "account" || jobs[0].ResourceURL != j.ResourceURL {
 		t.Fatal("private job state did not survive restart", err)
 	}
 }

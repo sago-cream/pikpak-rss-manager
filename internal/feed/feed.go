@@ -22,7 +22,7 @@ import (
 
 const MaxMetadata = 2 << 20
 
-type Item struct{ Fingerprint, Title, URL string }
+type Item struct{ Fingerprint, Title, URL, MetadataURL string }
 type Resource struct{ Key, URL string }
 type Client struct{ HTTP *http.Client }
 
@@ -181,7 +181,7 @@ func parse(b []byte, baseURL string, preferTorrent bool) ([]Item, error) {
 		if len(title) > 8192 {
 			continue
 		}
-		out = append(out, Item{hex.EncodeToString(h[:]), title, source})
+		out = append(out, Item{Fingerprint: hex.EncodeToString(h[:]), Title: title, URL: source, MetadataURL: torrentLink(item, base)})
 	}
 	return out, nil
 }

@@ -51,7 +51,7 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 	if err != nil || completed.State != "complete" || completed.SubscriptionID != 0 || completed.StagingID != j.StagingID || c.Calls["submit"] != 1 || c.Calls["rename"] != 0 || c.Files["original"].ParentID != j.DestinationID {
 		t.Fatal("manual job did not resume safely", err)
 	}
-	if _, added, err := restarted.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Duplicate", RenameEnabled: &off}); err != nil || added {
-		t.Fatal("restart lost deduplication", err)
+	if _, added, err := restarted.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Duplicate", RenameEnabled: &off}); err != nil || !added {
+		t.Fatal("restart suppressed an explicit repeat download", err)
 	}
 }

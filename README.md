@@ -16,14 +16,14 @@ Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.0.0` (linux/amd64 and li
 
 ## Use
 
-- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline; **Backfill** processes existing releases.
+- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline; **Backfill** lists torrent filenames for selection, then asks to confirm downloading and replacing matching destination files. Multi-file torrents download in full.
 - **Offline tasks → Add task:** submit a Magnet, torrent URL or direct HTTP/HTTPS download URL, choose a destination, and retain original filenames.
 - **Folders:** browse/create folders or enter a path. Saved folder IDs belong to the connected account; reselect them after switching accounts.
 - **Renaming:** disabled by default for new subscriptions. Enable regex replacement and select a torrent filename for automatic preview. Go RE2 supports `$1`, `${name}` and `$$`; nonmatches keep their names. Existing template rules remain compatible.
 - **Language:** choose Traditional Chinese or English in the top bar, setup or login page. The choice is saved in the browser; switching reloads the page.
 - **Settings → Change administrator password:** enter the current password and confirm a nonempty new password. All devices must sign in again after saving.
 
-Jobs deduplicate per account and resume after restarts. Unconfirmed submissions require reconciliation; filename collisions never overwrite files. New jobs stage under `<destination>/_PikPak-RSS-Staging/<jobID>`; existing staging IDs are preserved.
+Explicit downloads may repeat a previously downloaded source. Jobs resume after restarts, and retries of the same backfill confirmation do not create another job. Unconfirmed submissions require reconciliation. Confirmed backfills replace matching files only after completion, moving originals to the task’s `_Replaced` backup folder; ordinary jobs and folder/name ambiguities remain subject to review. New jobs stage under `<destination>/_PikPak-RSS-Staging/<jobID>`; existing staging IDs are preserved.
 
 PATs are encrypted with AES-GCM; passwords use salted Argon2id verifiers. Authorization or quota failures pause jobs. Renew the PAT or check the connection, then resume affected tasks. [PAT instructions](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token). OAuth is not implemented; [comparison](docs/auth-comparison.md).
 

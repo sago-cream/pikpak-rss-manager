@@ -19,7 +19,7 @@ import (
 	"github.com/zeebo/bencode"
 )
 
-func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
+func TestManualJobAuthenticationRepeatDownloadsAndDestination(t *testing.T) {
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -78,10 +78,10 @@ func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
 		t.Fatal("missing durable automatic title")
 	}
 	in["name"] = "Legacy manual fixture"
-	if r := request(in, true, true); r.Code != 409 {
-		t.Fatal("duplicate source accepted")
+	if r := request(in, true, true); r.Code != 201 {
+		t.Fatal("repeat source suppressed")
 	}
-	// Feed jobs and manual jobs share the account/infohash uniqueness constraint.
+	// Feed and manual jobs can explicitly queue the same normalized resource.
 	off := false
 	sub := model.Subscription{Name: "Feed fixture", RSSURL: "https://example.test/feed", IntervalMinutes: 10, RenameEnabled: &off}
 	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
@@ -90,8 +90,8 @@ func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
 	feedJob := stored
 	feedJob.ID = store.ID()
 	feedJob.SubscriptionID = sub.ID
-	if added, err := db.Enqueue(context.Background(), feedJob, "fixture"); err != nil || added {
-		t.Fatal("cross-source deduplication failed", err)
+	if added, err := db.Enqueue(context.Background(), feedJob, "fixture"); err != nil || !added {
+		t.Fatal("repeat source suppressed across jobs", err)
 	}
 	if got, _ := db.Subscription(context.Background(), sub.ID); got.Initialized {
 		t.Fatal("manual job changed baseline")
@@ -150,7 +150,7 @@ func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
 		t.Fatal("invalid destination accepted")
 	}
 	jobs, _ := db.Jobs(context.Background(), 200)
-	if len(jobs) != 2 {
+	if len(jobs) != 4 {
 		t.Fatal("rejected requests created jobs", len(jobs))
 	}
 }
@@ -172,7 +172,7 @@ func TestManualTorrentMetadataPrivateNetworkPolicy(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for i, body := range []string{
+			for _, body := range []string{
 				`{"name":"Torrent fixture","url":"` + source.URL + `/fixture.ToRrEnT?token=fixture"}`,
 				`{"name":"Torrent fixture","source_type":"torrent","url":"` + source.URL + `"}`,
 			} {
@@ -183,12 +183,9 @@ func TestManualTorrentMetadataPrivateNetworkPolicy(t *testing.T) {
 				want := http.StatusBadRequest
 				if allowed {
 					want = http.StatusCreated
-					if i == 1 {
-						want = http.StatusConflict // Same infohash across auto and legacy requests.
-					}
 				}
 				if result.Code != want {
-					t.Fatal("private metadata policy", i, result.Code, result.Body.String())
+					t.Fatal("private metadata policy", result.Code, result.Body.String())
 				}
 			}
 		})

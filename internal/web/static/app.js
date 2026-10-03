@@ -209,7 +209,8 @@ document.addEventListener('click',async event=>{
   button.disabled=true;
   try {
     if(button.id==='refresh'){await load();toast(t('已更新面板'));}
-    if(button.dataset.check||button.dataset.backfill){const id=button.dataset.check||button.dataset.backfill;if(button.dataset.backfill&&!confirm(t('補抓 RSS 中現有的項目？符合規則的項目會建立雲端任務並使用 PikPak 配額。')))return;await api(tr`/api/subscriptions/${id}/check`,'POST',{backfill:!!button.dataset.backfill});toast(t('訂閱檢查完成'));await load();}
+    if(button.dataset.backfill){await openBackfill(button.dataset.backfill);}
+    if(button.dataset.check){await api(`/api/subscriptions/${button.dataset.check}/check`,'POST',{backfill:false});toast(t('訂閱檢查完成'));await load();}
     if(button.dataset.delete){if(!confirm(t('刪除這筆訂閱？已建立的任務與雲端檔案會保留。')))return;await api(tr`/api/subscriptions/${button.dataset.delete}`,'DELETE');toast(t('訂閱已刪除'));await load();}
     if(button.dataset.retry){await api(tr`/api/jobs/${button.dataset.retry}/retry`,'POST',{});$('#job-dialog').close();toast(t('已重新核對或排入接續處理'));await load();}
     if(button.id==='check-connection'){await api('/api/settings/pikpak/check','POST',{});toast(t('PikPak 連線已更新；暫停的任務可個別接續'));await load();}
