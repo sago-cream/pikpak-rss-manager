@@ -35,6 +35,8 @@ docker compose up -d
 docker compose logs --tail=50
 ```
 
+The reissued v1.0.0 removes resource uniqueness through schema version 3. Pull again even if you already use the v1.0.0 tag. Back up the complete data volume before upgrading; returning to the earlier v1.0.0 build requires restoring its pre-upgrade backup.
+
 Pin an available version tag or digest to control updates. Never use `docker compose down -v` for updates. Existing subscriptions, encrypted PATs, jobs and staging IDs are retained. Upgrading versions predating web setup requires creating a new administrator password; externally configured PATs must be entered in Settings.
 
 ## Backup / restore

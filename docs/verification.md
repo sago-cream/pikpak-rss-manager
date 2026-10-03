@@ -1,5 +1,19 @@
 # Verification
 
+## v1.0.0 republication (2026-10-04)
+
+The existing v1.0.0 tag was updated to functional commit `2a66034` after selected backfill/replacement, repeat downloads, dark mode and new naming defaults passed local verification. The published v1.0.0 and latest images both passed anonymous checks on linux/amd64 and linux/arm64.
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, localization, non-root container startup/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37155134834) |
+| main/latest amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37155134838) |
+| Reissued v1.0.0 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37155173674) |
+| Anonymous latest pulls and container persistence on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37155321003) |
+| Anonymous v1.0.0 pulls and container persistence on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37155344169) |
+
+The release tag/image were replaced as requested; pull again even when already using v1.0.0. Back up the complete data volume before the schema-3 upgrade. Real PikPak replacement operations were not run, and mocked tests do not establish real cloud behavior. No VPS was deployed. Credentials remained local; staged files and the release tree passed secret-exclusion checks.
+
 ## Persistent dark mode (2026-10-04)
 
 Passed locally: `scripts/verify.ps1`, JavaScript theme/backfill syntax and localization checks, `git diff --check`, and the built executable reporting `v1.0.0`. Theme preference applies before styles load, follows the system until explicitly selected, persists across page reloads/language changes, and synchronizes across tabs.
