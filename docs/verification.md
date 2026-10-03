@@ -1,5 +1,9 @@
 # Verification
 
+## New subscription replacement defaults (2026-10-04)
+
+New subscriptions default to `\[(\d+)\]` and `S01E$1`. Existing saved rules, including empty replacements, retain their values. Passed JavaScript syntax and localization checks.
+
 ## v1.0.0 release (2026-10-04)
 
 Passed locally: `scripts/verify.ps1`, `git diff --check` and the built executable reporting `v1.0.0`. This release includes automatic manual-task link/name detection, administrator password changes, the shared brand icon and unused-file/code cleanup.

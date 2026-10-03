@@ -93,7 +93,7 @@ function openSubscription(id, manual=false) {
   $('#sub-rename-mode').value=sub?.rename_mode||(sub?'template':'replace');
   $('#rename-mode-label').classList.toggle('hidden',!sub||sub.rename_mode==='replace');
   $('#sub-template').value=sub?.template||'{title} - S{season:02}E{ep:02}.{ext}';
-  $('#sub-regex').value=sub?.regex??'^\\[[^\\]]+\\]\\s*'; $('#sub-replacement').value=sub?.replacement||'';
+  $('#sub-regex').value=sub?.regex??'\\[(\\d+)\\]'; $('#sub-replacement').value=sub?.replacement??'S01E$1';
   closeFolderBrowser(); clearSourceSamples(); updateRenameOptions(); $('#browse-folders').disabled=!data.status.connected||!!data.status.paused;
   $('#destination-help').textContent=data.status.connected?t('從 PikPak 選取資料夾，也可手動輸入路徑。'):t('綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。');
   $('#subscription-dialog').showModal();
