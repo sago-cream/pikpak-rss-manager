@@ -83,14 +83,6 @@ h3 {
   display:none!important
 }
 
-.eyebrow {
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:2px;
-  color:var(--accent);
-  margin-bottom:12px
-}
-
 .button {
   display:inline-flex;
   align-items:center;
@@ -274,13 +266,6 @@ h3 {
   color:#9692a2
 }
 
-.workspace-label {
-  margin:45px 12px 16px;
-  font-size:10px;
-  color:#a5a2b1;
-  letter-spacing:1px
-}
-
 .sidebar nav {
   display:grid;
   gap:8px
@@ -357,28 +342,6 @@ h3 {
   justify-content:space-between;
   padding:0 40px;
   background:#ffffffb5
-}
-
-.breadcrumb {
-  font-size:11px;
-  color:#a09cac;
-  display:flex;
-  gap:14px;
-  align-items:center
-}
-
-.breadcrumb b {
-  font-weight:500;
-  color:#5e586c
-}
-
-.topbar-note {
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:10px;
-  letter-spacing:.3px;
-  color:#8b8795
 }
 
 .content {
@@ -704,19 +667,6 @@ tr:last-child td {
   border:0
 }
 
-.empty-symbol {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:0 auto 15px;
-  width:48px;
-  height:48px;
-  background:var(--accent-light);
-  border-radius:14px;
-  color:var(--accent);
-  font-size:27px
-}
-
 .empty-state h3 {
   font-size:14px;
   margin-bottom:7px
@@ -810,18 +760,6 @@ tr:last-child td {
 
 .event-dot.error {
   background:#cf858a
-}
-
-.main-footer {
-  margin-top:auto;
-  border-top:1px solid var(--line);
-  padding:20px 40px;
-  font-size:9px;
-  color:#aca5b7;
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  letter-spacing:.3px
 }
 
 .settings-grid {
@@ -996,10 +934,6 @@ dialog::backdrop {
   justify-content:space-between;
   align-items:flex-start;
   margin-bottom:25px
-}
-
-.dialog-heading .eyebrow {
-  margin-bottom:6px
 }
 
 .dialog-heading h2 {
@@ -1241,86 +1175,6 @@ dialog::backdrop {
   margin-left:auto
 }
 
-.login-art {
-  flex:1;
-  position:relative;
-  overflow:hidden;
-  background:radial-gradient(ellipse at 40% 60%,#d6c5f0,#ede6f8 50%,#f6f1fc 90%);
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center
-}
-
-.orbit {
-  position:absolute;
-  border:1px solid #cfc0e66b;
-  border-radius:50%;
-  width:560px;
-  height:560px;
-  transform:rotate(-20deg)
-}
-
-.orbit-two {
-  width:380px;
-  height:380px;
-  border-color:#cabbdf8a
-}
-
-.floating-card {
-  position:relative;
-  z-index:1;
-  width:260px;
-  background:#ffffffd9;
-  border:1px solid #fff;
-  border-radius:23px;
-  box-shadow:0 30px 70px #61419b20;
-  padding:33px;
-  transform:rotate(-7deg);
-  backdrop-filter:blur(20px)
-}
-
-.floating-card .mini-label {
-  font-size:9px;
-  letter-spacing:1px;
-  color:#b3a0c9;
-  display:block;
-  margin-bottom:20px
-}
-
-.floating-card strong {
-  font-size:19px;
-  display:block;
-  color:#746185;
-  margin-bottom:8px
-}
-
-.floating-card .code {
-  font-family:Consolas,monospace;
-  font-size:12px;
-  color:#ac98c2
-}
-
-.art-check {
-  width:34px;
-  height:34px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:50%;
-  background:#e9f7ee;
-  color:#6db788;
-  margin-top:28px
-}
-
-.art-note {
-  position:absolute;
-  bottom:10%;
-  font-size:9px;
-  letter-spacing:4px;
-  color:#b5a1d1
-}
-
 @media(min-width:1500px) {
   .content {
   padding-top:45px
@@ -1374,10 +1228,6 @@ dialog::backdrop {
   font-size:26px
 }
 
-.main-footer {
-  padding:20px 28px
-}
-
 }
 
 @media(max-width:900px) {
@@ -1393,10 +1243,6 @@ dialog::backdrop {
 .brand {
   font-size:15px;
   gap:8px
-}
-
-.workspace-label {
-  margin-top:35px
 }
 
 .nav-item {
@@ -1435,11 +1281,6 @@ dialog::backdrop {
   font-size:34px
 }
 
-.floating-card {
-  width:230px;
-  padding:26px
-}
-
 }
 
 @media(max-width:650px) {
@@ -1460,7 +1301,7 @@ dialog::backdrop {
   height:30px
 }
 
-.workspace-label,.sidebar-bottom {
+.sidebar-bottom {
   display:none
 }
 
@@ -1503,10 +1344,6 @@ dialog::backdrop {
 
 .page-heading h1 {
   font-size:23px
-}
-
-.page-heading .eyebrow {
-  font-size:8px
 }
 
 .page-heading p {
@@ -1597,15 +1434,6 @@ th,td {
   font-size:9px
 }
 
-.main-footer {
-  padding:17px 20px;
-  font-size:8px
-}
-
-.main-footer>span {
-  display:none
-}
-
 .settings-panel {
   padding:21px
 }
@@ -1647,10 +1475,6 @@ dialog {
   min-height:100vh;
   max-width:450px;
   margin:0 auto
-}
-
-.login-art {
-  display:none
 }
 
 .login-shell h1 {

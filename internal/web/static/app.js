@@ -73,7 +73,6 @@ function render() {
 }
 function formatBytes(value) { let n=Number(value||0); if (!Number.isFinite(n)) return '—'; const units=['B','KiB','MiB','GiB','TiB']; let i=0; while(n>=1024&&i<4){n/=1024;i++;} return tr`${n.toFixed(i?1:0)} ${units[i]}`; }
 async function load(silent=false) { try { const [subscriptions,jobs,events,status]=await Promise.all(['/api/subscriptions','/api/jobs','/api/events','/api/settings/pikpak'].map(p=>api(p))); data={subscriptions,jobs,events,status}; render(); } catch(e){if(!silent)toast(e.message,true);} }
-const defaultRegex='(?i)(?:S(?P<season>[0-9]{1,2})E(?P<ep>[0-9]{1,3})|第\\s*(?P<ep>[0-9]{1,3})\\s*[話话集]|(?:^|[\\s\\[\\]_-])(?P<ep>[0-9]{1,3})(?:v[0-9]+)?(?:$|[\\s\\[\\]_.-]))';
 let manualTask=false;
 function openSubscription(id, manual=false) {
   manualTask=manual;
@@ -158,7 +157,7 @@ async function loadSourceSamples(){
     const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0,all:true},controller.signal);
     if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
     const selected=selectedSourceSample();sourceSamples=[];
-    const known=new Set(sourceSamples.map(s=>JSON.stringify([s.title,s.filename])));
+    const known=new Set();
     for(const sample of result.items.filter(s=>s.kind==='torrent_file')){const key=JSON.stringify([sample.title,sample.filename]);if(!known.has(key)){sourceSamples.push(sample);known.add(key);}}
     $('#preview-source').innerHTML=sourceSamples.map((s,i)=>tr`<option value="${i}">${escapeHTML(s.filename)}</option>`).join('');
     $('#preview-source-label').classList.toggle('hidden',!sourceSamples.length);

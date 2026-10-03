@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
@@ -45,7 +44,6 @@ type Server struct {
 	DB         *store.Store
 	Manager    CloudManager
 	Worker     *worker.Worker
-	Config     config.Config
 	Version    string
 	hash       string
 	accountKey []byte
@@ -58,7 +56,7 @@ type Server struct {
 	attempts   map[string]attempt
 }
 
-func New(c config.Config, db *store.Store, m CloudManager, w *worker.Worker, version string) (*Server, error) {
+func New(db *store.Store, m CloudManager, w *worker.Worker, version string) (*Server, error) {
 	accountKey := make([]byte, 32)
 	if _, err := rand.Read(accountKey); err != nil {
 		return nil, errors.New("無法初始化帳號參照")
@@ -76,7 +74,7 @@ func New(c config.Config, db *store.Store, m CloudManager, w *worker.Worker, ver
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, accountKey: accountKey, settings: settings, ready: make(chan struct{}), authGate: make(chan struct{}, 1), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}
+	s := &Server{DB: db, Manager: m, Worker: w, Version: version, hash: hash, accountKey: accountKey, settings: settings, ready: make(chan struct{}), authGate: make(chan struct{}, 1), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}
 	if w != nil {
 		w.SetFeeds(feed.New(settings.AllowPrivateFeeds))
 	}

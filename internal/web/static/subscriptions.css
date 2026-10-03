@@ -11,7 +11,6 @@
 .folder-row { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:10px; border:0; border-bottom:1px solid var(--line); background:transparent; color:var(--ink); text-align:left; cursor:pointer; font:inherit; font-size:12px; }
 .folder-row:hover,.folder-row:focus-visible { background:#f0ebfb; }
 .folder-row>span:nth-child(2) { min-width:0; overflow-wrap:anywhere; }
-.folder-symbol { font-size:24px; color:var(--accent); }
 .folder-arrow { margin-left:auto; color:var(--accent); font-size:20px; }
 .folder-footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; }
 .folder-footer>span { min-width:0; overflow-wrap:anywhere; }

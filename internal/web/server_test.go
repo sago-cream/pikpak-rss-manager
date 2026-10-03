@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
@@ -37,7 +36,7 @@ func initializedServer(t *testing.T, password string, settings store.AppSettings
 	if created, err := db.InitializeAdministrator(context.Background(), hash, settings); err != nil || !created {
 		t.Fatal("fixture setup failed", err)
 	}
-	return New(config.Config{}, db, m, w, "test")
+	return New(db, m, w, "test")
 }
 
 func TestLoginWithoutPasswordLengthOrCharacterRules(t *testing.T) {

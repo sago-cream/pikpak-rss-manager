@@ -1,5 +1,13 @@
 # Verification
 
+## Unused-file and code cleanup (2026-10-04)
+
+Removed 19 unreferenced screenshots (821,051 bytes), an unused RSS fixture, unused Web constructor configuration, an unused JavaScript regex constant, redundant empty-set initialization and CSS for retired UI elements. Screenshots referenced below, migrations, legacy naming rules and the cursor API remain available. `go mod tidy -diff` found no dependency changes.
+
+Passed locally with Go 1.27.1: `scripts/verify.ps1` (formatting, `go test ./...`, `go vet ./...`, build, JavaScript syntax and localization) and `git diff --check`. Go used a workspace-local cache; the build emitted a nonfatal module-cache metadata permission warning.
+
+Headless Edge used only `.local/release-ui-data` with a mocked account. Both languages and five management views passed at 1280, 390 and 320 pixels without horizontal overflow or browser errors. Reading 72 torrent filenames, regex previews and the folder-create dialog passed. Desktop/mobile fixture screenshots were visually inspected. No real PikPak operation was performed; container verification runs in Actions.
+
 ## Administrator password changes (2026-10-04)
 
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build, JavaScript syntax checks, `node scripts/test-i18n.cjs` and `git diff --check`. Go used a workspace-local build cache. The build succeeded with a nonfatal module-cache metadata permission warning.

@@ -22,7 +22,7 @@ func Run(ctx context.Context, c config.Config, version string) error {
 	manager := pikpak.NewManager(db)
 	defer manager.Close()
 	w := worker.New(db, manager, feed.New(false))
-	ui, err := web.New(c, db, manager, w, version)
+	ui, err := web.New(db, manager, w, version)
 	if err != nil {
 		return err
 	}

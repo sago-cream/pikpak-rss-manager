@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 )
 
@@ -170,7 +169,7 @@ func TestChangePasswordValidationRevocationAndRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err = New(config.Config{}, db, nil, nil, "test")
+	s, err = New(db, nil, nil, "test")
 	if err != nil {
 		t.Fatal(err)
 	}

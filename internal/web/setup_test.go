@@ -13,7 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 )
 
@@ -23,7 +22,7 @@ func TestFirstWebSetupAndRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := New(config.Config{}, db, nil, nil, "test")
+	s, err := New(db, nil, nil, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +168,7 @@ func TestFirstWebSetupAndRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	restarted, err := New(config.Config{}, db, nil, nil, "test")
+	restarted, err := New(db, nil, nil, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +199,7 @@ func TestHTTPSProxySetupAndLoginRateLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	s, err := New(config.Config{}, db, nil, nil, "test")
+	s, err := New(db, nil, nil, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +253,7 @@ func TestCorruptAdministratorDoesNotReopenSetup(t *testing.T) {
 	if _, err := db.InitializeAdministrator(context.Background(), "invalid-verifier", store.AppSettings{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(config.Config{}, db, nil, nil, "test"); err == nil {
+	if _, err := New(db, nil, nil, "test"); err == nil {
 		t.Fatal("corrupted verifier reopened setup")
 	}
 }
