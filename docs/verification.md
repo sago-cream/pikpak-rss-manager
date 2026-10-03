@@ -1,5 +1,9 @@
 # Verification
 
+## Shared favicon and brand icon (2026-10-04)
+
+The favicon and the setup, login and sidebar brand marks share one SVG with a white P and northeast arrow on purple. Passed locally: `go test ./internal/web`, `node scripts/test-i18n.cjs` and `git diff --check`. Go used a workspace-local build cache because the default cache was inaccessible.
+
 ## Manual tasks without a name field (2026-10-04)
 
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, JavaScript syntax/localization checks and `git diff --check`.
