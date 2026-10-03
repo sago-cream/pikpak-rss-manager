@@ -6,7 +6,7 @@ Keep HTTP/UI in `internal/web`, RSS and torrent metadata in `internal/feed`, nam
 Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The UI and primary documentation use Traditional Chinese. MIT license.
 
 ## Product decisions
-- One administrator and one active PikPak account; no default administrator password.
+- One administrator and one active PikPak account; no default administrator password. The user explicitly removed password length and character restrictions; require only a nonempty configured password.
 - Every subscription owns its destination, interval, season, regex and naming template.
 - Establish an initial feed baseline by default; backfill is explicit.
 - Normalize infohashes and deduplicate per PikPak account.

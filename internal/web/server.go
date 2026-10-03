@@ -1,7 +1,9 @@
 package web
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha512"
 	"database/sql"
 	"embed"
 	"encoding/base64"
@@ -36,28 +38,45 @@ type attempt struct {
 	until time.Time
 }
 type Server struct {
-	DB        *store.Store
-	Manager   *pikpak.Manager
-	Worker    *worker.Worker
-	Config    config.Config
-	Version   string
-	hash      []byte
-	templates *template.Template
-	mu        sync.Mutex
-	sessions  map[string]session
-	attempts  map[string]attempt
+	DB          *store.Store
+	Manager     *pikpak.Manager
+	Worker      *worker.Worker
+	Config      config.Config
+	Version     string
+	hash        []byte
+	passwordKey []byte
+	templates   *template.Template
+	mu          sync.Mutex
+	sessions    map[string]session
+	attempts    map[string]attempt
 }
 
 func New(c config.Config, db *store.Store, m *pikpak.Manager, w *worker.Worker, version string) (*Server, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(c.AdminPassword), 12)
+	if c.AdminPassword == "" {
+		return nil, errors.New("請設定管理密碼；沒有預設密碼")
+	}
+	passwordKey := make([]byte, 32)
+	if _, err := rand.Read(passwordKey); err != nil {
+		return nil, errors.New("無法初始化管理密碼驗證")
+	}
+	hash, err := bcrypt.GenerateFromPassword(passwordInput(passwordKey, c.AdminPassword), 12)
 	if err != nil {
-		return nil, errors.New("管理密碼設定無效，請使用 12–72 位元組")
+		return nil, errors.New("無法初始化管理密碼驗證")
 	}
 	t, err := template.ParseFS(assets, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}
-	return &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}, nil
+	return &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, passwordKey: passwordKey, templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}, nil
+}
+
+// Keyed, printable pre-hashing preserves the entire password while keeping the
+// bcrypt input below 72 bytes. The key and verifier are recreated at startup;
+// neither is persisted, just like the sessions they protect.
+func passwordInput(key []byte, password string) []byte {
+	digest := hmac.New(sha512.New384, key)
+	_, _ = digest.Write([]byte(password))
+	return []byte(base64.StdEncoding.EncodeToString(digest.Sum(nil)))
 }
 func nonce() string {
 	b := make([]byte, 32)
@@ -351,7 +370,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		failure(w, err)
 		return
 	}
-	if bcrypt.CompareHashAndPassword(s.hash, []byte(in.Password)) != nil {
+	if bcrypt.CompareHashAndPassword(s.hash, passwordInput(s.passwordKey, in.Password)) != nil {
 		JSON(w, 401, map[string]string{"error": "密碼不正確"})
 		return
 	}

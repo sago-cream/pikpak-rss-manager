@@ -4,7 +4,7 @@
 
 | 設定 | 預設／用途 |
 |---|---|
-| `APP_ADMIN_PASSWORD` | 必填，12–72 位元組，沒有預設密碼 |
+| `APP_ADMIN_PASSWORD` | 必填，沒有長度或字元限制，沒有預設密碼 |
 | `APP_ADMIN_PASSWORD_FILE` | 私密檔案，優先於密碼環境變數 |
 | `APP_LISTEN` | 本機 `127.0.0.1:8080`；映像內 `0.0.0.0:8080` |
 | `APP_DATA_DIR` | 本機 `data`；映像內 `/data` |
@@ -14,6 +14,8 @@
 | `PIKPAK_TOKEN` | 可選的環境 PAT，優先於面板 |
 
 環境變數優先於開發用 `.env`；檔案來源優先於對應值。Docker 映像不包含 `.env`。不要把整份本機開發 `.env` 放進 Actions secret 或映像。
+
+管理密碼檔案只移除結尾的一個換行，保留密碼前後的空白。
 
 ## 反向代理
 
@@ -62,7 +64,7 @@ secrets:
 
 ## 更新、固定版本與備份
 
-`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.1.1` 或已驗證 digest。更新：
+`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.1.2` 或已驗證 digest。更新：
 
 ```sh
 docker compose pull

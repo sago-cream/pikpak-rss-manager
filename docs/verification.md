@@ -14,6 +14,8 @@ Linux CI 加跑 `go test -race ./...`；容器建置後使用 `scripts/container
 
 修正版亦涵蓋含 403 的配額錯誤、網站來源不得含 query／fragment、明確配置的空白 PAT 檔案不得回退至其他憑證，以及新帳號補抓不沿用舊帳號的已處理 fingerprint／雲端 ID。選擇性實測資源固定至上游 commit，避免未來 master 變更擴大測試內容。
 
+密碼規則更新的測試涵蓋一字元、中文／Emoji、超過 72 bytes、前後空白的環境／檔案密碼，並透過真正的 HTTP handler 驗證登入、session 與超長密碼尾端差異，避免只比較前 72 bytes。登入表單不再設定 minlength／maxlength。
+
 ## 真實 PikPak 實測（2026-10-03，台灣時間）
 
 用本機使用者提供的 PAT 透過官方 MCP 實測，PAT 不進入測試輸出、Git 或 Actions。測試目錄：`_pikpak-rss-manager-test/run-20261002T201936-d8752c`。所有測試 mutation 僅限本專案建立的測試目錄；測試檔案與任務保留供核對，未刪除既有內容。
@@ -46,7 +48,7 @@ Remove-Item Env:PIKPAK_LIVE_TEST
 
 `amd64` 在 Linux Runner 原生執行；`arm64` 透過 QEMU 執行實際容器，亦通過 Compose 重建與加密資料持久化。這不代表已在使用者的 ARM VPS 上部署。Go／Docker／公開映像的驗證工作流保留在 `.github/workflows`，公開映像 smoke 可指定 Tag 手動重跑。
 
-交付版本為 [`v0.1.1`](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.1.1)，映像 `ghcr.io/wade00754/pikpak-rss-manager:v0.1.1`；上述驗證對應 commit `a93bb3b`。`latest` 跟隨 main；正式部署如需固定版本，可把 Compose 的映像標籤改為 `v0.1.1`。
+首次交付版本為 [`v0.1.1`](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.1.1)；上表驗證對應 commit `a93bb3b`。取消密碼規則的更新納入 [`v0.1.2`](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.1.2)，映像 `ghcr.io/wade00754/pikpak-rss-manager:v0.1.2`。該更新已通過本機 Go 測試／vet 及 PowerShell 一字元密碼輸入測試；容器 smoke 也改用少於 12 字元的臨時測試密碼，發布驗證結果附於 Release。`latest` 跟隨 main。
 
 瀏覽器已驗證登入／手機登出、兩筆訂閱的獨立規則保存、重載後資料、中文命名預覽與實際 `.mp4` 副檔名；在 1280px 與 390px 寬度檢查排版，手機沒有頁面橫向溢出。使用停用的測試訂閱與獨立本機資料目錄，不觸發新的雲端下載。畫面記錄：`docs/screenshots/subscriptions.jpg`、`docs/screenshots/mobile.jpg`。
 

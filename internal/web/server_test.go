@@ -20,6 +20,68 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/worker"
 )
 
+func TestLoginWithoutPasswordLengthOrCharacterRules(t *testing.T) {
+	for name, password := range map[string]string{
+		"one character": "x",
+		"unicode":       "密碼🔑",
+		"long":          strings.Repeat("long-password-", 20),
+		"spaces":        " leading and trailing spaces ",
+	} {
+		t.Run(name, func(t *testing.T) {
+			s, err := New(config.Config{AdminPassword: password}, nil, nil, nil, "test")
+			if err != nil {
+				t.Fatal("password rejected at startup", err)
+			}
+			handler := s.Handler()
+			page := httptest.NewRecorder()
+			handler.ServeHTTP(page, httptest.NewRequest("GET", "/", nil))
+			if page.Code != http.StatusOK || strings.Contains(page.Body.String(), "minlength=") || strings.Contains(page.Body.String(), "maxlength=") {
+				t.Fatal("login form still restricts password length")
+			}
+			var csrf *http.Cookie
+			for _, c := range page.Result().Cookies() {
+				if c.Name == "pp_csrf" {
+					csrf = c
+				}
+			}
+			if csrf == nil {
+				t.Fatal("missing CSRF cookie")
+			}
+			login := func(candidate string) *httptest.ResponseRecorder {
+				t.Helper()
+				body, _ := json.Marshal(map[string]string{"password": candidate})
+				req := httptest.NewRequest("POST", "/api/login", bytes.NewReader(body))
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("X-CSRF-Token", csrf.Value)
+				req.AddCookie(csrf)
+				response := httptest.NewRecorder()
+				handler.ServeHTTP(response, req)
+				return response
+			}
+			// The long case differs only beyond byte 72: this must not be truncated.
+			if response := login(password + "!"); response.Code != http.StatusUnauthorized {
+				t.Fatal("incorrect password was accepted")
+			}
+			response := login(password)
+			if response.Code != http.StatusOK {
+				t.Fatal("correct password could not log in")
+			}
+			req := httptest.NewRequest("GET", "/api/session", nil)
+			for _, c := range response.Result().Cookies() {
+				req.AddCookie(c)
+			}
+			session := httptest.NewRecorder()
+			handler.ServeHTTP(session, req)
+			var state struct {
+				Authenticated bool `json:"authenticated"`
+			}
+			if err := json.Unmarshal(session.Body.Bytes(), &state); err != nil || !state.Authenticated {
+				t.Fatal("successful login did not create a usable session")
+			}
+		})
+	}
+}
+
 func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 	db, err := store.Open(t.TempDir())
 	if err != nil {

@@ -5,7 +5,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     environment:
-      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:?Please set a unique administrator password of 12-72 bytes}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:?Please set your administrator password}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-}
       # Bind PAT in the Web UI by default; it is stored encrypted in this volume.
     volumes:

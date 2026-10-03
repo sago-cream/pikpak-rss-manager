@@ -3,8 +3,43 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestAdminPasswordsHaveNoLengthOrCharacterRules(t *testing.T) {
+	t.Setenv("APP_ADMIN_PASSWORD_FILE", "")
+	t.Setenv("APP_PUBLIC_URL", "")
+	t.Setenv("PIKPAK_TOKEN", "")
+	t.Setenv("PIKPAK_TOKEN_FILE", "")
+	for name, password := range map[string]string{
+		"one character": "x",
+		"unicode":       "密碼🔑",
+		"long":          strings.Repeat("任意長密碼", 30),
+		"spaces":        " leading and trailing spaces ",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("APP_ADMIN_PASSWORD", password)
+			c, err := Load()
+			if err != nil || c.AdminPassword != password {
+				t.Fatal("environment password rejected or changed")
+			}
+			file := filepath.Join(t.TempDir(), "password.txt")
+			if err := os.WriteFile(file, []byte(password+"\r\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("APP_ADMIN_PASSWORD_FILE", file)
+			c, err = Load()
+			if err != nil || c.AdminPassword != password {
+				t.Fatal("file password rejected or changed")
+			}
+		})
+	}
+	t.Setenv("APP_ADMIN_PASSWORD", "")
+	if _, err := Load(); err == nil {
+		t.Fatal("unconfigured password accepted")
+	}
+}
 
 func TestPublicURLIsAnOrigin(t *testing.T) {
 	t.Setenv("APP_ADMIN_PASSWORD", "unit-config-password-only")

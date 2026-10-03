@@ -26,10 +26,11 @@ func Load() (Config, error) {
 		if err != nil {
 			return c, errors.New("無法讀取管理密碼檔案")
 		}
-		c.AdminPassword = strings.TrimSpace(string(b))
+		// Secret files often end with a newline; preserve spaces in the password.
+		c.AdminPassword = strings.TrimSuffix(strings.TrimSuffix(string(b), "\n"), "\r")
 	}
-	if len(c.AdminPassword) < 12 || len(c.AdminPassword) > 72 {
-		return c, errors.New("請設定 12–72 位元組的 APP_ADMIN_PASSWORD 或 APP_ADMIN_PASSWORD_FILE；沒有預設密碼")
+	if c.AdminPassword == "" {
+		return c, errors.New("請設定 APP_ADMIN_PASSWORD 或 APP_ADMIN_PASSWORD_FILE；沒有預設密碼")
 	}
 	if c.PublicURL != "" {
 		u, err := url.Parse(c.PublicURL)

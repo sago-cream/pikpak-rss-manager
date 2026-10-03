@@ -25,7 +25,7 @@ Go 1.27.1、SQLite、原生 JavaScript/CSS；單一執行檔，無需 rclone、P
 將 [docker-compose.yml](docker-compose.yml) 放進一個目錄。在同一目錄建立 `.env`，填入你自己的管理密碼：
 
 ```dotenv
-APP_ADMIN_PASSWORD=請換成你自己的12至72位元組密碼
+APP_ADMIN_PASSWORD=請換成你自己的密碼
 # 使用 HTTPS 反向代理時設定精確的網站來源，不包含路徑。
 APP_PUBLIC_URL=https://rss.example.com
 ```
@@ -92,6 +92,8 @@ go vet ./...
 ```
 
 Windows 可用 `./scripts/dev.ps1` 與 `./scripts/verify.ps1`。測試預設不使用真實 PAT 或網路雲端操作；[驗證文件](docs/verification.md) 說明選擇性實測與限制。JSON API 需要登入 Cookie；修改請求須同時帶 `pp_csrf` Cookie 與 `X-CSRF-Token`。詳細資料結構及流程見 [架構文件](docs/architecture.md)。
+
+管理密碼沒有長度與字元限制，短密碼、中文及超過 72 位元組的密碼皆可使用；仍需自行設定密碼，沒有預設值。本機腳本會遮蔽密碼輸入，啟動後以同一組密碼登入。
 
 ## 發布、更新與備份
 

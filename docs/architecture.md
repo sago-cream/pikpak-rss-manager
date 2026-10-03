@@ -63,6 +63,8 @@ RSS 與檔案整理排程每五秒掃描到期紀錄；預設訂閱間隔十分�
 
 所有 `/api/` 管理介面需登入，除了 session 與 login。POST／PUT／DELETE 需要 CSRF；POST login 亦需要。`APP_PUBLIC_URL` 指定代理後的網站來源及 HTTPS Secure Cookie。Session 保存在記憶體，12 小時到期，服務重啟需重新登入。
 
+管理密碼不設長度或字元限制。完整密碼先經 HMAC-SHA384 與 Base64 編碼，再使用 cost 12 的 bcrypt 驗證；HMAC 金鑰與驗證值僅在程序記憶體中，每次啟動重新建立，不需遷移資料庫。此方式避免 bcrypt 的 72-byte 輸入截斷，採用 [OWASP 的 keyed pre-hashing 建議](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pre-hashing-passwords-with-bcrypt)。登入 API 與其他 JSON API 共用請求大小保護。
+
 | 方法與路徑 | 行為 |
 |---|---|
 | `GET /healthz` | DB 健康／版本，免登入 |

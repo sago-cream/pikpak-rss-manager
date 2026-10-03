@@ -17,7 +17,8 @@ import uuid
 
 image = sys.argv[1] if len(sys.argv) > 1 else "ghcr.io/wade00754/pikpak-rss-manager:latest"
 project = "rss-smoke-" + uuid.uuid4().hex[:8]
-password = "ci-test-only-" + uuid.uuid4().hex
+# A short random password exercises the absence of a minimum-length rule.
+password = uuid.uuid4().hex[:8]
 env = dict(os.environ, APP_ADMIN_PASSWORD=password, APP_PUBLIC_URL="")
 jar = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
