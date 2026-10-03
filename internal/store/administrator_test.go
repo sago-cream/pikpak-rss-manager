@@ -78,3 +78,38 @@ func TestAdministratorAtomicSetupAndMigration(t *testing.T) {
 		t.Fatal("migration version incorrect")
 	}
 }
+
+func TestAdministratorPasswordRejectsStaleVerifier(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	other, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	ctx := context.Background()
+	if err := s.ChangeAdministratorPassword(ctx, "original-verifier", "new-verifier"); err == nil {
+		t.Fatal("password change created an administrator before setup")
+	}
+	settings := AppSettings{PublicURL: "https://panel.test", AllowPrivateFeeds: true}
+	if _, err := s.InitializeAdministrator(ctx, "original-verifier", settings); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ChangeAdministratorPassword(ctx, "original-verifier", ""); err == nil {
+		t.Fatal("empty verifier accepted")
+	}
+	if err := s.ChangeAdministratorPassword(ctx, "original-verifier", "new-verifier"); err != nil {
+		t.Fatal(err)
+	}
+	if err := other.ChangeAdministratorPassword(ctx, "original-verifier", "stale-verifier"); err == nil {
+		t.Fatal("stale change overwrote password")
+	}
+	hash, got, err := other.Administrator(ctx)
+	if err != nil || hash != "new-verifier" || got != settings {
+		t.Fatal("password change lost credentials or settings", err)
+	}
+}

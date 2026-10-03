@@ -50,6 +50,7 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | POST /api/jobs/{id}/retry | Resume/reconcile safely |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |
+| POST /api/settings/password | current_password, new_password, confirm_password; revoke all sessions on success |
 | GET/POST /api/settings/pikpak | Status/write-only PAT |
 | POST /api/settings/pikpak/check | Reconnect |
 

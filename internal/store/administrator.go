@@ -44,3 +44,23 @@ func (s *Store) SaveAppSettings(ctx context.Context, settings AppSettings) error
 	_, err := s.db.ExecContext(ctx, "UPDATE administrator SET public_url=?,allow_private_feeds=? WHERE id=1", settings.PublicURL, settings.AllowPrivateFeeds)
 	return err
 }
+
+// Replace only the verifier that was authenticated; never overwrite another
+// password change or alter the administrator's application settings.
+func (s *Store) ChangeAdministratorPassword(ctx context.Context, previous, hash string) error {
+	if hash == "" {
+		return errors.New("管理密碼驗證值不可為空")
+	}
+	r, err := s.db.ExecContext(ctx, "UPDATE administrator SET password_hash=? WHERE id=1 AND password_hash=?", hash, previous)
+	if err != nil {
+		return err
+	}
+	n, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return errors.New("administrator verifier changed or missing")
+	}
+	return nil
+}

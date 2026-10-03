@@ -845,6 +845,10 @@ tr:last-child td {
   line-height:1.9
 }
 
+.settings-panel p.error {
+  color:#bf5f61
+}
+
 .settings-panel>h2 {
   margin:0 0 20px
 }

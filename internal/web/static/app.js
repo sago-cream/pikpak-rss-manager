@@ -249,6 +249,16 @@ async function start(){
   $('#folder-create-dialog').addEventListener('cancel',()=>{folderCreateContext=null;});
   $('#subscription-dialog').addEventListener('close',()=>{closeFolderBrowser();clearSourceSamples();});
   $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast(t('PAT 已驗證並安全保存'));await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=false;}});
+  $('#password-form').addEventListener('submit',async event=>{
+    event.preventDefault();const form=event.target,button=form.querySelector('button[type=submit]');button.disabled=true;$('#password-error').textContent='';
+    try{
+      const password=$('#new-password').value,confirm=$('#confirm-new-password').value;
+      if(password!==confirm)throw new Error(t('兩次輸入的密碼不一致'));
+      await api('/api/settings/password','POST',{current_password:$('#current-password').value,new_password:password,confirm_password:confirm});
+      form.reset();location.hash='';location.reload();
+    }catch(e){form.reset();$('#password-error').textContent=e.message;}
+    finally{button.disabled=false;}
+  });
   const settings=await api('/api/settings/app');$('#settings-public-url').value=settings.public_url;$('#settings-private-feeds').checked=settings.allow_private_feeds;
   $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast(t('網站設定已儲存'));}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();

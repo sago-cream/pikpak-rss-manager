@@ -211,6 +211,65 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, map[string]bool{"ok": true})
 }
 
+func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+	if err := decode(w, r, &in); err != nil {
+		failure(w, err)
+		return
+	}
+	if in.CurrentPassword == "" {
+		failure(w, errors.New("請輸入目前密碼"))
+		return
+	}
+	if in.NewPassword == "" {
+		failure(w, errors.New("請輸入新密碼"))
+		return
+	}
+	if in.NewPassword != in.ConfirmPassword {
+		failure(w, errors.New("兩次輸入的密碼不一致"))
+		return
+	}
+	if !s.beginAuth(w, r) {
+		return
+	}
+	defer func() { <-s.authGate }()
+	// A request may have passed middleware before another change revoked it.
+	if !s.authenticated(r) {
+		JSON(w, 401, map[string]string{"error": "請先登入"})
+		return
+	}
+	s.mu.Lock()
+	previous := s.hash
+	s.mu.Unlock()
+	matched := verifyPassword(previous, in.CurrentPassword)
+	in.CurrentPassword = ""
+	if !matched {
+		failure(w, errors.New("目前密碼不正確"))
+		return
+	}
+	hash, err := hashPassword(in.NewPassword)
+	in.NewPassword, in.ConfirmPassword = "", ""
+	if err != nil {
+		failure(w, err)
+		return
+	}
+	if err := s.DB.ChangeAdministratorPassword(r.Context(), previous, hash); err != nil {
+		JSON(w, 500, map[string]string{"error": "無法保存管理密碼，請重試"})
+		return
+	}
+	s.mu.Lock()
+	s.hash = hash
+	clear(s.sessions)
+	s.mu.Unlock()
+	s.cookie(w, r, "pp_session", "", true, -1)
+	s.cookie(w, r, "pp_csrf", nonce(), false, 43200)
+	JSON(w, 200, map[string]bool{"ok": true})
+}
+
 func (s *Server) saveAppSettings(w http.ResponseWriter, r *http.Request) {
 	var in store.AppSettings
 	if err := decode(w, r, &in); err != nil {

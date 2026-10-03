@@ -1,5 +1,13 @@
 # Verification
 
+## Administrator password changes (2026-10-04)
+
+Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build, JavaScript syntax checks, `node scripts/test-i18n.cjs` and `git diff --check`. Go used a workspace-local build cache. The build succeeded with a nonfatal module-cache metadata permission warning.
+
+Regression tests cover authenticated/CSRF-protected changes, empty/mismatched/wrong passwords, invalid JSON, shared authentication throttling, serialized Argon2 operations, storage failure preserving the verifier and sessions, stale database updates, all-session revocation, cookie expiry/CSRF rotation, old-password rejection and reopening the database with the new password. One-character, Unicode, long and whitespace-containing passwords remain supported. Application settings remain intact; persisted files contain no tested plaintext passwords.
+
+Headless Edge used only an isolated mocked account and `.local/password-ui-data`. Traditional Chinese and English settings, inline errors, confirmation mismatch without a request, input clearing, password changes, revocation in two browser contexts and subsequent login passed. Desktop (1280×900) and mobile (390×844) fixture screenshots were visually inspected; no horizontal overflow or browser errors occurred. The sidebar and favicon reference the same SVG. No real PikPak operation or Docker validation was performed for this change.
+
 ## Shared favicon and brand icon (2026-10-04)
 
 The favicon and the setup, login and sidebar brand marks share one SVG with a white P and northeast arrow on purple. Passed locally: `go test ./internal/web`, `node scripts/test-i18n.cjs` and `git diff --check`. Go used a workspace-local build cache because the default cache was inaccessible.

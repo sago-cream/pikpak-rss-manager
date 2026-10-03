@@ -21,6 +21,7 @@ Image: `ghcr.io/wade00754/pikpak-rss-manager:latest` (linux/amd64 and linux/arm6
 - **Folders:** browse/create folders or enter a path. Saved folder IDs belong to the connected account; reselect them after switching accounts.
 - **Renaming:** disabled by default for new subscriptions. Enable regex replacement and select a torrent filename for automatic preview. Go RE2 supports `$1`, `${name}` and `$$`; nonmatches keep their names. Existing template rules remain compatible.
 - **Language:** choose Traditional Chinese or English in the top bar, setup or login page. The choice is saved in the browser; switching reloads the page.
+- **Settings → Change administrator password:** enter the current password and confirm a nonempty new password. All devices must sign in again after saving.
 
 Jobs deduplicate per account and resume after restarts. Unconfirmed submissions require reconciliation; filename collisions never overwrite files. New jobs stage under `<destination>/_PikPak-RSS-Staging/<jobID>`; existing staging IDs are preserved.
 
