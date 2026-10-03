@@ -98,7 +98,7 @@ PAT 可設定 30 天至一年有效期；已連接應用共用各流量維度月
 
 範例下拉選單只列出 `.torrent` 中繼資料中單檔／多檔的實際檔名，選項直接顯示檔名。按「載入更多種子檔名」可接續讀取更多 RSS 來源，也能續讀同一個多檔種子的其餘檔名。每批最多檢查五筆來源、讀取三個種子中繼資料（每個最多 2 MiB），回傳三十筆範例；載入更多時保留目前選取與手動輸入的檔名。來源或種子內容在分頁間改變時，會提示重新讀取。
 
-解析時以 bencode 讀取 v1 的 `info.name`（單檔）或 `info.files[].path`（多檔；優先使用 UTF-8 欄位），v2 則走訪 `info.file tree` 的檔案節點。預覽只讀取中繼資料，不建立離線任務、不變更首次基準，也不下載媒體內容。同一筆 RSS 同時有 Magnet 與 `.torrent` 時，預覽優先讀取種子。
+來源由 Go 的 `net/http` 取得，RSS／Atom 使用 `github.com/mmcdole/gofeed` 解析，`.torrent` 使用 `github.com/zeebo/bencode` 解碼。v1 讀取 `info.name`（單檔）或 `info.files[].path`（多檔；優先使用 UTF-8 欄位），v2 則走訪 `info.file tree` 的檔案節點。預覽只讀取中繼資料，不建立離線任務、不變更首次基準，也不下載媒體內容。同一筆 RSS 同時有 Magnet 與 `.torrent` 時，預覽優先讀取種子。
 
 只有 Magnet 或無法取得種子檔名時，請手動輸入原始檔名。Magnet 的 `dn` 是可選的顯示名稱，可能是合集名稱，亦可能與種子內的單檔名稱不同；實際重命名以 PikPak 回傳的檔名為準。參考 [Magnet 規格（BEP 9）](https://www.bittorrent.org/beps/bep_0009.html)、[v1 種子格式（BEP 3）](https://www.bittorrent.org/beps/bep_0003.html)、[v2 種子格式（BEP 52）](https://www.bittorrent.org/beps/bep_0052.html)。
 
@@ -139,6 +139,8 @@ go vet ./...
 ```
 
 Windows 可用 `./scripts/dev.ps1` 與 `./scripts/verify.ps1`。測試預設不使用真實 PAT 或網路雲端操作；[驗證文件](docs/verification.md) 說明選擇性實測與限制。JSON API 需要登入 Cookie；修改請求須同時帶 `pp_csrf` Cookie 與 `X-CSRF-Token`。詳細資料結構及流程見 [架構文件](docs/architecture.md)。
+
+`./scripts/dev.ps1` 自動將目前 Git 版本傳入程式，例如 `v0.3.3-dev`；標籤後的提交與未提交變更也會顯示。`./scripts/dev.ps1 -Version` 可只查看版本，不讀取設定或啟動服務。沒有可用的 Git 資訊，或直接執行未指定版本的 `go run`／`go build` 時，版本顯示 `dev`；發布映像由建置流程傳入正式標籤或提交。
 
 管理密碼沒有長度與字元限制，短密碼、中文及超過 72 位元組的密碼皆可使用；仍需自行設定密碼，沒有預設值。本機腳本會遮蔽密碼輸入，啟動後以同一組密碼登入。
 

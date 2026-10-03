@@ -14,7 +14,7 @@ import (
 	_ "time/tzdata"
 )
 
-var version = "0.3.0-dev"
+var version = "dev"
 
 func main() {
 	command := "serve"
