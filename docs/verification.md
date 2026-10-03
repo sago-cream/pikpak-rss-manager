@@ -76,4 +76,12 @@ v0.3.0 已通過本機完整 Go 測試、vet、CGO-free build 與 JavaScript／P
 
 OAuth 調研僅讀取官方公開文件及 discovery（無憑證），確認宣告的端點與流程；沒有註冊 client、完成同意流程或測試 refresh token，不代表 OAuth 已可在本服務使用。詳見 [授權比較](auth-comparison.md)。
 
+### 即時檔名預覽與簡化範例（2026-10-03）
+
+本機 `go test ./...`、`go vet ./...`、`CGO_ENABLED=0 go build -trimpath` 與 `node --check internal/web/static/app.js` 通過。預覽沿用後端 Go renderer，輸入使用 200 ms 防抖，並在每次編輯時立即使舊請求失效。
+
+使用獨立的 localhost RSS／小型種子中繼資料、mocked PikPak 帳號與 `.local/realtime-ui-data` 驗證：混合 RSS 標題、Magnet 顯示名稱與種子多檔的來源只顯示兩筆種子檔名，選項沒有來源前綴；切換 `.mkv`／`.ass`、編輯原始檔名、Regex 或替換格式，以及快速連續編輯時會自動更新結果。另確認具名群組、無效 Regex 修正、未匹配保留原名與清空輸入提示。結果只顯示一列最終檔名；`S01/E$1` 的 `/` 轉為 `_` 時，只附一行「檔名含不適用字元，已自動替換或移除。」
+
+1280px 桌面與 390px 手機下，頁面及對話框沒有橫向溢出，瀏覽器無錯誤或警告。此次未讀取 PAT、未呼叫真實 PikPak，亦未新建下載任務。畫面：`docs/screenshots/source-preview.jpg`、`docs/screenshots/realtime-mobile.jpg`。本機無 Docker，容器驗證由 GitHub Actions 執行；發布後的容器驗證結果請見 [v0.3.1 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.1)。
+
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。

@@ -96,13 +96,12 @@ function openSubscription(id) {
 }
 function formRule(){return {title:$('#sub-name').value.trim(),season:Number($('#sub-season').value),regex:$('#sub-regex').value,template:$('#sub-template').value,rename_enabled:$('#sub-rename-enabled').checked,mode:$('#sub-rename-mode').value,replacement:$('#sub-replacement').value};}
 function updateRenameOptions(){
-  previewRequest++;
   const enabled=$('#sub-rename-enabled').checked, legacy=$('#sub-rename-mode').value==='template';
   $('#rename-options').classList.toggle('hidden',!enabled); $('#legacy-options').classList.toggle('hidden',!legacy); $('#replacement-options').classList.toggle('hidden',legacy); $('#preview-title-label').classList.toggle('hidden',!legacy);
   for(const id of ['sub-regex','sub-replacement','sub-template','sub-season','sub-rename-mode'])$('#'+id).disabled=!enabled;
   $('#sub-template').required=enabled&&legacy; $('#sub-season').required=enabled&&legacy; $('#sub-template').disabled=!enabled||!legacy; $('#sub-season').disabled=!enabled||!legacy; $('#sub-regex').required=enabled&&!legacy;
   $('#regex-label').textContent=legacy?'提取 Regex（既有規則）':'尋找 Regex';
-  $('#preview-result').className='preview-result'; $('#preview-result').textContent='輸入原始檔名，預覽替換結果。';
+  scheduleRenamePreview();
 }
 
 let folderState=null, folderRequest=0, folderCreateContext=null;
@@ -136,16 +135,15 @@ async function loadFolders(parent='',token='',append=false){
 }
 function showRenamePreview(result){
   const adjusted=result.raw_name!==undefined&&result.raw_name!==result.name;
-  const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>原始內容</span><code>${escapeHTML(result.old_name)}</code></div>${adjusted?`<div class="rename-preview-row"><span>Regex 替換結果</span><code>${escapeHTML(result.raw_name)}</code></div>`:''}<div class="rename-preview-row"><span>${adjusted?'實際儲存檔名':'新檔名'}</span><code>${escapeHTML(result.name)}</code></div>${(result.warnings||[]).map(w=>`<p class="preview-warning">${escapeHTML(w)}</p>`).join('')}${result.matched?'':'<p class="field-help">Regex 未匹配，保留原名。</p>'}`;
+  const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>替換結果</span><code>${escapeHTML(result.name)}</code></div>${adjusted?'<p class="preview-warning">檔名含不適用字元，已自動替換或移除。</p>':''}`;
 }
 let sourceSamples=[],sourceRequest=0;
-const sampleLabels={torrent_file:'種子檔名',downloaded_file:'已下載原始檔名',magnet_name:'Magnet 顯示名稱',rss_title:'RSS 標題（示意）'};
-function clearSourceSamples(){sourceRequest++;previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='可從 RSS／種子取得範例，也可手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
-async function selectSourceSample(){
+function clearSourceSamples(){sourceRequest++;clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='讀取 RSS 中的種子檔名，或手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
+function selectSourceSample(){
   const sample=sourceSamples[Number($('#preview-source').value)];if(!sample)return;
   $('#preview-filename').value=sample.filename;$('#preview-title').value=sample.title;
-  $('#preview-source-help').textContent=sample.kind==='torrent_file'?'已從種子中繼資料取得檔名，不下載媒體。':sample.kind==='downloaded_file'?'使用此訂閱近期任務記錄中的原始檔名。':'此來源只有發布／顯示名稱，無法保證與實際檔名一致；副檔名及多檔內容需以種子或已下載檔案確認。';
-  if($('#sub-name').value.trim())await previewRule();
+  $('#preview-source-help').textContent='已從種子中繼資料取得檔名。';
+  scheduleRenamePreview();
 }
 async function loadSourceSamples(){
   const url=$('#sub-url').value.trim();if(!url)throw new Error('請先填寫 RSS 連結');
@@ -153,14 +151,21 @@ async function loadSourceSamples(){
   try{
     const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0});
     if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
-    sourceSamples=result.items;$('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">【${escapeHTML(sampleLabels[s.kind]||'來源')}】${escapeHTML(s.filename)}</option>`).join('');
+    sourceSamples=result.items.filter(s=>s.kind==='torrent_file');$('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">${escapeHTML(s.filename)}</option>`).join('');
     $('#preview-source-label').classList.toggle('hidden',!sourceSamples.length);
-    if(sourceSamples.length){$('#preview-source').value='0';await selectSourceSample();}else $('#preview-source-help').textContent='目前 RSS 沒有可用的種子／Magnet 範例，可手動輸入檔名。';
-    if(result.notices?.length)toast(result.notices[0]);
+    if(sourceSamples.length){$('#preview-source').value='0';selectSourceSample();}else $('#preview-source-help').textContent='目前 RSS 沒有可用的種子檔名，可手動輸入檔名。';
+    if(sourceSamples.length&&result.notices?.length)$('#preview-source-help').textContent='部分種子檔名無法取得，可手動輸入檔名。';
   }catch(e){if(sequence===sourceRequest)$('#preview-source-help').textContent=e.message;}
   finally{if(sequence===sourceRequest)$('#source-samples').disabled=false;}
 }
-let previewRequest=0;
+let previewRequest=0,previewTimer;
+function scheduleRenamePreview(event){
+  clearTimeout(previewTimer);previewRequest++;
+  const element=$('#preview-result'),filename=$('#preview-filename').value;
+  element.className='preview-result';element.textContent=filename?'正在更新預覽…':'輸入原始檔名，預覽替換結果。';
+  if(!$('#subscription-dialog').open||!$('#sub-rename-enabled').checked||!filename||event?.isComposing)return;
+  previewTimer=setTimeout(previewRule,200);
+}
 async function previewRule(){
   const sequence=++previewRequest;
   try{const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:$('#preview-filename').value});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
@@ -197,9 +202,8 @@ document.addEventListener('click',async event=>{
     if(button.dataset.retry){await api(`/api/jobs/${button.dataset.retry}/retry`,'POST',{});$('#job-dialog').close();toast('已重新核對或排入接續處理');await load();}
     if(button.id==='check-connection'){await api('/api/settings/pikpak/check','POST',{});toast('PikPak 連線已更新；暫停的任務可個別接續');await load();}
     if(button.id==='logout'||button.id==='logout-mobile'){await api('/api/logout','POST',{});location.reload();}
-    if(button.id==='preview-button')await previewRule();
     if(button.id==='source-samples')await loadSourceSamples();
-  }catch(e){if(button.id==='preview-button'){$('#preview-result').className='preview-result error';$('#preview-result').textContent=e.message;}else toast(e.message,true);}
+  }catch(e){toast(e.message,true);}
   finally{button.disabled=false;}
 });
 async function start(){
@@ -221,6 +225,9 @@ async function start(){
   $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast('PAT 已驗證並安全保存');await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=!!data.status.external;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);$('#sub-rename-mode').addEventListener('change',updateRenameOptions);
+  for(const id of ['sub-name','sub-regex','sub-replacement','sub-template','sub-season','preview-title','preview-filename']){
+    $('#'+id).addEventListener('input',scheduleRenamePreview);$('#'+id).addEventListener('compositionend',scheduleRenamePreview);
+  }
   $('#sub-destination').addEventListener('input',()=>{$('#sub-destination-id').value='';$('#sub-destination-account-ref').value='';});
   $('#folder-search').addEventListener('input',renderFolders);
   $('#sub-url').addEventListener('input',clearSourceSamples);$('#preview-source').addEventListener('change',selectSourceSample);
