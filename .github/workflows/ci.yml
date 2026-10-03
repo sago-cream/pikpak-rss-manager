@@ -21,6 +21,8 @@ jobs:
         run: go test -race -count=1 ./...
       - name: Vet
         run: go vet ./...
+      - name: UI syntax and localization
+        run: node --check internal/web/static/app.js && node --check internal/web/static/i18n.js && node scripts/test-i18n.cjs
       - name: Build
         run: |
           CGO_ENABLED=0 go build -trimpath ./cmd/pikpak-rss-manager

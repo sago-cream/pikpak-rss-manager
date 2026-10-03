@@ -1694,3 +1694,19 @@ dialog {
 }
 
 }
+
+/* Dialog scroll stays inside the rounded shell at every viewport size. */
+#subscription-dialog { padding:0; overflow:hidden; }
+#subscription-dialog .dialog-scroll { max-height:calc(90dvh - 2px); overflow-y:auto; padding:27px; scrollbar-gutter:stable; }
+textarea { resize:none; }
+.folder-icon { width:20px; height:20px; flex-shrink:0; vertical-align:middle; }
+.sidebar nav { margin-top:32px; }
+.language-select, #task-source-type { font:inherit; color:var(--ink); background:white; border:1px solid var(--line); border-radius:8px; padding:8px; }
+#task-source-type { display:block; width:100%; margin-top:8px; }
+.language-select:focus-visible,select:focus-visible { outline:3px solid #c7b7ff; outline-offset:3px; }
+.login-page { display:flex; justify-content:center; }
+.login-shell { width:min(480px,100%); padding:40px 24px; }
+.login-shell>.language-select { float:right; }
+@media(max-width:600px) { #subscription-dialog .dialog-scroll { max-height:calc(94dvh - 2px); padding:22px; } }
+
+.topbar-actions { margin-left:auto; }

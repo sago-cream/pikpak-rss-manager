@@ -3,7 +3,7 @@
 ## Purpose and architecture
 Personal self-hosted Go service. Use the official hosted PikPak MCP with PAT authorization. Do not introduce rclone, a PikPak CLI runtime dependency, an LLM, MySQL, Redis, or a frontend build pipeline.
 Keep HTTP/UI in `internal/web`, RSS and torrent metadata in `internal/feed`, naming rules in `internal/rename`, the typed MCP adapter in `internal/pikpak`, durable workflow in `internal/worker`, and SQLite migrations in `internal/store/migrations`.
-Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The UI and primary documentation use Traditional Chinese. MIT license.
+Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The UI supports Traditional Chinese and English with a persistent language selector on setup, login and management pages. Translate application copy and messages only; preserve user names, paths, URLs, regex and filenames. MIT license.
 
 ## Product decisions
 - One administrator and one active PikPak account; no default administrator password. The user explicitly removed password length and character restrictions; require only a nonempty password created through first-run Web setup. Never persist plaintext or a reversible administrator password; store only a salted Argon2id verifier. Do not load .env or external password/PAT sources; initialize all application settings and PAT through the Web UI. Listen address and data-directory environment overrides remain optional process settings.
@@ -40,3 +40,9 @@ OAuth has been researched, not implemented. Official public discovery advertises
 ## Delivery
 Provide non-root multistage Docker images for linux/amd64 and linux/arm64, main/tag publishing to GHCR with GITHUB_TOKEN, a compose file using the published image, and 1Panel/reverse proxy/update/backup instructions. Confirm anonymous access after first GHCR publication; public repository visibility does not make a package public automatically.
 Routine implementation choices within these principles are authorized. Clearly record external blockers and incomplete validation.
+
+## Language and copy
+- Write README, documentation, release notes and future public descriptions in concise English. Include only behavior changes, required usage/deployment steps, verification evidence and material limitations; omit slogans and repeated explanations.
+- UI headings use page names, with only actionable labels, status, validation and necessary field help. Do not add decorative prose.
+- Manual offline tasks use the durable worker queue without creating subscriptions or feed baselines. Share account/resource deduplication, destination validation, destination-local staging and uncertain-submission recovery with RSS jobs; preserve original filenames by default.
+- Run `node scripts/test-i18n.cjs` when changing UI copy or translations.

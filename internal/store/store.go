@@ -283,8 +283,11 @@ func (s *Store) Enqueue(ctx context.Context, j model.Job, fingerprint string) (b
 	if err != nil {
 		return false, err
 	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO seen_items(subscription_id,fingerprint,baseline) VALUES(?,?,0) ON CONFLICT(subscription_id,fingerprint) DO UPDATE SET baseline=0", j.SubscriptionID, fingerprint); err != nil {
-		return false, err
+	// Manual jobs have no subscription and must not change feed baselines.
+	if j.SubscriptionID != 0 {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO seen_items(subscription_id,fingerprint,baseline) VALUES(?,?,0) ON CONFLICT(subscription_id,fingerprint) DO UPDATE SET baseline=0", j.SubscriptionID, fingerprint); err != nil {
+			return false, err
+		}
 	}
 	n, err := r.RowsAffected()
 	if err != nil {

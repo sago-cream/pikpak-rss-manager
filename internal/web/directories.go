@@ -96,6 +96,11 @@ func (s *Server) resolveDestination(ctx context.Context, sub *model.Subscription
 	defer cancel()
 	s.Worker.Gate.Lock()
 	defer s.Worker.Gate.Unlock()
+	return s.resolveDestinationLocked(ctx, sub)
+}
+
+// The caller holds Worker.Gate through validation and durable queue insertion.
+func (s *Server) resolveDestinationLocked(ctx context.Context, sub *model.Subscription) error {
 	if err := ctx.Err(); err != nil {
 		return pikpak.Classify(err)
 	}

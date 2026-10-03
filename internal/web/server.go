@@ -277,6 +277,7 @@ func (s *Server) Handler() http.Handler {
 		}
 		JSON(w, 200, jobs)
 	}))
+	mux.HandleFunc("POST /api/jobs", s.protected(s.createJob))
 	mux.HandleFunc("GET /api/jobs/{id}", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		job, err := s.DB.Job(r.Context(), r.PathValue("id"))
 		if err != nil {

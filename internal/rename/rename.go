@@ -245,7 +245,12 @@ func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (P
 
 func (p *Preview) nameWarnings() {
 	if p.RawName != p.Name && p.Name != "" {
-		p.Warnings = append(p.Warnings, "Regex／範本替換結果含檔名不適用的字元（例如 / 或 \\），或前後空白／句點；實際儲存時已替換為底線或移除。")
+		if unsafeName.MatchString(p.RawName) {
+			p.Warnings = append(p.Warnings, `檔案名稱不可以包含下列字元：\ / : * ? " < > |（及控制字元），已替換成：_。`)
+		}
+		if replaced := unsafeName.ReplaceAllString(p.RawName, "_"); strings.Trim(replaced, " .\t\r\n") != replaced {
+			p.Warnings = append(p.Warnings, "已移除檔名開頭或結尾的空白與句點。")
+		}
 	}
 }
 
