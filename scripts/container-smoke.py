@@ -19,7 +19,7 @@ image = sys.argv[1] if len(sys.argv) > 1 else "ghcr.io/wade00754/pikpak-rss-mana
 project = "rss-smoke-" + uuid.uuid4().hex[:8]
 # A short random password exercises the absence of a minimum-length rule.
 password = uuid.uuid4().hex[:8]
-env = dict(os.environ, APP_ADMIN_PASSWORD=password, APP_PUBLIC_URL="")
+env = dict(os.environ)
 jar = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 base = "http://127.0.0.1:8080"
@@ -87,7 +87,17 @@ with tempfile.TemporaryDirectory() as directory:
             raise AssertionError("anonymous management API access allowed")
         except urllib.error.HTTPError as error:
             assert error.code == 401
-        login()
+        assert request("/api/session")["initialized"] is False
+        csrf = request("/api/session")["csrf"]
+        request("/api/setup", "POST", {"password": password, "confirm_password": password,
+                                       "public_url": base, "allow_private_feeds": False})
+        assert request("/api/session")["initialized"] is True
+        csrf = request("/api/session")["csrf"]
+        try:
+            request("/api/setup", "POST", {"password": "overwrite", "confirm_password": "overwrite"})
+            raise AssertionError("completed setup could be overwritten")
+        except urllib.error.HTTPError as error:
+            assert error.code == 409
         with opener.open(base + "/", timeout=10) as page:
             assert version_label in page.read().decode("utf-8"), "dashboard version missing"
         subscription = request("/api/subscriptions", "POST", {
@@ -112,11 +122,12 @@ with tempfile.TemporaryDirectory() as directory:
         compose("down")  # volume and AES key are intentionally retained
         compose("up", "-d", "--pull", "never")
         ready()
+        assert request("/api/session")["initialized"] is True
         login()
         restored = request("/api/subscriptions")
         assert len(restored) == 1 and restored[0]["id"] == subscription["id"]
         assert restored[0]["rss_url"].endswith("private=ci-only")
         assert restored[0]["rename_enabled"] is False and restored[0]["rename_mode"] == "replace"
-        print("PASS: Compose startup, version " + reported_version + ", health, login, Regex preview, non-root and encrypted data persistence")
+        print("PASS: Compose startup without env file, version " + reported_version + ", Web setup, hashed-password login after restart, Regex preview, non-root and encrypted data persistence")
     finally:
         compose("down", "--volumes", "--remove-orphans")

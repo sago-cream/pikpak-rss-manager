@@ -14,7 +14,6 @@ import (
 
 	"github.com/zeebo/bencode"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
@@ -35,7 +34,7 @@ func TestSourcePreviewIsAuthenticatedAndDoesNotQueueDownloads(t *testing.T) {
 	c := testutil.NewCloud()
 	m := &folderManager{c}
 	w := worker.New(db, m, feed.New(true))
-	s, err := New(config.Config{AdminPassword: "x", AllowPrivateFeeds: true}, db, m, w, "test")
+	s, err := initializedServer(t, "x", store.AppSettings{AllowPrivateFeeds: true}, db, m, w)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +132,7 @@ func TestSourcePagingProtectsCursorsAndDoesNotRepeatCachedNames(t *testing.T) {
 	cloud := testutil.NewCloud()
 	manager := &folderManager{cloud}
 	worker := worker.New(db, manager, feed.New(true))
-	server, err := New(config.Config{AdminPassword: "x", AllowPrivateFeeds: true}, db, manager, worker, "test")
+	server, err := initializedServer(t, "x", store.AppSettings{AllowPrivateFeeds: true}, db, manager, worker)
 	if err != nil {
 		t.Fatal(err)
 	}

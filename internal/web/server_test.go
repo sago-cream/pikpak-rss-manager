@@ -20,6 +20,26 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/worker"
 )
 
+func initializedServer(t *testing.T, password string, settings store.AppSettings, db *store.Store, m CloudManager, w *worker.Worker) (*Server, error) {
+	t.Helper()
+	if db == nil {
+		var err error
+		db, err = store.Open(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { db.Close() })
+	}
+	hash, err := hashPassword(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created, err := db.InitializeAdministrator(context.Background(), hash, settings); err != nil || !created {
+		t.Fatal("fixture setup failed", err)
+	}
+	return New(config.Config{}, db, m, w, "test")
+}
+
 func TestLoginWithoutPasswordLengthOrCharacterRules(t *testing.T) {
 	for name, password := range map[string]string{
 		"one character": "x",
@@ -28,7 +48,7 @@ func TestLoginWithoutPasswordLengthOrCharacterRules(t *testing.T) {
 		"spaces":        " leading and trailing spaces ",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s, err := New(config.Config{AdminPassword: password}, nil, nil, nil, "test")
+			s, err := initializedServer(t, password, store.AppSettings{}, nil, nil, nil)
 			if err != nil {
 				t.Fatal("password rejected at startup", err)
 			}
@@ -88,9 +108,9 @@ func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	m := pikpak.NewManager(db, "", "environment")
+	m := pikpak.NewManager(db)
 	w := worker.New(db, m, feed.New(false))
-	s, err := New(config.Config{AdminPassword: "unit-test-password-only"}, db, m, w, "test")
+	s, err := initializedServer(t, "unit-test-password-only", store.AppSettings{}, db, m, w)
 	if err != nil {
 		t.Fatal(err)
 	}

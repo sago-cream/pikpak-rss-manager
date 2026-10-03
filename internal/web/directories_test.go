@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
@@ -42,7 +41,7 @@ func TestFolderAPIAuthenticationSelectionAndAccountIsolation(t *testing.T) {
 	c.Files["video"] = pikpak.File{ID: "video", Name: "private-video.mp4", Kind: "drive#file"}
 	m := &folderManager{c}
 	w := worker.New(db, m, feed.New(false))
-	s, err := New(config.Config{AdminPassword: "x"}, db, m, w, "test")
+	s, err := initializedServer(t, "x", store.AppSettings{}, db, m, w)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,7 +16,7 @@ import (
 // An opaque account reference prevents a browser's stale selection from being
 // reused after switching accounts. It never exposes the PikPak account ID.
 func (s *Server) accountReference(account string) string {
-	mac := hmac.New(sha256.New, s.passwordKey)
+	mac := hmac.New(sha256.New, s.accountKey)
 	_, _ = mac.Write([]byte("folder-account\x00" + account))
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 }

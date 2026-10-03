@@ -20,7 +20,7 @@ flowchart LR
 |---|---|
 | `cmd/pikpak-rss-manager` | serve、version、healthcheck、signal 處理 |
 | `internal/app` | 設定、儲存、MCP、HTTP 與 worker 生命週期 |
-| `internal/config` | 環境與 .env、憑證檔案來源 |
+| `internal/config` | 監聽位址／資料目錄、網站網址驗證 |
 | `internal/model` | 訂閱、規則、任務、逐檔操作與日誌 |
 | `internal/store` | SQLite、首次基準、帳號去重、加密與進度 |
 | `internal/feed` | 限流量 HTTP 讀取、RSS／Atom、Magnet／torrent |
@@ -71,14 +71,17 @@ RSS 與檔案整理排程每五秒掃描到期紀錄；預設訂閱間隔十分�
 
 ## JSON API
 
-所有 `/api/` 管理介面需登入，除了 session 與 login。POST／PUT／DELETE 需要 CSRF；POST login 亦需要。`APP_PUBLIC_URL` 指定代理後的網站來源及 HTTPS Secure Cookie。Session 保存在記憶體，12 小時到期，服務重啟需重新登入。
+所有 `/api/` 管理介面需登入，除了 session、一次性 setup 與 login。POST／PUT／DELETE 需要 CSRF；setup 與 login 亦需要。首次設定及「系統設定」中的網站網址指定代理後的網站來源及 HTTPS Secure Cookie。初始化前以相同 Host 的 HTTP／HTTPS Origin 驗證，支援 TLS 終止於反向代理；不依賴轉送標頭。Session 保存在記憶體，12 小時到期，服務重啟需重新登入。
 
-管理密碼不設長度或字元限制。完整密碼先經 HMAC-SHA384 與 Base64 編碼，再使用 cost 12 的 bcrypt 驗證；HMAC 金鑰與驗證值僅在程序記憶體中，每次啟動重新建立，不需遷移資料庫。此方式避免 bcrypt 的 72-byte 輸入截斷，採用 [OWASP 的 keyed pre-hashing 建議](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pre-hashing-passwords-with-bcrypt)。登入 API 與其他 JSON API 共用請求大小保護。
+管理密碼在首次網頁設定建立，僅要求非空，完整密碼以 Argon2id（64 MiB、3 次、平行度 2）、16 位元組隨機 salt 產生 32 位元組雜湊。SQLite `administrator` 單列只保存含參數與 salt 的驗證值及非私密網站設定，沒有明文或可解密密碼。單列唯一鍵原子阻擋重複初始化；已完成或損毀的驗證值不會回到開放設定狀態。初始化／登入共享按來源 IP 限流及單一運算閘門，限制記憶體耗用，並共用 JSON 請求大小保護。
+
+服務不讀取 `.env` 或外部密碼／PAT。PikPak PAT 統一透過已登入網頁綁定並 AES-GCM 加密；其他網站偏好由網頁保存。程序層級僅保留監聽位址與資料目錄選項。SQLite schema v2 遷移保留所有既有訂閱與工作狀態；升級前只保存在外部設定的管理密碼需在網頁重新設定。初始化完成前不啟動背景排程，已有加密 PAT 完成初始化後重新連線。
 
 | 方法與路徑 | 行為 |
 |---|---|
 | `GET /healthz` | DB 健康／版本，免登入 |
-| `GET /api/session` | 登入狀態及 CSRF |
+| `GET /api/session` | 初始化／登入狀態及 CSRF |
+| `POST /api/setup` | 首次設定管理密碼、網站網址、內網 RSS 開關；完成後拒絕再次初始化 |
 | `POST /api/login`、`POST /api/logout` | 密碼登入／登出 |
 | `GET/POST /api/subscriptions` | 列表／新增 |
 | `PUT/DELETE /api/subscriptions/{id}` | 更新／刪除 |
@@ -91,6 +94,7 @@ RSS 與檔案整理排程每五秒掃描到期紀錄；預設訂閱間隔十分�
 | `POST /api/jobs/{id}/retry` | 從安全階段接續／核對 |
 | `GET /api/events` | 近期操作日誌 |
 | `GET/POST /api/settings/pikpak` | 授權狀態／寫入 PAT |
+| `GET/POST /api/settings/app` | 已登入的網站網址及內網 RSS 選項，變更即時生效 |
 | `POST /api/settings/pikpak/check` | 重新授權檢查 |
 
 HTTP 有請求大小、標頭與逾時限制；登入按來源 IP 限流，Cookie HttpOnly／SameSite Strict；Origin 驗證、CSP、無外部 CDN。反向代理請保留 Host，對外提供 HTTPS。JSON 錯誤不包含原始雲端回應，以免暴露來源連結或權杖。

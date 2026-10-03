@@ -1,21 +1,23 @@
 # 部署與維護
 
-## 環境設定
+## 首次網頁設定
+
+直接執行 `docker compose up -d`，無須建立 `.env` 或提供管理密碼／PAT。開啟管理網址後：
+
+1. 設定並確認管理密碼，僅要求非空，沒有長度或字元限制。
+2. 確認網站網址（預填目前來源）；內網 RSS 預設停用，需要時勾選。
+3. 建立管理員後自動登入，到「系統設定」驗證並綁定 PikPak PAT。
+
+管理密碼只保存 Argon2id 加鹽雜湊，PAT 以 AES-256-GCM 加密。初始化完成後入口關閉，重啟不會重新設定密碼。網站網址及內網 RSS 選項可於登入後修改。先在可控的連線中完成初始化，再開放外部存取；首次設定介面會讓第一位完成設定的人建立管理員。
+
+程序層級只保留以下可選環境設定，映像已內建適當預設，不需要 `.env`：
 
 | 設定 | 預設／用途 |
 |---|---|
-| `APP_ADMIN_PASSWORD` | 必填，沒有長度或字元限制，沒有預設密碼 |
-| `APP_ADMIN_PASSWORD_FILE` | 私密檔案，優先於密碼環境變數 |
 | `APP_LISTEN` | 本機 `127.0.0.1:8080`；映像內 `0.0.0.0:8080` |
 | `APP_DATA_DIR` | 本機 `data`；映像內 `/data` |
-| `APP_PUBLIC_URL` | 代理後精確的網站來源，例如 `https://rss.example.com`，不含路徑 |
-| `APP_ALLOW_PRIVATE_FEEDS` | `false`；允許內網 RSS 才設 `true` |
-| `PIKPAK_TOKEN_FILE` | 可選的私密 PAT 檔案，優先於環境／面板 |
-| `PIKPAK_TOKEN` | 可選的環境 PAT，優先於面板 |
 
-環境變數優先於開發用 `.env`；檔案來源優先於對應值。Docker 映像不包含 `.env`。不要把整份本機開發 `.env` 放進 Actions secret 或映像。
-
-管理密碼檔案只移除結尾的一個換行，保留密碼前後的空白。
+舊 `APP_ADMIN_PASSWORD`、`APP_ADMIN_PASSWORD_FILE`、`PIKPAK_TOKEN`、`PIKPAK_TOKEN_FILE`、`APP_PUBLIC_URL` 與 `APP_ALLOW_PRIVATE_FEEDS` 均不再讀取。舊 `.env` 保留但不載入。升級後先在網頁重新設定管理密碼；既有訂閱、任務與已加密保存的 PAT 保留。僅存在外部設定中的 PAT 請重新貼到網頁綁定。初始化前背景排程暫停。請使用本版 Compose，移除舊編排中強制要求密碼的插值設定。
 
 ## 反向代理
 
@@ -43,28 +45,11 @@ location / {
 }
 ```
 
-同時設定 `APP_PUBLIC_URL=https://你的網域`，用同一來源開啟面板，確保 Origin 驗證與 Secure Cookie 正常。服務不依賴轉送標頭推斷登入 IP；大量錯誤登入可能共用代理來源的限流。僅需要私人存取時也可使用 SSH tunnel 連到 localhost。
-
-## 使用私密檔案提供 PAT
-
-預設建議面板綁定。若使用檔案：
-
-```yaml
-services:
-  pikpak-rss-manager:
-    environment:
-      PIKPAK_TOKEN_FILE: /run/secrets/pikpak_pat
-    secrets: [pikpak_pat]
-secrets:
-  pikpak_pat:
-    file: ./secrets/pikpak-pat.txt
-```
-
-將此片段合併至完整 Compose，保留密碼等既有設定。保護本機 secrets 目錄，PAT 不放入 Git；檔案必須可供容器 UID 65532 讀取，並符合主機的安全權限安排。外部來源模式不允許面板更改權杖。
+在首次設定／系統設定填入 `https://你的網域` 作為網站網址，用同一來源開啟面板，確保 Origin 驗證與 Secure Cookie 正常。服務不依賴轉送標頭推斷登入 IP；大量錯誤登入可能共用代理來源的限流。僅需要私人存取時也可使用 SSH tunnel 連到 localhost。
 
 ## 更新、固定版本與備份
 
-`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.3.0` 或已驗證 digest。更新：
+`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.4.0` 或已驗證 digest。更新：
 
 ```sh
 docker compose pull

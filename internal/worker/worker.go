@@ -33,6 +33,15 @@ type Worker struct {
 }
 
 func New(db *store.Store, p Provider, f Feeds) *Worker { return &Worker{DB: db, Provider: p, Feeds: f} }
+
+// Apply a network policy only after the current RSS check has finished, so
+// Fetch and Resolve use the same client and preference changes cannot race.
+func (w *Worker) SetFeeds(f Feeds) {
+	w.subMu.Lock()
+	defer w.subMu.Unlock()
+	w.Feeds = f
+}
+
 func (w *Worker) Run(ctx context.Context) {
 	var wg sync.WaitGroup
 	wg.Add(2)

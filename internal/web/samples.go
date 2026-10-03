@@ -22,7 +22,7 @@ func (s *Server) sourceSamples(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
 	in.URL = strings.TrimSpace(in.URL)
-	out, err := s.feeds.SamplesPage(ctx, in.URL, in.Cursor)
+	out, err := feed.New(s.appSettings().AllowPrivateFeeds).SamplesPage(ctx, in.URL, in.Cursor)
 	if err != nil {
 		failure(w, err)
 		return

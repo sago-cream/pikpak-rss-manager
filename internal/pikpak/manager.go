@@ -26,8 +26,8 @@ type Manager struct {
 	factory                        func(context.Context, string) (API, error)
 }
 
-func NewManager(db *store.Store, token, source string) *Manager {
-	return &Manager{db: db, token: token, source: source, factory: func(ctx context.Context, t string) (API, error) { return New(ctx, t) }}
+func NewManager(db *store.Store) *Manager {
+	return &Manager{db: db, factory: func(ctx context.Context, t string) (API, error) { return New(ctx, t) }}
 }
 func (m *Manager) Initialize(ctx context.Context) error {
 	m.mu.RLock()
@@ -58,11 +58,8 @@ func (m *Manager) Reconnect(ctx context.Context) error {
 	return m.bind(ctx, token, false)
 }
 func (m *Manager) Bind(ctx context.Context, token string) error {
-	m.mu.RLock()
-	external := m.source == "environment" || m.source == "file"
-	m.mu.RUnlock()
-	if external {
-		return errors.New("目前由環境或檔案管理 PAT，請更新該設定並重新啟動服務")
+	if token == "" {
+		return errors.New("請輸入 PikPak PAT")
 	}
 	return m.bind(ctx, token, true)
 }
@@ -134,7 +131,7 @@ func (m *Manager) Snapshot() (API, string) {
 func (m *Manager) Status() Status {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return Status{m.api != nil, m.account.Name, m.source, m.source == "environment" || m.source == "file", m.paused, m.message, m.account.Storage.Total, m.account.Storage.Used}
+	return Status{m.api != nil, m.account.Name, m.source, false, m.paused, m.message, m.account.Storage.Total, m.account.Storage.Used}
 }
 func (m *Manager) Pause(e *Error) {
 	if e == nil {

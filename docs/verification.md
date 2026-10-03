@@ -8,13 +8,13 @@ go vet ./...
 CGO_ENABLED=0 go build ./cmd/pikpak-rss-manager
 ```
 
-Linux CI 加跑 `go test -race ./...`；容器建置後使用 `scripts/container-smoke.py` 啟動本專案的 Compose，測試健康、未登入限制、短密碼登入、Regex 新舊檔名預覽、non-root UID、重建容器後的訂閱、重命名關閉設定與 AES 金鑰持久化。不配置真實 PAT，不連線 PikPak 或實際 RSS。
+Linux CI 加跑 `go test -race ./...`；容器建置後使用 `scripts/container-smoke.py` 啟動本專案的 Compose，無須密碼環境變數或 `.env`，測試網頁初始化、拒絕重新初始化、健康、未登入限制、重建後的短密碼登入、Regex 新舊檔名預覽、non-root UID、重建容器後的訂閱、重命名關閉設定與 AES 金鑰持久化。不配置真實 PAT，不連線 PikPak 或實際 RSS。
 
 自動化測試涵蓋 RSS／Atom、相對 torrent enclosure、Magnet hex／base32／v2、原始 bencode infohash、資料大小／私人網路限制、中文命名、補零、實際副檔名、RE2 限制、首次基準、補抓、跨訂閱去重、多檔歧義、附屬檔案、名稱衝突、提交回應遺失、重啟恢復、部分 rename／move、授權／配額／限流、換帳號與 HTTP 登入／CSRF／私密欄位隔離。
 
-修正版亦涵蓋含 403 的配額錯誤、網站來源不得含 query／fragment、明確配置的空白 PAT 檔案不得回退至其他憑證，以及新帳號補抓不沿用舊帳號的已處理 fingerprint／雲端 ID。選擇性實測資源固定至上游 commit，避免未來 master 變更擴大測試內容。
+修正版亦涵蓋含 403 的配額錯誤、網站來源不得含 query／fragment，以及新帳號補抓不沿用舊帳號的已處理 fingerprint／雲端 ID。外部 PAT 檔案來源已於 v0.4.0 移除，改由網頁綁定。選擇性實測資源固定至上游 commit，避免未來 master 變更擴大測試內容。
 
-密碼規則更新的測試涵蓋一字元、中文／Emoji、超過 72 bytes、前後空白的環境／檔案密碼，並透過真正的 HTTP handler 驗證登入、session 與超長密碼尾端差異，避免只比較前 72 bytes。登入表單不再設定 minlength／maxlength。
+密碼測試涵蓋一字元、中文／Emoji、超過 72 bytes、前後空白，並透過真正的 HTTP handler 驗證網頁初始化、登入、session 與超長密碼尾端差異。初始化／登入表單不設定 minlength／maxlength。
 
 v0.2.0 測試新增：資料夾分頁與檔案過濾、同名資料夾的 ID 身分、循環路徑、建立同名項目阻擋、建立回應遺失後不重送、CSRF／帳號切換隔離；重命名關閉、數字／具名群組、移除匹配、字面 `$`、所有匹配替換、未匹配保留原名、無效群組／空檔名、舊訂閱與任務規則相容、選取 ID 及開關重啟持久化。正式 worker 測試確認未勾選時沒有 rename 呼叫，仍執行 move；Regex 模式逐檔替換，不使用 RSS 標題回退。
 
@@ -37,7 +37,7 @@ go test ./tests/integration -run TestLivePikPak -count=1 -v
 Remove-Item Env:PIKPAK_LIVE_TEST
 ```
 
-本機 `.env` 需含 `PIKPAK_TOKEN`，不得把權杖放在命令列。測試資料庫／非敏感摘要置於忽略的 `.local`，供失敗核對。來源授權由 WebTorrent fixture README 說明；不使用大型影片測試。
+先在網頁初始化並綁定 PAT；測試從本機 `data` 的加密設定讀取權杖，不讀取 `.env`。自訂資料目錄時設定 `PIKPAK_LIVE_DATA_DIR`，不得把權杖放在命令列。測試資料庫／非敏感摘要置於忽略的 `.local`，供失敗核對。來源授權由 WebTorrent fixture README 說明；不使用大型影片測試。
 
 ### 資料夾功能實測（2026-10-03）
 
@@ -49,7 +49,7 @@ go test ./tests/integration -run TestLiveFolderBrowsingAndCreation -count=1 -v
 Remove-Item Env:PIKPAK_LIVE_FOLDERS_TEST
 ```
 
-需已設定本機管理密碼及 PAT。一般 `go test ./...` 不執行這項真實操作；CI／Actions 不提供 PAT。
+需已在本機網頁初始化並綁定 PAT；自訂資料目錄使用 `PIKPAK_LIVE_DATA_DIR`。一般 `go test ./...` 不執行這項真實操作；CI／Actions 不提供 PAT。
 
 ## 發布與介面驗證
 
@@ -107,3 +107,13 @@ v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接
 容器 smoke 新增核對執行檔、健康／session API、登入頁與登入後頁面的版本，並比較預期的正式版本號；公開 smoke 會檢查正式 Tag 或目前 `latest`／`main` 的版本。容器與發布的實際結果請見 [v0.3.4 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.4)。本機沒有 Docker；此次未呼叫真實 PikPak。
 
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。
+
+## v0.4.0 網頁初始化（2026-10-04）
+
+本機 Go 1.27.1 已通過 `go test ./...`、`go vet ./...` 與 `go build ./cmd/pikpak-rss-manager`；程式回報 `v0.4.0`。本機建置僅在該程序設定工作區的 Git safe.directory，處理沙箱與登入使用者的目錄擁有權差異，沒有變更全域 Git 設定。
+
+新增測試驗證：空資料目錄可啟動、首次設定頁、非空／密碼確認、CSRF／跨來源限制、完成後自動登入、拒絕匿名或已登入重新初始化、兩個資料庫連線競爭只有一個初始化成功、v1→v2 遷移保留既有資料、重啟以原雜湊登入、網站設定持久化、內網 RSS 開關等待既有檢查完成且無競態、HTTPS 代理 Secure Cookie、登入限流及損毀驗證值拒絕啟動。測試直接掃描持久化資料目錄的 DB／WAL／SHM／金鑰檔，確認沒有原始密碼；設定測試確認舊 `.env` 與外部密碼／PAT 不再載入。
+
+瀏覽器使用獨立 `.local` 資料目錄與「介面測試帳號」mock，通過：兩次密碼不一致的提示、首次初始化後自動進入系統設定、mock PAT 綁定後清空輸入框、網站設定儲存及重載、實際重啟測試服務後用原密碼登入。1280×900 與 390×844 檢查首次設定；手機系統設定也未橫向溢出，未觀察到 console error／warning。畫面僅含 fixture：`docs/screenshots/setup-desktop.jpg`、`setup-mobile.jpg`、`web-settings-desktop.jpg`。
+
+此 UI 測試沒有讀取使用者 PAT、連線真實 PikPak 或建立下載任務；mock 綁定不證明真實授權操作。既有 `.env` 保留未改寫。容器 smoke 已改為從 Web API 初始化並驗證重建後登入；Linux race、容器及新 GHCR 映像驗證交由 GitHub Actions，結果待回填。

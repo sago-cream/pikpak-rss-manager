@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wade00754/pikpak-rss-manager/internal/config"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 )
@@ -15,15 +14,11 @@ func TestLiveFolderBrowsingAndCreation(t *testing.T) {
 	if os.Getenv("PIKPAK_LIVE_FOLDERS_TEST") != "1" {
 		t.Skip("opt-in real PikPak directory test")
 	}
-	// Load the development credential in memory; never print it or remote names.
-	t.Chdir("../..")
-	cfg, err := config.Load()
-	if err != nil {
-		t.Fatal("local credential configuration unavailable")
-	}
+	// Read the encrypted UI credential in memory; never print it or remote names.
+	token := liveToken(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	api, err := pikpak.New(ctx, cfg.Token)
+	api, err := pikpak.New(ctx, token)
 	if err != nil {
 		t.Fatal("official MCP authorization failed")
 	}

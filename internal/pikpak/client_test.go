@@ -102,7 +102,7 @@ func TestAccountSwitchPausesDurableIntent(t *testing.T) {
 	if _, err := db.Enqueue(ctx, j, "one"); err != nil {
 		t.Fatal(err)
 	}
-	m := NewManager(db, "", "")
+	m := NewManager(db)
 	m.factory = func(context.Context, string) (API, error) {
 		return &accountOnly{value: Account{ID: "new", Name: "New"}}, nil
 	}

@@ -18,35 +18,29 @@ Go 1.27.1、SQLite、原生 JavaScript/CSS；單一執行檔，無需 rclone、P
 - Magnet v1/v2 與小型 `.torrent` 中繼資料解析；同一帳號按正規化 infohash 去重。
 - 離線任務與逐檔操作持久化，重啟後接續，提交結果不明時先核對。
 - 多檔種子逐檔解析；衝突或無法判定時保留原名，附屬檔案保持完整。
-- PAT 可由面板加密保存、環境變數或私密檔案提供；不回傳或記錄權杖。
+- 首次開啟網頁建立管理密碼，僅保存 Argon2id 加鹽雜湊；PAT 從面板綁定並加密保存，不回傳或記錄權杖。
 - GHCR 公開映像：`ghcr.io/wade00754/pikpak-rss-manager:latest`，支援 `linux/amd64`、`linux/arm64`。
 
 ![訂閱管理介面](docs/screenshots/subscriptions.jpg)
 
 ## Docker Compose 快速開始
 
-將 [docker-compose.yml](docker-compose.yml) 放進一個目錄。在同一目錄建立 `.env`，填入你自己的管理密碼：
-
-```dotenv
-APP_ADMIN_PASSWORD=請換成你自己的密碼
-# 使用 HTTPS 反向代理時設定精確的網站來源，不包含路徑。
-APP_PUBLIC_URL=https://rss.example.com
-```
+將 [docker-compose.yml](docker-compose.yml) 放進一個目錄，直接啟動，無須建立 `.env` 或提供任何密碼環境變數：
 
 ```sh
 docker compose up -d
 docker compose ps
 ```
 
-映像預設只將面板映射到主機 `127.0.0.1:8080`。同一主機的反向代理可連線至 `http://127.0.0.1:8080`；代理本身若在容器內，請依 [部署文件](docs/deployment.md) 配置共同 Docker 網路。初次登入後，前往「授權設定」綁定 PikPak PAT。
+映像預設只將面板映射到主機 `127.0.0.1:8080`。同一主機的反向代理可連線至 `http://127.0.0.1:8080`；代理本身若在容器內，請依 [部署文件](docs/deployment.md) 配置共同 Docker 網路。首次開啟網頁設定管理密碼、確認網站網址及內網 RSS 選項，完成後自動登入並前往「系統設定」綁定 PikPak PAT。初始化完成後入口關閉，重啟仍使用已保存的密碼雜湊。
 
 ### 1Panel「容器 → 編排」
 
 1. 建立編排，名稱可用 `pikpak-rss-manager`，貼上本專案的 Compose。
-2. 在編排的環境設定／`.env` 設定 `APP_ADMIN_PASSWORD`；如果該版本的 1Panel 沒有此欄位，將 Compose 的 `${APP_ADMIN_PASSWORD:?...}` 換成**你自己的密碼**。包含 `:`、`#`、`$` 等字元時注意 YAML 與 Compose 插值規則（字面 `$` 使用 `$$`）。
-3. 使用網域反向代理時，同時設定 `APP_PUBLIC_URL`，例如 `https://rss.example.com`。
+2. 不需要填密碼或 PAT 環境變數，也不需要 `.env`。
+3. 設定反向代理網域；開啟該網址，在首次設定畫面確認對外網站網址，例如 `https://rss.example.com`。
 4. 啟動編排，確認容器健康。反向代理的上游為主機的 `127.0.0.1:8080`，或共同網路中的 `pikpak-rss-manager:8080`。
-5. 登入 → 授權設定 → PAT 綁定 → 新增訂閱 → 選擇資料夾 → 視需要勾選重命名與預覽 → 儲存。
+5. 首次設定管理密碼 → 系統設定 → PAT 綁定 → 新增訂閱 → 選擇資料夾 → 視需要勾選重命名與預覽 → 儲存。
 
 PikPak PAT 不需要放進 GitHub 或 Actions。Compose 使用面板綁定，會把加密權杖與金鑰保存在持久化資料卷。
 
@@ -54,7 +48,7 @@ PikPak PAT 不需要放進 GitHub 或 Actions。Compose 使用面板綁定，會
 
 在 PikPak 官方「存取與整合／Access & Integrations」建立 PAT，授予帳號資訊、檔案讀取、寫入／管理與雲端下載的必要權限；實際權限名稱以官方介面為準。本服務不使用分享、永久刪除或邀請工具。
 
-PAT 來源的優先順序為 `PIKPAK_TOKEN_FILE` → `PIKPAK_TOKEN` → 面板加密保存的權杖。使用外部來源時，面板不能覆寫 PAT；更新外部設定後需重新啟動。失效或配額不足會暫停相關任務；更新授權、重新檢查連線後，可逐一接續暫停的任務。更換帳號會暫停舊帳號任務。
+PAT 統一在「系統設定」驗證及綁定，以 AES-256-GCM 加密保存於資料目錄。失效或配額不足會暫停相關任務；在網頁更新授權、重新檢查連線後，可逐一接續暫停的任務。更換帳號會暫停舊帳號任務。
 
 PAT 可設定 30 天至一年有效期；已連接應用共用各流量維度月配額的 25%。RSS、種子中繼資料與管理 API 仍會使用少量 VPS 網路流量；影片內容不經 VPS。離線能否秒傳取決於 PikPak 快取、來源與配額。[官方 PAT 說明](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token)、[Connected Apps FAQ](https://mypikpak.com/en-US/connect-apps-faq)。
 
@@ -131,8 +125,6 @@ Regex 使用 Go RE2，具名群組寫成 `(?P<ep>...)`、`(?P<season>...)`、`(?
 需要支援自動下載 toolchain 的 Go；取得儲存庫與提交變更時使用 Git。`go.mod` 固定 Go 1.27.1；`GOTOOLCHAIN=auto` 可自動取得，不會更改系統 Go 安裝。
 
 ```sh
-cp .env.example .env  # 僅限尚未存在 .env；不要覆蓋既有權杖
-# 編輯 .env，設定管理密碼
 go run ./cmd/pikpak-rss-manager
 go test ./...
 go vet ./...
@@ -140,9 +132,11 @@ go vet ./...
 
 Windows 可用 `./scripts/dev.ps1` 與 `./scripts/verify.ps1`。測試預設不使用真實 PAT 或網路雲端操作；[驗證文件](docs/verification.md) 說明選擇性實測與限制。JSON API 需要登入 Cookie；修改請求須同時帶 `pp_csrf` Cookie 與 `X-CSRF-Token`。詳細資料結構及流程見 [架構文件](docs/architecture.md)。
 
-目前版本號保存在 `cmd/pikpak-rss-manager/VERSION` 並內建至程式。`./scripts/dev.ps1`、直接執行 `go run`／`go build` 與發布映像都顯示同一版本號（目前 `v0.3.4`），不依賴 Git 資訊；下載原始碼壓縮檔也能顯示。`./scripts/dev.ps1 -Version` 可只查看版本，不讀取設定或啟動服務。更新後需重新啟動服務。
+目前版本號保存在 `cmd/pikpak-rss-manager/VERSION` 並內建至程式。`./scripts/dev.ps1`、直接執行 `go run`／`go build` 與發布映像都顯示同一版本號（目前 `v0.4.0`），不依賴 Git 資訊；下載原始碼壓縮檔也能顯示。`./scripts/dev.ps1 -Version` 可只查看版本，不讀取設定或啟動服務。更新後需重新啟動服務。
 
-管理密碼沒有長度與字元限制，短密碼、中文及超過 72 位元組的密碼皆可使用；仍需自行設定密碼，沒有預設值。本機腳本會遮蔽密碼輸入，啟動後以同一組密碼登入。
+開啟 `http://127.0.0.1:8080` 完成首次設定；本機腳本不再詢問密碼。管理密碼僅要求非空，不限制長度或字元，沒有預設值。密碼只在處理初始化／登入請求時短暫使用，持久化資料只保存 Argon2id 加鹽雜湊，不保存可還原的密碼。服務不讀取 `.env`，也不使用舊有管理密碼／PAT 環境或檔案來源。
+
+升級舊版本後，原本環境中的管理密碼未曾持久化，因此第一次開啟新版網頁需重新設定管理密碼。既有訂閱、任務、已加密保存的 PAT 與 `secret.key` 保留；只曾放在 `.env` 的 PAT 需在網頁重新綁定。初始化前背景排程暫停。舊 `.env` 不會被讀取、改寫或刪除。
 
 ## 發布、更新與備份
 

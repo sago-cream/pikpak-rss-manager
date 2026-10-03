@@ -22,6 +22,9 @@ import (
 //go:embed migrations/001_init.sql
 var migration string
 
+//go:embed migrations/002_web_setup.sql
+var webSetupMigration string
+
 type Store struct {
 	db   *sql.DB
 	aead cipher.AEAD
@@ -75,12 +78,19 @@ func Open(dir string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
-	if schemaVersion > 1 {
+	if schemaVersion > 2 {
 		db.Close()
 		return nil, errors.New("資料庫由較新版本建立，請使用對應版本服務")
 	}
 	s := &Store{db, aead}
-	for _, statement := range []string{"PRAGMA journal_mode=WAL", "PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", migration} {
+	statements := []string{"PRAGMA journal_mode=WAL", "PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000"}
+	if schemaVersion < 1 {
+		statements = append(statements, migration)
+	}
+	if schemaVersion < 2 {
+		statements = append(statements, webSetupMigration)
+	}
+	for _, statement := range statements {
 		if _, err := db.Exec(statement); err != nil {
 			db.Close()
 			return nil, err

@@ -3,7 +3,6 @@ module github.com/wade00754/pikpak-rss-manager
 go 1.27.1
 
 require (
-	github.com/joho/godotenv v1.5.1
 	github.com/mmcdole/gofeed v1.5.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/zeebo/bencode v1.0.0

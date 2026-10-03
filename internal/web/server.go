@@ -2,9 +2,7 @@ package web
 
 import (
 	"context"
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha512"
 	"database/sql"
 	"embed"
 	"encoding/base64"
@@ -17,11 +15,9 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/rename"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 	"github.com/wade00754/pikpak-rss-manager/internal/worker"
-	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"io"
 	"io/fs"
-	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -46,47 +42,50 @@ type CloudManager interface {
 	Bind(context.Context, string) error
 }
 type Server struct {
-	DB          *store.Store
-	Manager     CloudManager
-	Worker      *worker.Worker
-	Config      config.Config
-	Version     string
-	hash        []byte
-	passwordKey []byte
-	feeds       *feed.Client
-	templates   *template.Template
-	mu          sync.Mutex
-	sessions    map[string]session
-	attempts    map[string]attempt
+	DB         *store.Store
+	Manager    CloudManager
+	Worker     *worker.Worker
+	Config     config.Config
+	Version    string
+	hash       string
+	accountKey []byte
+	settings   store.AppSettings
+	ready      chan struct{}
+	authGate   chan struct{}
+	templates  *template.Template
+	mu         sync.Mutex
+	sessions   map[string]session
+	attempts   map[string]attempt
 }
 
 func New(c config.Config, db *store.Store, m CloudManager, w *worker.Worker, version string) (*Server, error) {
-	if c.AdminPassword == "" {
-		return nil, errors.New("請設定管理密碼；沒有預設密碼")
+	accountKey := make([]byte, 32)
+	if _, err := rand.Read(accountKey); err != nil {
+		return nil, errors.New("無法初始化帳號參照")
 	}
-	passwordKey := make([]byte, 32)
-	if _, err := rand.Read(passwordKey); err != nil {
-		return nil, errors.New("無法初始化管理密碼驗證")
-	}
-	hash, err := bcrypt.GenerateFromPassword(passwordInput(passwordKey, c.AdminPassword), 12)
+	hash, settings, err := db.Administrator(context.Background())
 	if err != nil {
-		return nil, errors.New("無法初始化管理密碼驗證")
+		return nil, errors.New("無法讀取管理員設定")
+	}
+	if hash != "" {
+		if _, _, err := passwordParts(hash); err != nil {
+			return nil, err
+		}
 	}
 	t, err := template.ParseFS(assets, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}
-	return &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, passwordKey: passwordKey, feeds: feed.New(c.AllowPrivateFeeds), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}, nil
+	s := &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, accountKey: accountKey, settings: settings, ready: make(chan struct{}), authGate: make(chan struct{}, 1), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}
+	if w != nil {
+		w.SetFeeds(feed.New(settings.AllowPrivateFeeds))
+	}
+	if hash != "" {
+		close(s.ready)
+	}
+	return s, nil
 }
 
-// Keyed, printable pre-hashing preserves the entire password while keeping the
-// bcrypt input below 72 bytes. The key and verifier are recreated at startup;
-// neither is persisted, just like the sessions they protect.
-func passwordInput(key []byte, password string) []byte {
-	digest := hmac.New(sha512.New384, key)
-	_, _ = digest.Write([]byte(password))
-	return []byte(base64.StdEncoding.EncodeToString(digest.Sum(nil)))
-}
 func nonce() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -94,9 +93,9 @@ func nonce() string {
 	}
 	return base64.RawURLEncoding.EncodeToString(b)
 }
-func (s *Server) secure() bool { return strings.HasPrefix(s.Config.PublicURL, "https://") }
-func (s *Server) cookie(w http.ResponseWriter, name, value string, httpOnly bool, maxAge int) {
-	http.SetCookie(w, &http.Cookie{Name: name, Value: value, Path: "/", HttpOnly: httpOnly, Secure: s.secure(), SameSite: http.SameSiteStrictMode, MaxAge: maxAge})
+func (s *Server) cookie(w http.ResponseWriter, r *http.Request, name, value string, httpOnly bool, maxAge int) {
+	secure := r.TLS != nil || strings.HasPrefix(s.appSettings().PublicURL, "https://")
+	http.SetCookie(w, &http.Cookie{Name: name, Value: value, Path: "/", HttpOnly: httpOnly, Secure: secure, SameSite: http.SameSiteStrictMode, MaxAge: maxAge})
 }
 func (s *Server) authenticated(r *http.Request) bool {
 	cookie, err := r.Cookie("pp_session")
@@ -120,7 +119,7 @@ func (s *Server) csrf(w http.ResponseWriter, r *http.Request) string {
 		return c.Value
 	}
 	value := nonce()
-	s.cookie(w, "pp_csrf", value, false, 43200)
+	s.cookie(w, r, "pp_csrf", value, false, 43200)
 	return value
 }
 func (s *Server) validCSRF(r *http.Request) bool {
@@ -129,15 +128,13 @@ func (s *Server) validCSRF(r *http.Request) bool {
 		return false
 	}
 	if origin := r.Header.Get("Origin"); origin != "" {
-		if s.Config.PublicURL != "" {
-			return origin == s.Config.PublicURL
+		if publicURL := s.appSettings().PublicURL; publicURL != "" {
+			return origin == publicURL
 		}
 		u, err := url.Parse(origin)
-		scheme := "http"
-		if r.TLS != nil {
-			scheme = "https"
-		}
-		return err == nil && u.Host == r.Host && u.Scheme == scheme
+		// Before setup, allow the browser's same-host HTTPS origin behind a
+		// TLS-terminating proxy without trusting arbitrary forwarding headers.
+		return err == nil && u.Host == r.Host && (u.Scheme == "http" || u.Scheme == "https") && u.User == nil && u.Path == "" && u.RawQuery == "" && u.Fragment == ""
 	}
 	return true
 }
@@ -184,15 +181,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		s.csrf(w, r)
 		name := "login.html"
-		if s.authenticated(r) {
+		if !s.initialized() {
+			name = "setup.html"
+		} else if s.authenticated(r) {
 			name = "app.html"
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = s.templates.ExecuteTemplate(w, name, map[string]string{"Version": s.Version})
 	})
 	mux.HandleFunc("GET /api/session", func(w http.ResponseWriter, r *http.Request) {
-		JSON(w, 200, map[string]any{"authenticated": s.authenticated(r), "csrf": s.csrf(w, r), "version": s.Version})
+		JSON(w, 200, map[string]any{"initialized": s.initialized(), "authenticated": s.authenticated(r), "csrf": s.csrf(w, r), "version": s.Version})
 	})
+	mux.HandleFunc("POST /api/setup", s.setup)
 	mux.HandleFunc("POST /api/login", s.login)
 	mux.HandleFunc("POST /api/logout", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		c, _ := r.Cookie("pp_session")
@@ -201,7 +201,7 @@ func (s *Server) Handler() http.Handler {
 			delete(s.sessions, c.Value)
 			s.mu.Unlock()
 		}
-		s.cookie(w, "pp_session", "", true, -1)
+		s.cookie(w, r, "pp_session", "", true, -1)
 		JSON(w, 200, map[string]bool{"ok": true})
 	}))
 	mux.HandleFunc("GET /api/subscriptions", s.protected(func(w http.ResponseWriter, r *http.Request) {
@@ -306,6 +306,8 @@ func (s *Server) Handler() http.Handler {
 		JSON(w, 200, events)
 	}))
 	mux.HandleFunc("GET /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Manager.Status()) }))
+	mux.HandleFunc("GET /api/settings/app", s.protected(func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.appSettings()) }))
+	mux.HandleFunc("POST /api/settings/app", s.protected(s.saveAppSettings))
 	mux.HandleFunc("GET /api/pikpak/folders", s.protected(s.browseDirectories))
 	mux.HandleFunc("POST /api/pikpak/folders", s.protected(s.addDirectory))
 	mux.HandleFunc("POST /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) {
@@ -354,48 +356,6 @@ func (s *Server) protected(h http.HandlerFunc) http.HandlerFunc {
 		}
 		h(w, r)
 	}
-}
-func (s *Server) login(w http.ResponseWriter, r *http.Request) {
-	if !s.validCSRF(r) {
-		JSON(w, 403, map[string]string{"error": "請求驗證失敗"})
-		return
-	}
-	host, _, _ := net.SplitHostPort(r.RemoteAddr)
-	s.mu.Lock()
-	now := time.Now()
-	for k, a := range s.attempts {
-		if !now.Before(a.until) {
-			delete(s.attempts, k)
-		}
-	}
-	a := s.attempts[host]
-	if a.count >= 8 && now.Before(a.until) {
-		s.mu.Unlock()
-		JSON(w, 429, map[string]string{"error": "登入嘗試過多，請一分鐘後再試"})
-		return
-	}
-	a.count++
-	a.until = now.Add(time.Minute)
-	s.attempts[host] = a
-	s.mu.Unlock()
-	var in struct {
-		Password string `json:"password"`
-	}
-	if err := decode(w, r, &in); err != nil {
-		failure(w, err)
-		return
-	}
-	if bcrypt.CompareHashAndPassword(s.hash, passwordInput(s.passwordKey, in.Password)) != nil {
-		JSON(w, 401, map[string]string{"error": "密碼不正確"})
-		return
-	}
-	value := nonce()
-	s.mu.Lock()
-	s.sessions[value] = session{now.Add(12 * time.Hour)}
-	delete(s.attempts, host)
-	s.mu.Unlock()
-	s.cookie(w, "pp_session", value, true, 43200)
-	JSON(w, 200, map[string]bool{"ok": true})
 }
 func (s *Server) saveSubscription(w http.ResponseWriter, r *http.Request) {
 	var sub model.Subscription

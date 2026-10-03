@@ -2,55 +2,28 @@ package config
 
 import (
 	"errors"
-	"github.com/joho/godotenv"
 	"net/url"
 	"os"
 	"strings"
 )
 
-type Config struct {
-	Listen, DataDir, AdminPassword, PublicURL, Token, TokenSource string
-	AllowPrivateFeeds                                             bool
-}
+// Credentials and application preferences are initialized in the Web UI.
+type Config struct{ Listen, DataDir string }
 
 func Load() (Config, error) {
-	// An existing process environment always wins over the local development file.
-	if _, err := os.Stat(".env"); err == nil {
-		if err := godotenv.Load(".env"); err != nil {
-			return Config{}, errors.New("無法解析 .env 設定（內容已隱藏）")
-		}
+	return Config{Listen: env("APP_LISTEN", "127.0.0.1:8080"), DataDir: env("APP_DATA_DIR", "data")}, nil
+}
+
+func NormalizePublicURL(value string) (string, error) {
+	value = strings.TrimRight(strings.TrimSpace(value), "/")
+	if value == "" {
+		return "", nil
 	}
-	c := Config{Listen: env("APP_LISTEN", "127.0.0.1:8080"), DataDir: env("APP_DATA_DIR", "data"), AdminPassword: os.Getenv("APP_ADMIN_PASSWORD"), PublicURL: strings.TrimRight(os.Getenv("APP_PUBLIC_URL"), "/"), AllowPrivateFeeds: os.Getenv("APP_ALLOW_PRIVATE_FEEDS") == "true"}
-	if f := os.Getenv("APP_ADMIN_PASSWORD_FILE"); f != "" {
-		b, err := os.ReadFile(f)
-		if err != nil {
-			return c, errors.New("無法讀取管理密碼檔案")
-		}
-		// Secret files often end with a newline; preserve spaces in the password.
-		c.AdminPassword = strings.TrimSuffix(strings.TrimSuffix(string(b), "\n"), "\r")
+	u, err := url.Parse(value)
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || strings.Contains(value, "#") {
+		return "", errors.New("網站網址必須是沒有路徑的 http/https 網站來源")
 	}
-	if c.AdminPassword == "" {
-		return c, errors.New("請設定 APP_ADMIN_PASSWORD 或 APP_ADMIN_PASSWORD_FILE；沒有預設密碼")
-	}
-	if c.PublicURL != "" {
-		u, err := url.Parse(c.PublicURL)
-		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Path != "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || strings.Contains(c.PublicURL, "#") {
-			return c, errors.New("APP_PUBLIC_URL 必須是沒有路徑的 http/https 網站來源")
-		}
-	}
-	if f := os.Getenv("PIKPAK_TOKEN_FILE"); f != "" {
-		b, err := os.ReadFile(f)
-		if err != nil {
-			return c, errors.New("無法讀取 PikPak 權杖檔案")
-		}
-		c.Token, c.TokenSource = strings.TrimSpace(string(b)), "file"
-		if c.Token == "" {
-			return c, errors.New("PikPak 權杖檔案為空；不會改用其他帳號的已保存權杖")
-		}
-	} else if t := strings.TrimSpace(os.Getenv("PIKPAK_TOKEN")); t != "" {
-		c.Token, c.TokenSource = t, "environment"
-	}
-	return c, nil
+	return value, nil
 }
 
 func env(k, fallback string) string {

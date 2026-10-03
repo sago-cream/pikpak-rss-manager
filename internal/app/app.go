@@ -19,14 +19,9 @@ func Run(ctx context.Context, c config.Config, version string) error {
 		return err
 	}
 	defer db.Close()
-	manager := pikpak.NewManager(db, c.Token, c.TokenSource)
+	manager := pikpak.NewManager(db)
 	defer manager.Close()
-	initCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
-	if err := manager.Initialize(initCtx); err != nil {
-		slog.Warn("PikPak 尚未連線；可登入面板處理授權", "reason", pikpak.Classify(err).Message)
-	}
-	cancel()
-	w := worker.New(db, manager, feed.New(c.AllowPrivateFeeds))
+	w := worker.New(db, manager, feed.New(false))
 	ui, err := web.New(c, db, manager, w, version)
 	if err != nil {
 		return err
@@ -35,7 +30,22 @@ func Run(ctx context.Context, c config.Config, version string) error {
 	workerCtx, stopWorker := context.WithCancel(ctx)
 	defer stopWorker()
 	workerDone := make(chan struct{})
-	go func() { defer close(workerDone); w.Run(workerCtx) }()
+	go func() {
+		defer close(workerDone)
+		select {
+		case <-workerCtx.Done():
+			return
+		case <-ui.Ready():
+		}
+		w.Gate.Lock()
+		initCtx, cancel := context.WithTimeout(workerCtx, 45*time.Second)
+		if err := manager.Initialize(initCtx); err != nil {
+			slog.Warn("PikPak 尚未連線；可登入面板處理授權", "reason", pikpak.Classify(err).Message)
+		}
+		cancel()
+		w.Gate.Unlock()
+		w.Run(workerCtx)
+	}()
 	serverErr := make(chan error, 1)
 	go func() {
 		slog.Info("管理介面已啟動", "address", c.Listen, "version", version)

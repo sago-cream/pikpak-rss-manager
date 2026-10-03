@@ -10,7 +10,7 @@ async function api(path, method = 'GET', body) {
       headers: {'Content-Type':'application/json', 'X-CSRF-Token':csrf}, body: body === undefined ? undefined : JSON.stringify(body)});
     const result = await response.json();
     if (!response.ok) {
-      if (response.status === 401 && path !== '/api/login' && !$('#login-form')) location.reload();
+      if (response.status === 401 && path !== '/api/login' && !$('#login-form') && !$('#setup-form')) location.reload();
       throw new Error(result.error || '操作未完成，請稍後再試');
     }
     return result;
@@ -32,7 +32,7 @@ const views = {
   subscriptions:['為喜歡的作品，留一個位置。','每筆訂閱，都有自己的目錄與命名規則。','訂閱管理'],
   jobs:['每個任務，都有跡可循。','從離線下載到逐檔整理，查看每一步的結果。','離線任務'],
   events:['所有動作，清楚記錄。','檢查來源、觸發任務、整理結果，都在這裡。','執行日誌'],
-  settings:['連接你的 PikPak。','以官方授權安全操作雲端，無需提供帳號密碼。','授權設定']
+  settings:['設定你的工作空間。','管理 PikPak 授權與網站設定。','系統設定']
 };
 let data = {subscriptions:[], jobs:[], events:[], status:{}}, currentView = 'overview', jobFilter = 'all';
 function showView(name) {
@@ -71,10 +71,9 @@ function render() {
   $('#settings-badge').className=`badge ${connected?'green':'orange'}`;
   $('#settings-badge').textContent=connected?'連線正常':status.paused?'已暫停':'未綁定';
   $('#connection-banner').classList.toggle('hidden',connected);
-  $('#connection-banner').textContent=status.message||(status.connected ? '請重新檢查 PikPak 連線。' : '先到「授權設定」綁定 PikPak，再開始自動追蹤。');
+  $('#connection-banner').textContent=status.message||(status.connected ? '請重新檢查 PikPak 連線。' : '先到「系統設定」綁定 PikPak，再開始自動追蹤。');
   $('#account-details').innerHTML=status.connected?`<div class="account-card"><span class="account-avatar">P</span><div><strong>${escapeHTML(status.name||'PikPak 帳號')}</strong><span>${formatBytes(status.storage_used)} / ${formatBytes(status.storage_total)} 雲端空間</span></div></div>`:'';
-  $('#token').disabled=!!status.external; $('#save-token').disabled=!!status.external;
-  $('#token-source').textContent=status.external?'目前由環境變數／私密檔案提供 PAT。更新該設定後重新啟動服務。':'PAT 只用於官方 PikPak 端點；儲存後加密，不會回傳至瀏覽器。';
+  $('#token-source').textContent='PAT 只用於官方 PikPak 端點；儲存後加密，不會回傳至瀏覽器。';
 }
 function formatBytes(value) { let n=Number(value||0); if (!Number.isFinite(n)) return '—'; const units=['B','KiB','MiB','GiB','TiB']; let i=0; while(n>=1024&&i<4){n/=1024;i++;} return `${n.toFixed(i?1:0)} ${units[i]}`; }
 async function load(silent=false) { try { const [subscriptions,jobs,events,status]=await Promise.all(['/api/subscriptions','/api/jobs','/api/events','/api/settings/pikpak'].map(p=>api(p))); data={subscriptions,jobs,events,status}; render(); } catch(e){if(!silent)toast(e.message,true);} }
@@ -214,8 +213,22 @@ document.addEventListener('click',async event=>{
 });
 async function start(){
   const session=await api('/api/session');csrf=session.csrf;
+  if($('#setup-form')){
+    if(session.initialized){location.reload();return;}
+    $('#setup-public-url').value=location.origin;
+    $('#setup-form').addEventListener('submit',async event=>{
+      event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;$('#setup-error').textContent='';
+      try{
+        const password=$('#setup-password').value,confirm=$('#setup-confirm').value;
+        if(password!==confirm)throw new Error('兩次輸入的密碼不一致');
+        await api('/api/setup','POST',{password,confirm_password:confirm,public_url:$('#setup-public-url').value.trim(),allow_private_feeds:$('#setup-private-feeds').checked});
+        $('#setup-password').value='';$('#setup-confirm').value='';location.hash='settings';location.reload();
+      }catch(e){$('#setup-password').value='';$('#setup-confirm').value='';$('#setup-error').textContent=e.message;}
+      finally{button.disabled=false;}
+    });return;
+  }
   if($('#login-form')){
-    $('#login-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;$('#login-error').textContent='';try{await api('/api/login','POST',{password:$('#password').value});location.reload();}catch(e){$('#login-error').textContent=e.message;}finally{button.disabled=false;}});return;
+    $('#login-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;$('#login-error').textContent='';try{await api('/api/login','POST',{password:$('#password').value});$('#password').value='';location.reload();}catch(e){$('#password').value='';$('#login-error').textContent=e.message;}finally{button.disabled=false;}});return;
   }
   $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();await api(`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),season:rule.season,regex:rule.regex,template:rule.template,rename_enabled:rule.rename_enabled,rename_mode:rule.mode,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast('訂閱設定已儲存');await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#folder-create-form').addEventListener('submit',async event=>{
@@ -228,7 +241,9 @@ async function start(){
   });
   $('#folder-create-dialog').addEventListener('cancel',()=>{folderCreateContext=null;});
   $('#subscription-dialog').addEventListener('close',()=>{closeFolderBrowser();clearSourceSamples();});
-  $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast('PAT 已驗證並安全保存');await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=!!data.status.external;}});
+  $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast('PAT 已驗證並安全保存');await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=false;}});
+  const settings=await api('/api/settings/app');$('#settings-public-url').value=settings.public_url;$('#settings-private-feeds').checked=settings.allow_private_feeds;
+  $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast('網站設定已儲存');}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);$('#sub-rename-mode').addEventListener('change',updateRenameOptions);
   for(const id of ['sub-name','sub-regex','sub-replacement','sub-template','sub-season','preview-title','preview-filename']){
@@ -239,4 +254,4 @@ async function start(){
   $('#sub-url').addEventListener('input',clearSourceSamples);$('#preview-source').addEventListener('change',selectSourceSample);
   setInterval(()=>{if(!document.hidden&&!$('#subscription-dialog').open&&!$('#job-dialog').open)load(true);},15000);
 }
-start().catch(e=>{if($('#login-error'))$('#login-error').textContent=e.message;else toast(e.message,true);});
+start().catch(e=>{if($('#setup-error'))$('#setup-error').textContent=e.message;else if($('#login-error'))$('#login-error').textContent=e.message;else toast(e.message,true);});

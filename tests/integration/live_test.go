@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
@@ -24,10 +23,10 @@ func TestLivePikPak(t *testing.T) {
 	if os.Getenv("PIKPAK_LIVE_TEST") != "1" {
 		t.Skip("opt-in local cloud test")
 	}
-	_ = godotenv.Load(filepath.Join("..", "..", ".env"))
-	token := os.Getenv("PIKPAK_TOKEN")
+	token := liveToken(t)
+
 	if token == "" {
-		t.Fatal("local PIKPAK_TOKEN is required; never pass it on the command line")
+		t.Fatal("bind PAT in the Web UI before running live tests")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
