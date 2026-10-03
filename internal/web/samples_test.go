@@ -210,7 +210,20 @@ func TestSourcePagingProtectsCursorsAndDoesNotRepeatCachedNames(t *testing.T) {
 			t.Fatal("cached names repeated or torrent skipped", sample)
 		}
 	}
+	body["cursor"] = ""
+	body["all"] = true
+	if code, _ := post("/api/feeds/samples", body, false); code != 403 {
+		t.Fatal("all-filenames request bypassed CSRF")
+	}
+	code, data = post("/api/feeds/samples", body, true)
+	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 6 || next.NextCursor != "" || next.Items[0].Kind != "downloaded_file" {
+		t.Fatal("all filenames or account-scoped original name missing", code)
+	}
 	body["cursor"] = "invalid"
+	if code, _ := post("/api/feeds/samples", body, true); code != 400 {
+		t.Fatal("all request accepted a cursor")
+	}
+	body["all"] = false
 	if code, _ := post("/api/feeds/samples", body, true); code != 400 {
 		t.Fatal("malformed continuation accepted")
 	}
@@ -219,6 +232,12 @@ func TestSourcePagingProtectsCursorsAndDoesNotRepeatCachedNames(t *testing.T) {
 	code, data = post("/api/feeds/samples", body, true)
 	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 3 || next.Items[0].Kind != "torrent_file" {
 		t.Fatal("old account's cached filenames reused")
+	}
+	body["all"] = true
+	code, data = post("/api/feeds/samples", body, true)
+	next = feed.Samples{}
+	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 5 || next.NextCursor != "" || next.Items[0].Kind != "torrent_file" {
+		t.Fatal("all filenames reused old-account cache or omitted torrents", code)
 	}
 	stored, _ := db.Subscription(context.Background(), sub.ID)
 	jobs, _ := db.Jobs(context.Background(), 10)

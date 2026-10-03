@@ -11,6 +11,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 	"unicode/utf8"
 
 	"github.com/zeebo/bencode"
@@ -31,6 +34,103 @@ type Samples struct {
 const sampleEntriesPerPage = 5
 const sampleTorrentsPerPage = 3
 const sampleNamesPerPage = 30
+
+// SamplesAll reads one feed snapshot and each distinct torrent once. Three
+// workers bound simultaneous requests; request-wide budgets bound retained data.
+func (c *Client) SamplesAll(ctx context.Context, feedURL string) (Samples, error) {
+	out := Samples{Items: []Sample{}, Notices: []string{}}
+	items, err := c.fetch(ctx, feedURL, true)
+	if err != nil {
+		return out, err
+	}
+	urls := []string{}
+	indices := map[string]int{}
+	for _, item := range items {
+		if !strings.HasPrefix(item.URL, "magnet:") {
+			if _, exists := indices[item.URL]; !exists {
+				indices[item.URL] = len(urls)
+				urls = append(urls, item.URL)
+			}
+		}
+	}
+	results := make([][]string, len(urls))
+	readCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var totalBytes atomic.Int64
+	var overBudget atomic.Bool
+	queue := make(chan int)
+	var workers sync.WaitGroup
+	for range min(3, len(urls)) {
+		workers.Go(func() {
+			for index := range queue {
+				if readCtx.Err() != nil {
+					continue
+				}
+				torrentCtx, done := context.WithTimeout(readCtx, 15*time.Second)
+				metadata, err := c.read(torrentCtx, urls[index])
+				done()
+				if err != nil {
+					continue
+				}
+				if totalBytes.Add(int64(len(metadata))) > 32<<20 {
+					overBudget.Store(true)
+					cancel()
+					continue
+				}
+				results[index], _ = torrentNames(metadata)
+			}
+		})
+	}
+enqueue:
+	for index := range urls {
+		select {
+		case queue <- index:
+		case <-readCtx.Done():
+			break enqueue
+		}
+	}
+	close(queue)
+	workers.Wait()
+	if overBudget.Load() {
+		out.Notices = append(out.Notices, "種子中繼資料總量超過 32 MiB，已停止讀取；請使用較小的 RSS。")
+	} else if ctx.Err() != nil {
+		out.Notices = append(out.Notices, "種子檔名讀取逾時，已保留取得的檔名；可重新讀取。")
+	}
+	sampleBytes, failed := 0, false
+	for _, item := range items {
+		samples := []Sample{}
+		if strings.HasPrefix(item.URL, "magnet:") {
+			if _, err := NormalizeMagnet(item.URL); err == nil {
+				u, _ := url.Parse(item.URL)
+				if name := u.Query().Get("dn"); validSampleName(name) {
+					samples = append(samples, Sample{item.Title, name, "magnet_name"})
+				}
+			}
+		} else {
+			for _, name := range results[indices[item.URL]] {
+				samples = append(samples, Sample{item.Title, name, "torrent_file"})
+			}
+			if len(samples) == 0 {
+				failed = true
+			}
+		}
+		if len(samples) == 0 && item.Title != "" {
+			samples = append(samples, Sample{item.Title, item.Title, "rss_title"})
+		}
+		for _, sample := range samples {
+			sampleBytes += len(sample.Title) + len(sample.Filename)
+			if len(out.Items) >= 10000 || sampleBytes > 8<<20 {
+				out.Notices = append(out.Notices, "檔名清單超過 10,000 筆或 8 MiB，已保留部分檔名；請使用較小的 RSS。")
+				return out, nil
+			}
+			out.Items = append(out.Items, sample)
+		}
+	}
+	if failed {
+		out.Notices = append(out.Notices, "部分種子無法取得或解析檔名，可重新讀取或手動輸入檔名。")
+	}
+	return out, nil
+}
 
 // Samples reads feed/torrent metadata only. Magnet display names and RSS titles
 // are labeled separately because they need not match a downloaded filename.

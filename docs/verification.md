@@ -126,3 +126,11 @@ v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接
 | 未登入 GHCR，兩種架構匿名拉取、網頁初始化與重建後雜湊登入 | [Public image smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37138687394) |
 
 固定映像：`ghcr.io/wade00754/pikpak-rss-manager:v0.4.0`；`latest` 同步發布。這些容器與 UI 測試使用隔離 fixture，未重跑真實 PikPak 下載／重命名／移動，也未部署至 VPS。
+
+## v0.4.1 一次讀取全部種子檔名（2026-10-04）
+
+本機 Go 1.27.1 的完整 `go test ./...`、`go vet ./...`、CGO-free build、JavaScript 語法與 diff 空白檢查通過；建置執行檔回報 `v0.4.1`。新增測試驗證 RSS 只讀一次、重複種子連結只讀一次、最多三個並行請求、65 個多檔檔名完整保留及 RSS 順序固定。另涵蓋部分失敗／取消後保留成功檔名、內網保護、32 MiB 中繼資料與 10,000 筆清單上限明確提示。HTTP 測試確認一鍵回應無續讀位置、CSRF 保護、拒絕同時指定續讀位置、切換帳號隔離，且不修改基準或呼叫雲端下載。
+
+瀏覽器以獨立 `.local/all-ui-data2`、mocked PikPak 帳號及 localhost v1／v2 種子測試：單次按「讀取種子檔名」取得 72 個實際檔名，來源伺服器記錄一次 RSS、八次不同種子請求，畫面沒有「載入更多」按鈕。紫色按鈕在讀取期間停用並顯示「讀取中…」；重新讀取保留手動檔名，變更 RSS 取消舊請求且不接受舊結果。選取第 65 個多檔檔名仍正確更新替換結果。1280×900 桌面與 390×844 手機沒有頁面或對話框橫向溢出，瀏覽器無錯誤或警告。畫面：`docs/screenshots/source-all.png`、`docs/screenshots/source-all-mobile.png`。
+
+此次未讀取使用者 PAT、連線真實 PikPak 或建立下載任務。本機沒有 Docker；容器、Linux race、多架構發布與匿名拉取的實際結果於發布後記錄在 [v0.4.1 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.1)。
