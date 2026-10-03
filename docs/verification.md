@@ -1,8 +1,12 @@
 # Verification
 
+## v1.0.0 release (2026-10-04)
+
+Passed locally: `scripts/verify.ps1`, `git diff --check` and the built executable reporting `v1.0.0`. This release includes automatic manual-task link/name detection, administrator password changes, the shared brand icon and unused-file/code cleanup. Linux race tests, Docker startup/persistence, multiarch publishing and anonymous image pulls are validated separately in Actions; links will be recorded after completion. Real PikPak operations were not rerun.
+
 ## Unused-file and code cleanup (2026-10-04)
 
-Removed 19 unreferenced screenshots (821,051 bytes), an unused RSS fixture, unused Web constructor configuration, an unused JavaScript regex constant, redundant empty-set initialization and CSS for retired UI elements. Screenshots referenced below, migrations, legacy naming rules and the cursor API remain available. `go mod tidy -diff` found no dependency changes.
+Removed 19 unreferenced screenshots (791,031 bytes), an unused RSS fixture, unused Web constructor configuration, an unused JavaScript regex constant, redundant empty-set initialization and CSS for retired UI elements. Screenshots referenced below, migrations, legacy naming rules and the cursor API remain available. `go mod tidy -diff` found no dependency changes.
 
 Passed locally with Go 1.27.1: `scripts/verify.ps1` (formatting, `go test ./...`, `go vet ./...`, build, JavaScript syntax and localization) and `git diff --check`. Go used a workspace-local cache; the build emitted a nonfatal module-cache metadata permission warning.
 

@@ -46,7 +46,7 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | POST /api/feeds/samples | url, subscription_id, all:true; metadata preview |
 | POST /api/rules/preview | rule, title, filename; shared renderer |
 | GET /api/jobs, /api/jobs/{id} | Latest 200 jobs / file actions |
-| POST /api/jobs | name, url, source_type (torrent or url), destination, optional destination_id/destination_account_ref; 201 queued, 409 duplicate |
+| POST /api/jobs | url, destination, optional name/source_type/destination_id/destination_account_ref; 201 queued, 409 duplicate |
 | POST /api/jobs/{id}/retry | Resume/reconcile safely |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |
@@ -54,4 +54,4 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | GET/POST /api/settings/pikpak | Status/write-only PAT |
 | POST /api/settings/pikpak/check | Reconnect |
 
-Direct URLs are submitted to PikPak without fetching their content locally. Torrent URLs are resolved using the same metadata size/timeout/private-network policy as feeds. Manual tasks preserve filenames. Settings and cloud processing share a lock to prevent account switches between destination validation and queue insertion.
+Manual tasks detect Magnet, `.torrent` and HTTP/HTTPS links automatically. Existing API clients can still specify source_type (`torrent` or `url`) and name. Omitted names use Magnet dn, torrent metadata or the URL path/host, with a resource-key fallback. Direct URLs are submitted to PikPak without fetching their content locally. Torrent URLs are resolved using the same metadata size/timeout/private-network policy as feeds. Manual tasks preserve filenames. Settings and cloud processing share a lock to prevent account switches between destination validation and queue insertion.

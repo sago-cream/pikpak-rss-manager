@@ -12,7 +12,7 @@ docker compose up -d
 
 Open the site, create an administrator password, confirm the public URL, and connect a PikPak PAT in **Settings**. There is no default password. Passwords and PATs are configured through the UI; the service does not load `.env`.
 
-Image: `ghcr.io/wade00754/pikpak-rss-manager:latest` (linux/amd64 and linux/arm64). Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md).
+Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.0.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.0.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md).
 
 ## Use
 
