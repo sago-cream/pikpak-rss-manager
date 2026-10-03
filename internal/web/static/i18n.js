@@ -78,7 +78,9 @@ const translations = {
   "種子中繼資料與下載來源不一致":"Torrent metadata does not match the download source.",
   "覆蓋備份目錄無法定位，請檢查任務":"Could not locate the replacement backup folder. Check the task.",
   "同名舊檔已變更，請檢查覆蓋備份":"Original file changed. Check the replacement backup.",
-  "首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載與覆蓋。Regex 不匹配時保留原名。":"First check sets a baseline. Use Backfill to select existing releases and confirm downloading and replacement. Nonmatches keep their names."
+  "首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載與覆蓋。Regex 不匹配時保留原名。":"First check sets a baseline. Use Backfill to select existing releases and confirm downloading and replacement. Nonmatches keep their names.",
+ "切換深色模式":"Switch to dark mode",
+ "切換淺色模式":"Switch to light mode"
 };
 const escapePattern=value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const literalPattern=new RegExp(Object.keys(translations).filter(key=>!/%[ds]/.test(key)).sort((a,b)=>b.length-a.length).map(escapePattern).join('|'),'g');

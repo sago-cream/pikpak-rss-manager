@@ -1,0 +1,95 @@
+:root { --surface:#fff; color-scheme:light; }
+.appearance-controls { display:flex; align-items:center; gap:10px; }
+.theme-toggle { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; flex-shrink:0; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:22px; line-height:1; }
+.theme-toggle:hover { background:var(--accent-light); }
+html[data-theme="dark"] {
+  color-scheme:dark;
+  --ink:#e7e7ef; --muted:#a7a5b8; --accent:#b4a0ff; --accent-dark:#8064d5;
+  --accent-light:#302743; --canvas:#14131b; --surface:#201e29; --line:#383441;
+  --green:#71d2ad; --orange:#e5b66e; --shadow:0 12px 48px #0003;
+}
+html[data-theme="dark"] .button.primary { background:#7053c5; color:#fff; }
+html[data-theme="dark"] .button.primary:hover { background:#8064d5; }
+html[data-theme="dark"] .button.subtle { color:var(--ink); }
+html[data-theme="dark"] .button.subtle:hover,
+html[data-theme="dark"] .nav-item:hover,
+html[data-theme="dark"] .folder-row:hover,
+html[data-theme="dark"] .folder-row:focus-visible { background:#2d2939; }
+html[data-theme="dark"] .topbar { background:#14131bb5; }
+html[data-theme="dark"] .badge,
+html[data-theme="dark"] .filter-tabs { background:#2d2939; color:var(--muted); }
+html[data-theme="dark"] .badge.green { background:#20392f; color:var(--green); }
+html[data-theme="dark"] .badge.orange { background:#403220; color:var(--orange); }
+html[data-theme="dark"] .badge.purple { background:var(--accent-light); color:var(--accent); }
+html[data-theme="dark"] .notice { background:#30291e; border-color:#59452b; color:#e5c58e; }
+html[data-theme="dark"] .error,
+html[data-theme="dark"] .preview-result.error { color:#f098a4; }
+html[data-theme="dark"] .icon-button.danger:hover { background:#44242c; color:#f098a4; }
+html[data-theme="dark"] .subscription-icon { background:#342946; color:#b4a0ff; }
+html[data-theme="dark"] .subscription-icon.color-1 { background:#203b32; color:#8ccdb7; }
+html[data-theme="dark"] .subscription-icon.color-2 { background:#3c3022; color:#ddbd85; }
+html[data-theme="dark"] .subscription-icon.color-3 { background:#283448; color:#abc4f5; }
+html[data-theme="dark"] .card-rule,
+html[data-theme="dark"] thead,
+html[data-theme="dark"] .account-card,
+html[data-theme="dark"] input:not([type=checkbox]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .preview-box,
+html[data-theme="dark"] .id-list,
+html[data-theme="dark"] .folder-browser { background:#25222f; border-color:var(--line); }
+html[data-theme="dark"] td,
+html[data-theme="dark"] .event-row,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .preview-result { border-color:var(--line); }
+html[data-theme="dark"] input:not([type=checkbox]),
+html[data-theme="dark"] textarea { color:var(--ink); }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color:var(--muted); }
+html[data-theme="dark"] input:disabled { background:#292532; }
+html[data-theme="dark"] .account-avatar,
+html[data-theme="dark"] .token-hints code { background:var(--accent-light); color:var(--accent); }
+html[data-theme="dark"] .preview-result.success { background:#1e3429; border-color:#355342; }
+html[data-theme="dark"] dialog::backdrop { background:#0008; }
+html[data-theme="dark"] .toast { background:#423455; }
+
+html[data-theme="dark"] .button.subtle,
+html[data-theme="dark"] .badge,
+html[data-theme="dark"] .version,
+html[data-theme="dark"] .brand b,
+html[data-theme="dark"] .nav-item,
+html[data-theme="dark"] .sidebar-bottom p,
+html[data-theme="dark"] .connection-pill,
+html[data-theme="dark"] .stat-card>span,
+html[data-theme="dark"] .stat-card small,
+html[data-theme="dark"] .card-path,
+html[data-theme="dark"] .card-path span,
+html[data-theme="dark"] .card-rule span,
+html[data-theme="dark"] .card-rule code,
+html[data-theme="dark"] .card-meta,
+html[data-theme="dark"] thead,
+html[data-theme="dark"] .job-name>span,
+html[data-theme="dark"] .progress-caption,
+html[data-theme="dark"] .empty-state p,
+html[data-theme="dark"] .filter-tabs button,
+html[data-theme="dark"] .event-row time,
+html[data-theme="dark"] .settings-panel p,
+html[data-theme="dark"] .account-card div>span,
+html[data-theme="dark"] label,
+html[data-theme="dark"] input:not([type=checkbox]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder,
+html[data-theme="dark"] .field-help,
+html[data-theme="dark"] .preview-result,
+html[data-theme="dark"] .detail-meta,
+html[data-theme="dark"] .id-list dt,
+html[data-theme="dark"] .id-list dd,
+html[data-theme="dark"] .file-detail p,
+html[data-theme="dark"] .login-footer { color:var(--muted); }
+html[data-theme="dark"] label,
+html[data-theme="dark"] input:not([type=checkbox]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .card-rule code,
+html[data-theme="dark"] .preview-result { color:var(--ink); }
+html[data-theme="dark"] .preview-result.success { color:var(--green); }
+html[data-theme="dark"] .filter-tabs button.selected { color:var(--accent); }

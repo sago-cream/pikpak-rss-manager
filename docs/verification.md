@@ -1,8 +1,14 @@
 # Verification
 
+## Persistent dark mode (2026-10-04)
+
+Passed locally: `scripts/verify.ps1`, JavaScript theme/backfill syntax and localization checks, `git diff --check`, and the built executable reporting `v1.0.0`. Theme preference applies before styles load, follows the system until explicitly selected, persists across page reloads/language changes, and synchronizes across tabs.
+
+Headless Edge used only isolated mock account and first-run data directories. Both languages and all five management views passed at 1280, 390 and 320 pixels without horizontal overflow or JavaScript errors. System-theme changes, saved light/dark toggles, logout/login, setup, subscription forms, folder browsing and the backfill dialog passed. Visually inspected fixture screenshots: [dark overview](screenshots/v100-dark-overview.png), [mobile login](screenshots/v100-dark-login.png). No real PAT or PikPak operation was used.
+
 ## Selected backfill and repeat downloads (2026-10-04)
 
-Passed locally: `go test ./...`, `go vet ./...`, JavaScript syntax/localization checks, `git diff --check`, and a `-buildvcs=false -trimpath` application build reporting `v1.0.0`. The standard verification build was interrupted after its VCS metadata lookup could not write the shared module cache; the explicit build passed using the workspace-local cache.
+Passed locally: `go test ./...`, `go vet ./...`, JavaScript syntax/localization checks, `git diff --check`, and a `-buildvcs=false -trimpath` application build reporting `v1.0.0`. The standard verification script also passed with a nonfatal shared module-cache metadata permission warning; the explicit build used the workspace-local cache.
 
 Regression coverage includes version-2 migration retaining encrypted jobs, staging/task IDs and partial file actions; repeat resource downloads; atomic/idempotent selection batches; authentication/CSRF; subscription, account and expiry checks; preview without baseline/queue/cloud mutations; one feed snapshot and distinct torrent read; v2 filenames, metadata-size protection and mismatched provenance; and recovery after an uncertain backup move. Ordinary collisions and same-name folders still require review.
 

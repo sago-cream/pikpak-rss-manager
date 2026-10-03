@@ -25,7 +25,7 @@
 .rename-toggle { border-top:1px solid var(--line); padding-top:14px; margin-top:14px; }
 .rename-toggle .checkbox-label { margin-bottom:0; }
 .rename-toggle p { margin:5px 0 12px; }
-.rule-block select { width:100%; border:1px solid var(--line); background:white; border-radius:8px; padding:12px; color:var(--ink); font:inherit; margin-top:8px; }
+.rule-block select { width:100%; border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:12px; color:var(--ink); font:inherit; margin-top:8px; }
 .rename-preview-row { display:grid; grid-template-columns:86px minmax(0,1fr); gap:10px; padding:7px 0; }
 .rename-preview-row>span { color:var(--muted); font-size:11px; }
 .rename-preview-row>code { white-space:pre-wrap; overflow-wrap:anywhere; color:var(--ink); font-size:12px; }

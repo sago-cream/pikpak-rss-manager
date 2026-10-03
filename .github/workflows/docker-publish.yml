@@ -34,7 +34,7 @@ jobs:
           echo "version=$source_version" >> "$GITHUB_OUTPUT"
       - run: go test -race ./...
       - run: go vet ./...
-      - run: node --check internal/web/static/app.js && node --check internal/web/static/backfill.js && node --check internal/web/static/i18n.js && node scripts/test-i18n.cjs
+      - run: node --check internal/web/static/app.js && node --check internal/web/static/theme.js && node --check internal/web/static/backfill.js && node --check internal/web/static/i18n.js && node scripts/test-i18n.cjs
       - run: docker build -t pikpak-rss-manager:smoke .
       - run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" python3 scripts/container-smoke.py pikpak-rss-manager:smoke
   publish:

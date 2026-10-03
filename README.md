@@ -23,6 +23,8 @@ Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.0.0` (linux/amd64 and li
 - **Language:** choose Traditional Chinese or English in the top bar, setup or login page. The choice is saved in the browser; switching reloads the page.
 - **Settings → Change administrator password:** enter the current password and confirm a nonempty new password. All devices must sign in again after saving.
 
+The theme switch on setup, login and management pages remembers your light/dark preference. Before a choice is saved, it follows the system theme.
+
 Explicit downloads may repeat a previously downloaded source. Jobs resume after restarts, and retries of the same backfill confirmation do not create another job. Unconfirmed submissions require reconciliation. Confirmed backfills replace matching files only after completion, moving originals to the task’s `_Replaced` backup folder; ordinary jobs and folder/name ambiguities remain subject to review. New jobs stage under `<destination>/_PikPak-RSS-Staging/<jobID>`; existing staging IDs are preserved.
 
 PATs are encrypted with AES-GCM; passwords use salted Argon2id verifiers. Authorization or quota failures pause jobs. Renew the PAT or check the connection, then resume affected tasks. [PAT instructions](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token). OAuth is not implemented; [comparison](docs/auth-comparison.md).

@@ -112,7 +112,7 @@ h3 {
 }
 
 .button.subtle {
-  background:white;
+  background:var(--surface);
   border-color:var(--line);
   color:#626273
 }
@@ -244,7 +244,7 @@ h3 {
   position:fixed;
   inset:0 auto 0 0;
   width:226px;
-  background:white;
+  background:var(--surface);
   border-right:1px solid var(--line);
   display:flex;
   flex-direction:column;
@@ -378,7 +378,7 @@ h3 {
 
 .stat-card {
   padding:23px 25px;
-  background:white;
+  background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
@@ -433,7 +433,7 @@ h3 {
 }
 
 .subscription-card {
-  background:white;
+  background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
   padding:23px 23px 0;
@@ -562,7 +562,7 @@ h3 {
 }
 
 .panel {
-  background:white;
+  background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
@@ -658,7 +658,7 @@ tr:last-child td {
   text-align:center;
   padding:46px 24px;
   grid-column:1/-1;
-  background:white;
+  background:var(--surface);
   border-radius:var(--radius);
   border:1px dashed #e9e3f0
 }
@@ -688,7 +688,7 @@ tr:last-child td {
 
 .toolbar>input {
   max-width:350px;
-  background:white
+  background:var(--surface)
 }
 
 .toolbar>.muted {
@@ -713,7 +713,7 @@ tr:last-child td {
 }
 
 .filter-tabs button.selected {
-  background:white;
+  background:var(--surface);
   color:var(--accent);
   box-shadow:0 2px 5px #7961d710
 }
@@ -989,7 +989,7 @@ dialog::backdrop {
 .preview-result {
   margin-top:15px;
   border-radius:7px;
-  background:white;
+  background:var(--surface);
   border:1px dashed #dfd4ed;
   padding:12px;
   font-size:11px;
@@ -1084,7 +1084,7 @@ dialog::backdrop {
 .login-page {
   display:flex;
   min-height:100vh;
-  background:#fff
+  background:var(--surface)
 }
 
 .login-shell {
@@ -1514,7 +1514,7 @@ dialog {
 textarea { resize:none; }
 .folder-icon { width:20px; height:20px; flex-shrink:0; vertical-align:middle; }
 .sidebar nav { margin-top:32px; }
-.language-select { font:inherit; color:var(--ink); background:white; border:1px solid var(--line); border-radius:8px; padding:8px; }
+.language-select { font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px; }
 .language-select:focus-visible,select:focus-visible { outline:3px solid #c7b7ff; outline-offset:3px; }
 .login-page { display:flex; justify-content:center; }
 .login-shell { width:min(378px,100%); padding:40px 24px; }

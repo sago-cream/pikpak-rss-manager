@@ -8,6 +8,8 @@ go vet ./...
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 node --check internal/web/static/app.js
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+node --check internal/web/static/theme.js
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 node --check internal/web/static/backfill.js
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 node --check internal/web/static/i18n.js
