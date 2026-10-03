@@ -171,4 +171,14 @@ v0.4.2 匿名 manifest 亦確認含兩種 Linux 架構。以上容器驗證不�
 
 本機完整 `go test ./...`、`go vet ./...`、CGO-free build、JavaScript 語法與 diff 空白檢查通過；`dev.ps1 -Version` 顯示 `v0.4.3`。隔離 mocked 帳號與 `.local/all-ui-data2` 瀏覽器驗證：DOM 無原始檔名輸入框，首次讀取 72 筆後直接產生結果；切換第 65 個種子檔名及編輯 Regex／替換格式自動更新，重新讀取保留選項，更換 RSS 清除選項與舊結果並恢復選擇提示。390×844 手機沒有頁面或對話框橫向溢出，console 無錯誤／警告。畫面：`docs/screenshots/filename-selection.png`、`docs/screenshots/filename-selection-mobile.png`，僅含 fixture。
 
-此次未讀取使用者 PAT、呼叫真實 PikPak 或建立下載任務。本機沒有 Docker，Linux／容器／多架構發布與公開拉取的實際結果於完成後記錄在 [v0.4.3 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.3)。
+此次未讀取使用者 PAT、呼叫真實 PikPak 或建立下載任務。本機沒有 Docker；功能提交 `295befe` 的 GitHub Actions 已全部通過，亦記錄在 [v0.4.3 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.3)：
+
+| 驗證 | 實際結果／證據 |
+|---|---|
+| Linux race、vet、build、容器啟動／登入／資料持久化 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37144695003) |
+| main/latest 的 amd64、arm64 映像發布 | [main 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37144694924) |
+| v0.4.3 的 amd64、arm64 映像發布 | [Tag 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37144695286) |
+| v0.4.3 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [公開映像 smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37144895903) |
+| latest 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [latest smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37144898174) |
+
+兩個標籤的匿名 manifest 均含兩種 Linux 架構。容器測試使用隔離 fixture，不代表真實 PikPak 操作或 VPS 部署。
