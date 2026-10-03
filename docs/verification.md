@@ -1,5 +1,11 @@
 # Verification
 
+## Login and setup language-selector layout (2026-10-04)
+
+Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, localization checks and `git diff --check`.
+
+Headless Edge used an isolated mock account (`.local/auth-header-ui-data`) and a separate first-run data directory (`.local/auth-header-setup-data`). Traditional Chinese and English login/setup layouts passed at 1280×900, 390×844 and 320×568: the selector shares a row with the logo and aligns with the form's right edge, with no overlap or horizontal overflow. Persisted language switching, setup, login, translated wrong-password errors and logout passed without browser errors. Visually inspected fixture screenshots: [desktop](screenshots/login-language-desktop.png), [mobile](screenshots/login-language-mobile.png). No real PAT or PikPak operation was used.
+
 ## Automatic manual-task source detection (2026-10-04)
 
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, JavaScript syntax/localization checks and `git diff --check`. VCS stamping was disabled because the elevated build user differs from the checkout owner.

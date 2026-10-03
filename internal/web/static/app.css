@@ -1179,7 +1179,12 @@ dialog::backdrop {
   justify-content:center
 }
 
-.login-shell>.brand-mark {
+.login-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  width:100%;
   margin-bottom:45px
 }
 
@@ -1188,7 +1193,7 @@ dialog::backdrop {
   padding-bottom:32px;
 }
 
-.setup-page .login-shell>.brand-mark {
+.setup-page .login-header {
   margin-bottom:20px;
 }
 
@@ -1668,7 +1673,7 @@ dialog {
   font-size:36px
 }
 
-.login-shell>.brand-mark {
+.login-header {
   margin-bottom:35px
 }
 
@@ -1704,8 +1709,7 @@ textarea { resize:none; }
 .language-select { font:inherit; color:var(--ink); background:white; border:1px solid var(--line); border-radius:8px; padding:8px; }
 .language-select:focus-visible,select:focus-visible { outline:3px solid #c7b7ff; outline-offset:3px; }
 .login-page { display:flex; justify-content:center; }
-.login-shell { width:min(480px,100%); padding:40px 24px; }
-.login-shell>.language-select { float:right; }
+.login-shell { width:min(378px,100%); padding:40px 24px; }
 @media(max-width:600px) { #subscription-dialog .dialog-scroll { max-height:calc(94dvh - 2px); padding:22px; } }
 
 .topbar-actions { margin-left:auto; }
