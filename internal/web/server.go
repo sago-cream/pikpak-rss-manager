@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha512"
@@ -37,9 +38,16 @@ type attempt struct {
 	count int
 	until time.Time
 }
+
+type CloudManager interface {
+	Snapshot() (pikpak.API, string)
+	Status() pikpak.Status
+	Reconnect(context.Context) error
+	Bind(context.Context, string) error
+}
 type Server struct {
 	DB          *store.Store
-	Manager     *pikpak.Manager
+	Manager     CloudManager
 	Worker      *worker.Worker
 	Config      config.Config
 	Version     string
@@ -51,7 +59,7 @@ type Server struct {
 	attempts    map[string]attempt
 }
 
-func New(c config.Config, db *store.Store, m *pikpak.Manager, w *worker.Worker, version string) (*Server, error) {
+func New(c config.Config, db *store.Store, m CloudManager, w *worker.Worker, version string) (*Server, error) {
 	if c.AdminPassword == "" {
 		return nil, errors.New("請設定管理密碼；沒有預設密碼")
 	}
@@ -201,6 +209,9 @@ func (s *Server) Handler() http.Handler {
 			JSON(w, 500, map[string]string{"error": "無法讀取訂閱"})
 			return
 		}
+		for i := range subs {
+			s.directoryReference(&subs[i])
+		}
 		JSON(w, 200, subs)
 	}))
 	mux.HandleFunc("POST /api/subscriptions", s.protected(s.saveSubscription))
@@ -246,7 +257,7 @@ func (s *Server) Handler() http.Handler {
 			failure(w, err)
 			return
 		}
-		if in.Filename == "" {
+		if in.Filename == "" && in.Rule.Mode != "replace" {
 			in.Filename = "preview.mkv"
 		}
 		preview, err := rename.Render(in.Rule, in.Title, in.Filename, true)
@@ -293,6 +304,8 @@ func (s *Server) Handler() http.Handler {
 		JSON(w, 200, events)
 	}))
 	mux.HandleFunc("GET /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Manager.Status()) }))
+	mux.HandleFunc("GET /api/pikpak/folders", s.protected(s.browseDirectories))
+	mux.HandleFunc("POST /api/pikpak/folders", s.protected(s.addDirectory))
 	mux.HandleFunc("POST /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Token string `json:"token"`
@@ -405,19 +418,28 @@ func (s *Server) saveSubscription(w http.ResponseWriter, r *http.Request) {
 		failure(w, err)
 		return
 	}
-	destination, err := rename.Destination(sub.Destination)
-	if err != nil {
-		failure(w, err)
-		return
+	if sub.DestinationID == "" {
+		destination, err := rename.Destination(sub.Destination)
+		if err != nil {
+			failure(w, err)
+			return
+		}
+		sub.Destination = destination
 	}
-	sub.Destination = destination
 	if err := rename.Validate(sub.Rule()); err != nil {
 		failure(w, err)
 		return
+	}
+	if sub.DestinationID != "" {
+		if err := s.resolveDestination(r.Context(), &sub); err != nil {
+			failure(w, err)
+			return
+		}
 	}
 	if err := s.Worker.SaveSubscription(r.Context(), &sub); err != nil {
 		failure(w, errors.New("無法保存訂閱"))
 		return
 	}
+	s.directoryReference(&sub)
 	JSON(w, 200, sub)
 }

@@ -64,7 +64,7 @@ secrets:
 
 ## 更新、固定版本與備份
 
-`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.1.2` 或已驗證 digest。更新：
+`latest` 隨 main 更新；希望固定版本，可將 image 改為 `:v0.2.0` 或已驗證 digest。更新：
 
 ```sh
 docker compose pull
@@ -73,6 +73,8 @@ docker compose logs --tail=50
 ```
 
 資料卷內包含加密 SQLite 與金鑰，更新不要加 `-v`。備份應先停止程序，避免只複製 DB 主檔漏掉 WAL；備份保存於你可控的加密位置。
+
+v0.2.0 新增資料夾選擇／建立與可選的 Regex 尋找／替換。更新後既有訂閱仍使用原本命名範本；新增訂閱預設不重命名。重新啟動服務並重新整理瀏覽器即可使用新介面。
 
 ```sh
 docker compose stop

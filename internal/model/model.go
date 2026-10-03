@@ -1,29 +1,48 @@
 package model
 
 type Rule struct {
-	Title    string `json:"title"`
-	Season   int    `json:"season"`
-	Regex    string `json:"regex"`
-	Template string `json:"template"`
+	Title         string `json:"title"`
+	Season        int    `json:"season"`
+	Regex         string `json:"regex"`
+	Template      string `json:"template"`
+	RenameEnabled *bool  `json:"rename_enabled,omitempty"`
+	Mode          string `json:"mode,omitempty"`
+	Replacement   string `json:"replacement"`
 }
+
+// A missing switch means a rule saved before optional renaming was introduced.
+func (r Rule) Renaming() bool { return r.RenameEnabled == nil || *r.RenameEnabled }
 
 type Subscription struct {
-	ID              int64  `json:"id"`
-	Name            string `json:"name"`
-	RSSURL          string `json:"rss_url"`
-	Destination     string `json:"destination"`
-	Enabled         bool   `json:"enabled"`
-	IntervalMinutes int    `json:"interval_minutes"`
-	Season          int    `json:"season"`
-	Regex           string `json:"regex"`
-	Template        string `json:"template"`
-	Initialized     bool   `json:"initialized"`
-	LastChecked     int64  `json:"last_checked"`
-	NextCheck       int64  `json:"next_check"`
-	LastError       string `json:"last_error"`
+	ID                    int64  `json:"id"`
+	Name                  string `json:"name"`
+	RSSURL                string `json:"rss_url"`
+	Destination           string `json:"destination"`
+	DestinationID         string `json:"destination_id,omitempty"`
+	DestinationAccountID  string `json:"-"`
+	DestinationAccountRef string `json:"destination_account_ref,omitempty"`
+	Enabled               bool   `json:"enabled"`
+	IntervalMinutes       int    `json:"interval_minutes"`
+	Season                int    `json:"season"`
+	Regex                 string `json:"regex"`
+	Template              string `json:"template"`
+	RenameEnabled         *bool  `json:"rename_enabled,omitempty"`
+	RenameMode            string `json:"rename_mode,omitempty"`
+	Replacement           string `json:"replacement"`
+	Initialized           bool   `json:"initialized"`
+	LastChecked           int64  `json:"last_checked"`
+	NextCheck             int64  `json:"next_check"`
+	LastError             string `json:"last_error"`
 }
 
-func (s Subscription) Rule() Rule { return Rule{s.Name, s.Season, s.Regex, s.Template} }
+func (s Subscription) Rule() Rule {
+	return Rule{Title: s.Name, Season: s.Season, Regex: s.Regex, Template: s.Template, RenameEnabled: s.RenameEnabled, Mode: s.RenameMode, Replacement: s.Replacement}
+}
+
+type SubscriptionRecord struct {
+	Subscription
+	StoredDestinationAccountID string `json:"destination_account_id,omitempty"`
+}
 
 type Job struct {
 	ID             string  `json:"id"`

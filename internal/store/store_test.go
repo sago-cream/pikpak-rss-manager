@@ -3,12 +3,53 @@ package store
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 )
+
+func TestOptionalRenamingAndFolderIdentitySurviveRestart(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	off := false
+	sub := model.Subscription{Name: "作品", RSSURL: "https://rss.test", RenameEnabled: &off, RenameMode: "replace", DestinationID: "chosen-folder", DestinationAccountID: "private-owner", DestinationAccountRef: "ephemeral-ref"}
+	if err := s.SaveSubscription(context.Background(), &sub); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s, err = Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	got, err := s.Subscription(context.Background(), sub.ID)
+	if err != nil || got.Rule().Renaming() || got.DestinationID != sub.DestinationID || got.DestinationAccountID != sub.DestinationAccountID || got.DestinationAccountRef != "" {
+		t.Fatal("new subscription settings lost", err)
+	}
+	b, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(b, []byte(sub.DestinationAccountID)) {
+		t.Fatal("private account ID escaped subscription API")
+	}
+	legacy := model.Subscription{Name: "舊規則", RSSURL: "https://rss.test", Season: 1, Template: "{title}.{ext}"}
+	if err := s.SaveSubscription(context.Background(), &legacy); err != nil {
+		t.Fatal(err)
+	}
+	legacy, err = s.Subscription(context.Background(), legacy.ID)
+	if err != nil || !legacy.Rule().Renaming() {
+		t.Fatal("old settings were silently disabled")
+	}
+}
 
 func TestEncryptedPersistenceAndDeduplication(t *testing.T) {
 	ctx := context.Background()

@@ -135,6 +135,65 @@ func TestBaselineBackfillAndCrossSubscriptionDedup(t *testing.T) {
 		t.Fatal("new feed reused old baseline")
 	}
 }
+
+func TestDisabledRenamingAndRegexReplacement(t *testing.T) {
+	for _, enabled := range []bool{false, true} {
+		t.Run(map[bool]string{false: "retain names", true: "regex replacement"}[enabled], func(t *testing.T) {
+			w, c, _, _, sub, _ := setup(t)
+			sub.RenameEnabled = &enabled
+			sub.RenameMode = "replace"
+			sub.Regex = `^\[字幕組\]\s*`
+			sub.Replacement = ""
+			if err := w.SaveSubscription(context.Background(), &sub); err != nil {
+				t.Fatal(err)
+			}
+			j := enqueue(t, w, sub, "organizing")
+			prepareFiles(t, w, c, &j, pikpak.File{ID: "file1", Name: "[字幕組] unparseable 01.mp4"}, pikpak.File{ID: "file2", Name: "[字幕組] unparseable 02.mp4"})
+			if err := w.Process(context.Background(), j.ID); err != nil {
+				t.Fatal(err)
+			}
+			if saved(t, w, j).State != "complete" || c.Files["file1"].ParentID != "dest" || c.Files["file2"].ParentID != "dest" {
+				t.Fatal("optional naming did not finish moving")
+			}
+			if !enabled && c.Calls["rename"] != 0 {
+				t.Fatal("unchecked option still renamed")
+			}
+			if enabled && (c.Files["file1"].Name != "unparseable 01.mp4" || c.Calls["rename"] != 2) {
+				t.Fatal("regex replacement not applied per file")
+			}
+		})
+	}
+}
+
+func TestSelectedFolderIDAndChangedAccount(t *testing.T) {
+	w, c, _, f, sub, _ := setup(t)
+	c.Files["first"] = pikpak.File{ID: "first", Name: "作品", Kind: "drive#folder"}
+	c.Files["second"] = pikpak.File{ID: "second", Name: "作品", Kind: "drive#folder"}
+	sub.Destination = "作品"
+	sub.DestinationID = "second"
+	sub.DestinationAccountID = c.AccountID
+	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
+		t.Fatal(err)
+	}
+	f.items = []feed.Item{{Fingerprint: "one", Title: "作品 S01E01", URL: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567"}}
+	if err := w.Check(context.Background(), sub.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	jobs, err := w.DB.Jobs(context.Background(), 10)
+	if err != nil || len(jobs) != 1 || jobs[0].DestinationID != "second" {
+		t.Fatal("selected folder identity lost", err)
+	}
+	if err := w.Process(context.Background(), jobs[0].ID); err != nil || c.Calls["submit"] != 1 {
+		t.Fatal("duplicate names prevented ID destination", err)
+	}
+	c.AccountID = "changed-account"
+	if err := w.Check(context.Background(), sub.ID, true); err == nil {
+		t.Fatal("old account folder ID reused")
+	}
+	if f.resolves != 1 {
+		t.Fatal("changed account still queued selected-folder downloads")
+	}
+}
 func TestUncertainSubmitAndCrashNeverResubmit(t *testing.T) {
 	w, c, _, _, sub, _ := setup(t)
 	ctx := context.Background()

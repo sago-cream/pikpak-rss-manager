@@ -139,13 +139,16 @@ func (s *Store) SetSetting(ctx context.Context, key, value string) error {
 
 func (s *Store) subscriptionPayload(sub model.Subscription) ([]byte, error) {
 	sub.RSSURL = s.seal(sub.RSSURL)
-	return json.Marshal(sub)
+	sub.DestinationAccountRef = ""
+	return json.Marshal(model.SubscriptionRecord{Subscription: sub, StoredDestinationAccountID: sub.DestinationAccountID})
 }
 func (s *Store) decodeSubscription(payload string) (model.Subscription, error) {
-	var sub model.Subscription
-	if err := json.Unmarshal([]byte(payload), &sub); err != nil {
-		return sub, err
+	var record model.SubscriptionRecord
+	if err := json.Unmarshal([]byte(payload), &record); err != nil {
+		return record.Subscription, err
 	}
+	sub := record.Subscription
+	sub.DestinationAccountID = record.StoredDestinationAccountID
 	u, err := s.open(sub.RSSURL)
 	sub.RSSURL = u
 	return sub, err

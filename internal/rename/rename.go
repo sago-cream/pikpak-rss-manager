@@ -18,7 +18,9 @@ var tokenRE = regexp.MustCompile(`\{([a-z]+)(?::(0[1-6]))?\}`)
 var unsafeName = regexp.MustCompile(`[\\/:*?"<>|\x00-\x1f]`)
 
 type Preview struct {
+	OldName   string            `json:"old_name"`
 	Name      string            `json:"name"`
+	Matched   bool              `json:"matched"`
 	Variables map[string]string `json:"variables"`
 }
 
@@ -26,14 +28,30 @@ func Validate(r model.Rule) error {
 	if strings.TrimSpace(r.Title) == "" || len(r.Title) > 500 {
 		return errors.New("作品名稱必須為 1–500 位元組")
 	}
-	if r.Season < 1 || r.Season > 999 {
-		return errors.New("預設季數必須為 1–999")
+	if !r.Renaming() {
+		return nil
 	}
 	if len(r.Regex) > 4096 {
 		return errors.New("正則表達式過長")
 	}
-	if _, err := regexp.Compile(r.Regex); err != nil {
+	re, err := regexp.Compile(r.Regex)
+	if err != nil {
 		return errors.New("Regex 不符合 Go RE2 語法；不支援 lookbehind 或反向參照")
+	}
+	if r.Mode == "replace" {
+		if r.Regex == "" {
+			return errors.New("請填寫尋找用的 Regex")
+		}
+		if len(r.Replacement) > 1000 {
+			return errors.New("替換格式最多 1000 位元組")
+		}
+		return validateReplacement(re, r.Replacement)
+	}
+	if r.Mode != "" && r.Mode != "template" {
+		return errors.New("不支援的重命名方式")
+	}
+	if r.Season < 1 || r.Season > 999 {
+		return errors.New("預設季數必須為 1–999")
 	}
 	if len(r.Template) == 0 || len(r.Template) > 1000 {
 		return errors.New("請設定命名範本，最多 1000 位元組")
@@ -54,6 +72,49 @@ func Validate(r model.Rule) error {
 	}
 	if strings.ContainsAny(r.Template, `/\`) {
 		return errors.New("命名範本只能產生檔名，不能包含路徑")
+	}
+	return nil
+}
+
+func validateReplacement(re *regexp.Regexp, replacement string) error {
+	for i := 0; i < len(replacement); {
+		if replacement[i] != '$' {
+			i++
+			continue
+		}
+		i++
+		if i == len(replacement) {
+			break
+		}
+		if replacement[i] == '$' {
+			i++
+			continue
+		}
+		braced := replacement[i] == '{'
+		if braced {
+			i++
+		}
+		start := i
+		for i < len(replacement) && (replacement[i] >= 'a' && replacement[i] <= 'z' || replacement[i] >= 'A' && replacement[i] <= 'Z' || replacement[i] >= '0' && replacement[i] <= '9' || replacement[i] == '_') {
+			i++
+		}
+		name := replacement[start:i]
+		if braced {
+			if name == "" || i >= len(replacement) || replacement[i] != '}' {
+				return errors.New("替換格式的 ${群組} 不完整")
+			}
+			i++
+		}
+		if name == "" {
+			continue
+		}
+		if n, err := strconv.Atoi(name); err == nil {
+			if n < 0 || n > re.NumSubexp() {
+				return errors.New("替換格式引用不存在的捕捉群組")
+			}
+		} else if re.SubexpIndex(name) < 0 {
+			return errors.New("替換格式引用不存在的具名群組；接文字時請使用 ${群組}")
+		}
 	}
 	return nil
 }
@@ -83,14 +144,31 @@ func captures(re *regexp.Regexp, input string) (map[string]string, error) {
 }
 
 func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (Preview, error) {
-	p := Preview{Variables: map[string]string{}}
+	p := Preview{OldName: filename, Variables: map[string]string{}}
 	if err := Validate(r); err != nil {
 		return p, err
 	}
 	if len(rssTitle) > 8192 || len(filename) > 8192 {
 		return p, errors.New("測試標題或檔名過長")
 	}
+	if !r.Renaming() {
+		p.Name = filename
+		return p, nil
+	}
 	re := regexp.MustCompile(r.Regex)
+	if r.Mode == "replace" {
+		if filename == "" {
+			return p, errors.New("請輸入原始檔名（包含副檔名）")
+		}
+		p.Matched = re.MatchString(filename)
+		p.Name = filename
+		if !p.Matched {
+			return p, nil
+		}
+		name, err := safeName(re.ReplaceAllString(filename, r.Replacement))
+		p.Name = name
+		return p, err
+	}
 	values, err := captures(re, filename)
 	if err != nil {
 		return p, err
@@ -139,12 +217,21 @@ func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (P
 	if renderErr != nil {
 		return p, renderErr
 	}
-	name = strings.Trim(unsafeName.ReplaceAllString(name, "_"), " .\t\r\n")
-	if name == "" || name == "." || name == ".." || len(name) > 240 || !utf8.ValidString(name) {
-		return p, errors.New("產生的檔名為空或超過 240 位元組")
+	name, err = safeName(name)
+	if err != nil {
+		return p, err
 	}
 	p.Name = name
+	p.Matched = true
 	return p, nil
+}
+
+func safeName(name string) (string, error) {
+	name = strings.Trim(unsafeName.ReplaceAllString(name, "_"), " .\t\r\n")
+	if name == "" || name == "." || name == ".." || len(name) > 240 || !utf8.ValidString(name) {
+		return "", errors.New("產生的檔名為空或超過 240 位元組")
+	}
+	return name, nil
 }
 
 func Destination(v string) (string, error) {

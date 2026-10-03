@@ -81,7 +81,15 @@ with tempfile.TemporaryDirectory() as directory:
         subscription = request("/api/subscriptions", "POST", {
             "name": "持久化測試", "rss_url": "https://example.org/feed?private=ci-only",
             "destination": "Test", "enabled": False, "interval_minutes": 10,
-            "season": 1, "regex": "(?P<ep>[0-9]+)", "template": "{title} - E{ep:02}.{ext}"})
+            "rename_enabled": False, "rename_mode": "replace", "regex": "", "replacement": ""})
+        assert subscription["rename_enabled"] is False
+        preview = request("/api/rules/preview", "POST", {
+            "rule": {"title": "命名測試", "rename_enabled": True, "mode": "replace",
+                     "regex": r"^(?P<title>.+)_(?P<ep>\d+)\.(?P<ext>[^.]+)$",
+                     "replacement": "${title} - E${ep}.${ext}"},
+            "filename": "作品_03.mkv"})
+        assert preview["old_name"] == "作品_03.mkv"
+        assert preview["name"] == "作品 - E03.mkv" and preview["matched"] is True
         compose("down")  # volume and AES key are intentionally retained
         compose("up", "-d", "--pull", "never")
         ready()
@@ -89,6 +97,7 @@ with tempfile.TemporaryDirectory() as directory:
         restored = request("/api/subscriptions")
         assert len(restored) == 1 and restored[0]["id"] == subscription["id"]
         assert restored[0]["rss_url"].endswith("private=ci-only")
-        print("PASS: shipped Compose startup, health, authentication, non-root and encrypted data persistence")
+        assert restored[0]["rename_enabled"] is False and restored[0]["rename_mode"] == "replace"
+        print("PASS: Compose startup, health, login, Regex preview, non-root and encrypted data persistence")
     finally:
         compose("down", "--volumes", "--remove-orphans")

@@ -133,6 +133,12 @@ func (w *Worker) Check(ctx context.Context, id int64, backfill bool) error {
 	if api == nil || account == "" {
 		return errors.New("請先綁定 PikPak，或解除授權／配額暫停")
 	}
+	if sub.DestinationID != "" && sub.DestinationAccountID != account {
+		sub.LastError = "PikPak 帳號已更換，請重新選取此訂閱的目標資料夾"
+		sub.NextCheck = time.Now().Add(time.Duration(sub.IntervalMinutes) * time.Minute).Unix()
+		_ = w.DB.SaveSubscription(ctx, &sub)
+		return errors.New(sub.LastError)
+	}
 	items, err := w.Feeds.Fetch(ctx, sub.RSSURL)
 	sub.LastChecked = time.Now().Unix()
 	sub.NextCheck = time.Now().Add(time.Duration(sub.IntervalMinutes) * time.Minute).Unix()
@@ -170,6 +176,7 @@ func (w *Worker) Check(ctx context.Context, id int64, backfill bool) error {
 		}
 		now := time.Now().Unix()
 		j := model.Job{ID: store.ID(), SubscriptionID: id, AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: item.Title, Rule: sub.Rule(), Destination: sub.Destination, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
+		j.DestinationID = sub.DestinationID
 		added, err := w.DB.Enqueue(ctx, j, item.Fingerprint)
 		if err != nil {
 			return err
@@ -226,6 +233,14 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 			j.DestinationID, err = ensurePath(ctx, api, "", j.Destination)
 			if err != nil {
 				return w.failure(ctx, &j, err, false)
+			}
+		} else {
+			destination, e := api.Get(ctx, j.DestinationID)
+			if e != nil {
+				return w.failure(ctx, &j, e, false)
+			}
+			if !destination.Folder() || destination.ID != j.DestinationID {
+				return w.failure(ctx, &j, &pikpak.Error{Kind: "permanent", Message: "目標資料夾已變更，請重新選取"}, false)
 			}
 		}
 		if j.StagingID == "" {

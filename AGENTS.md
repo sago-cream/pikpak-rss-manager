@@ -7,11 +7,13 @@ Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The U
 
 ## Product decisions
 - One administrator and one active PikPak account; no default administrator password. The user explicitly removed password length and character restrictions; require only a nonempty configured password.
-- Every subscription owns its destination, interval, season, regex and naming template.
+- Every subscription owns its destination, interval, rename checkbox, regex and replacement. New UI subscriptions default to keeping original filenames. Regex replace mode operates on each actual filename with Go replacement references ($1, ${name}, $$); preview and execution share the renderer.
+- Missing rename flags/modes in existing records mean legacy template naming remains enabled. Preserve season/template support for these subscriptions and existing job snapshots; do not silently rewrite existing rules.
+- Browse/create cloud folders through the official MCP. Persist selected folder IDs and their owning account; expose only opaque account references to the UI. Revalidate selected IDs, reject stale selections after switching accounts, and never retry uncertain folder creation automatically. Manual destination paths remain supported.
 - Establish an initial feed baseline by default; backfill is explicit.
 - Normalize infohashes and deduplicate per PikPak account.
 - Download on PikPak, then rename/move by file ID. Never transfer media through this service.
-- Parse multiple files independently. RSS episode fallback is allowed only for one primary file. Keep ambiguous files and name collisions for review; never overwrite existing files.
+- Parse multiple files independently. RSS episode fallback is allowed only for one primary file in legacy template mode. Regex replace mode leaves non-matching names unchanged. Keep ambiguous files and name collisions for review; never overwrite existing files.
 - Persist task IDs and file action progress. Reconcile ambiguous submissions instead of automatically submitting another task.
 - Pause authentication/quota errors and use bounded backoff for transient failures.
 
@@ -20,6 +22,7 @@ Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The U
 Linux CI additionally runs `go test -race ./...` and container startup/persistence smoke tests.
 The development machine has no Docker. Use GitHub Actions for Docker validation and multiarch publishing rather than installing Docker.
 Meaningful tests must cover RSS/Atom and torrent parsing, independent naming rules, baseline/deduplication, restart recovery, partial actions, uncertain submissions, auth/quota/rate failures, HTTP authentication and CSRF.
+Folder tests cover paging, duplicate folder names by ID, creation collisions and account switches; naming tests cover disabled rules, replacement groups, nonmatches and legacy records. Opt-in `PIKPAK_LIVE_FOLDERS_TEST=1` verifies folder-only operations inside a dedicated test run without downloading content. UI testing uses an isolated mocked account and data directory; screenshots contain only fixture names.
 Document actual results in `docs/verification.md`; never claim a mocked test proves a real PikPak operation.
 
 ## Secrets and external actions

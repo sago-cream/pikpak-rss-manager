@@ -1,9 +1,70 @@
 package rename
 
 import (
+	"encoding/json"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"testing"
 )
+
+func TestOptionalRegexReplacement(t *testing.T) {
+	on, off := true, false
+	r := model.Rule{Title: "作品", RenameEnabled: &on, Mode: "replace", Regex: `^(?P<title>.+)_(?P<ep>\d+)\.(?P<ext>[^.]+)$`, Replacement: `${title} - E${ep}.${ext}`}
+	p, err := Render(r, "RSS S09E99", "葬送的芙莉蓮_03.mkv", true)
+	if err != nil || p.OldName != "葬送的芙莉蓮_03.mkv" || p.Name != "葬送的芙莉蓮 - E03.mkv" || !p.Matched {
+		t.Fatal(p, err)
+	}
+	r.Regex, r.Replacement = `(作品)_(\d+)`, `${1}-E${2}`
+	p, err = Render(r, "", "作品_01_作品_02.mp4", false)
+	if err != nil || p.Name != "作品-E01_作品-E02.mp4" {
+		t.Fatal(p, err)
+	}
+	r.Regex, r.Replacement = `^\[[^\]]+\]\s*`, ""
+	p, err = Render(r, "", "[字幕組] 作品 - 03.mp4", false)
+	if err != nil || p.Name != "作品 - 03.mp4" {
+		t.Fatal(p, err)
+	}
+	p, err = Render(r, "[字幕組] RSS - 99", "original.mp4", true)
+	if err != nil || p.Name != "original.mp4" || p.Matched {
+		t.Fatal("replacement used RSS fallback", p, err)
+	}
+	r.Regex, r.Replacement = `x`, `$$-${0}`
+	p, err = Render(r, "", "x.mp4", false)
+	if err != nil || p.Name != "$-x.mp4" {
+		t.Fatal(p, err)
+	}
+	r.RenameEnabled, r.Regex = &off, `(?<=invalid)`
+	p, err = Render(r, "", "保留 原名.mp4", false)
+	if err != nil || p.Name != "保留 原名.mp4" {
+		t.Fatal("disabled renaming changed a file", p, err)
+	}
+	r.RenameEnabled, r.Regex, r.Replacement = &on, `(x)`, "$2"
+	if Validate(r) == nil {
+		t.Fatal("unknown group accepted")
+	}
+	r.Replacement = `${missing}`
+	if Validate(r) == nil {
+		t.Fatal("unknown named group accepted")
+	}
+	r.Replacement = `${1`
+	if Validate(r) == nil {
+		t.Fatal("incomplete group accepted")
+	}
+	r.Replacement, r.Regex = "", `^.*$`
+	if _, err := Render(r, "", "x.mp4", false); err == nil {
+		t.Fatal("empty output accepted")
+	}
+}
+
+func TestLegacyRulesKeepRenaming(t *testing.T) {
+	var r model.Rule
+	if err := json.Unmarshal([]byte(`{"title":"作品","season":1,"regex":"S(?P<season>[0-9]+)E(?P<ep>[0-9]+)","template":"{title} - S{season:02}E{ep:02}.{ext}"}`), &r); err != nil {
+		t.Fatal(err)
+	}
+	p, err := Render(r, "", "S01E03.mp4", false)
+	if err != nil || !r.Renaming() || p.Name != "作品 - S01E03.mp4" {
+		t.Fatal("legacy rule changed", p, err)
+	}
+}
 
 func TestSubscriptionRulesAndActualExtension(t *testing.T) {
 	r := model.Rule{Title: "葬送的芙莉蓮", Season: 1, Regex: `\[(?P<ep>\d+)\].*?(?P<resolution>\d+p)`, Template: `{title} - S{season:02}E{ep:02} [{resolution}].{ext}`}
