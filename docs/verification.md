@@ -1,5 +1,13 @@
 # Verification
 
+## Automatic manual-task source detection (2026-10-04)
+
+Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, JavaScript syntax/localization checks and `git diff --check`. VCS stamping was disabled because the elevated build user differs from the checkout owner.
+
+Regression tests cover automatic v1/v2 Magnet normalization, `.torrent` paths with mixed case and query strings, direct HTTP/HTTPS URLs, legacy explicit types, invalid sources, private-network metadata policy and deduplication across automatic/legacy requests. General HTTP/HTTPS links are queued without fetching their content; extensionless torrent URLs use the direct URL path unless an API client explicitly requests torrent resolution.
+
+Headless Edge with an isolated mocked account and `.local/auto-links-ui-data` passed creating Magnet, HTTP and torrent tasks without a type selector or `source_type` request field, duplicate rejection, and a 390×844 viewport without horizontal overflow or browser errors. No real PikPak operation was performed.
+
 ## Current change (2026-10-04)
 
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, CGO-free build, JavaScript syntax checks, localization checks and `git diff --check`. The executable reports v0.5.0.

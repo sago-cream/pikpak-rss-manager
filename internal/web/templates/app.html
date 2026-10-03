@@ -14,7 +14,7 @@
     <div class="form-grid">
       <label class="full"><span id="sub-name-label">訂閱名稱</span><input id="sub-name" required maxlength="100" placeholder="訂閱名稱"></label>
       <label class="full"><span id="sub-url-label">RSS 連結</span><input id="sub-url" required type="url" placeholder="https://…"></label>
-      <label id="task-source-type-field" class="full hidden">連結類型<select id="task-source-type"><option value="torrent">Magnet／種子連結</option><option value="url">HTTP／HTTPS 下載連結</option></select></label><div class="full destination-field"><label for="sub-destination">PikPak 目標資料夾</label><div class="destination-input"><input id="sub-destination" placeholder="根目錄，或輸入 Anime/Series"><button id="browse-folders" type="button" class="button subtle"><img class="folder-icon" src="/static/folder.svg" alt=""> 選擇資料夾</button></div><span id="destination-help" class="field-help">從 PikPak 選取資料夾，也可手動輸入路徑。</span></div>
+      <div class="full destination-field"><label for="sub-destination">PikPak 目標資料夾</label><div class="destination-input"><input id="sub-destination" placeholder="根目錄，或輸入 Anime/Series"><button id="browse-folders" type="button" class="button subtle"><img class="folder-icon" src="/static/folder.svg" alt=""> 選擇資料夾</button></div><span id="destination-help" class="field-help">從 PikPak 選取資料夾，也可手動輸入路徑。</span></div>
       <div id="folder-browser" class="folder-browser full hidden">
         <div class="section-heading"><h3>選擇 PikPak 資料夾</h3><div><button type="button" class="text-button" data-folder="">回根目錄</button><button id="folder-close" type="button" class="icon-button" aria-label="收起資料夾選擇器">×</button></div></div>
         <nav id="folder-breadcrumbs" class="folder-breadcrumbs" aria-label="資料夾路徑"></nav>

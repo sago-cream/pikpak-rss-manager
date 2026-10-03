@@ -52,7 +52,7 @@ func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
 		h.ServeHTTP(response, r)
 		return response
 	}
-	in := map[string]string{"name": "Manual fixture", "url": "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567", "source_type": "torrent", "destination_id": "folder", "destination_account_ref": s.accountReference(c.AccountID)}
+	in := map[string]string{"name": "Manual fixture", "url": "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567", "destination_id": "folder", "destination_account_ref": s.accountReference(c.AccountID)}
 	if r := request(in, false, true); r.Code != 401 {
 		t.Fatal("anonymous job accepted")
 	}
@@ -113,7 +113,6 @@ func TestManualJobAuthenticationDeduplicationAndDestination(t *testing.T) {
 	}
 	in["destination_account_ref"] = ""
 	in["destination"] = "Downloads"
-	in["source_type"] = "url"
 	in["url"] = "https://example.test/file.mp4?private=fixture"
 	r = request(in, true, true)
 	if r.Code != 201 {
@@ -161,12 +160,90 @@ func TestManualTorrentMetadataPrivateNetworkPolicy(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := httptest.NewRequest("POST", "/api/jobs", strings.NewReader(`{"name":"Torrent fixture","source_type":"torrent","url":"`+source.URL+`"}`))
+			for i, body := range []string{
+				`{"name":"Torrent fixture","url":"` + source.URL + `/fixture.ToRrEnT?token=fixture"}`,
+				`{"name":"Torrent fixture","source_type":"torrent","url":"` + source.URL + `"}`,
+			} {
+				r := httptest.NewRequest("POST", "/api/jobs", strings.NewReader(body))
+				r.Header.Set("Content-Type", "application/json")
+				result := httptest.NewRecorder()
+				s.createJob(result, r)
+				want := http.StatusBadRequest
+				if allowed {
+					want = http.StatusCreated
+					if i == 1 {
+						want = http.StatusConflict // Same infohash across auto and legacy requests.
+					}
+				}
+				if result.Code != want {
+					t.Fatal("private metadata policy", i, result.Code, result.Body.String())
+				}
+			}
+		})
+	}
+}
+
+func TestManualAutomaticSourceDetection(t *testing.T) {
+	metadata, _ := bencode.EncodeBytes(map[string]any{"info": map[string]any{"name": "fixture.txt", "length": 1, "piece length": 16384, "pieces": "01234567890123456789"}})
+	torrent, err := feed.Torrent(metadata)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reads int
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reads++
+		w.Write(metadata)
+	}))
+	defer source.Close()
+	for _, tc := range []struct {
+		name, url, sourceType, key string
+		status, reads              int
+	}{
+		{"v1 magnet", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567", "", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
+		{"v2 magnet", "magnet:?xt=urn:btmh:1220" + strings.Repeat("A", 64), "auto", "btmh:1220" + strings.Repeat("a", 64), 201, 0},
+		{"torrent", source.URL + "/fixture.TORRENT?token=fixture", "", torrent.Key, 201, 1},
+		{"http", source.URL + "/file.mp4", "", "url:", 201, 0},
+		{"https share", "https://example.test/share/fixture?file=fixture.torrent", "", "url:", 201, 0},
+		{"legacy direct", source.URL + "/direct.torrent", "url", "url:", 201, 0},
+		{"invalid magnet", "magnet:?dn=fixture", "", "", 400, 0},
+		{"invalid scheme", "file:///fixture.torrent", "", "", 400, 0},
+		{"embedded credentials", "https://user:password@example.test/fixture.torrent", "", "", 400, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, err := store.Open(t.TempDir())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			cloud := testutil.NewCloud()
+			m := &folderManager{cloud}
+			worker := worker.New(db, m, feed.New(true))
+			s, err := initializedServer(t, "x", store.AppSettings{AllowPrivateFeeds: true}, db, m, worker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, _ := json.Marshal(map[string]string{"name": "Automatic fixture", "url": "  " + tc.url + "  ", "source_type": tc.sourceType})
+			r := httptest.NewRequest("POST", "/api/jobs", bytes.NewReader(body))
 			r.Header.Set("Content-Type", "application/json")
 			result := httptest.NewRecorder()
+			before := reads
 			s.createJob(result, r)
-			if allowed && result.Code != 201 || !allowed && result.Code != 400 {
-				t.Fatal("private metadata policy", result.Code)
+			if result.Code != tc.status || reads-before != tc.reads {
+				t.Fatal("source resolution", result.Code, reads-before, result.Body.String())
+			}
+			jobs, err := db.Jobs(context.Background(), 10)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.status == 201 {
+				if len(jobs) != 1 || !strings.HasPrefix(jobs[0].ResourceKey, tc.key) || jobs[0].Rule.Renaming() {
+					t.Fatal("incorrect automatic job snapshot")
+				}
+			} else if len(jobs) != 0 {
+				t.Fatal("invalid source created a job")
+			}
+			if cloud.Calls["submit"] != 0 {
+				t.Fatal("source detection submitted a cloud task")
 			}
 		})
 	}

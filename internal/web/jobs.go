@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -55,7 +56,14 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var resource feed.Resource
-	switch in.SourceType {
+	sourceType := in.SourceType
+	if sourceType == "" || sourceType == "auto" {
+		sourceType = "url"
+		if u, parseErr := url.Parse(source); parseErr == nil && (u.Scheme == "magnet" || strings.HasSuffix(strings.ToLower(u.Path), ".torrent")) {
+			sourceType = "torrent"
+		}
+	}
+	switch sourceType {
 	case "torrent":
 		// Fetch metadata only, with the current private-network policy and limits.
 		resource, err = feed.New(s.appSettings().AllowPrivateFeeds).Resolve(ctx, source)
@@ -66,7 +74,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 			resource = feed.Resource{Key: "url:" + hex.EncodeToString(hash[:]), URL: source}
 		}
 	default:
-		err = errors.New("請選擇下載連結類型")
+		err = errors.New("不支援的下載連結類型")
 	}
 	if err != nil {
 		failure(w, err)
