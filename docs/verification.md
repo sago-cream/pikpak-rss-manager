@@ -6,7 +6,19 @@ Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, CGO-free build, JavaS
 
 Headless Edge used an isolated mocked account and `.local/v050-ui-data-final`, without reading a real PAT or calling PikPak. Passed: English login, persisted language switching, unchanged Chinese subscription names, task creation with a selected folder, duplicate-source error, task details, 72 torrent samples and live filename warnings. At 1280×900 and 390×844, the regex textarea cannot resize, the form scrolls inside the rounded dialog, and there is no horizontal overflow or browser error. Fixture screenshots: [desktop](screenshots/v050-desktop.png), [mobile](screenshots/v050-mobile.png).
 
-Docker and Linux race validation remain for GitHub Actions; this development machine has no Docker. No v0.5.0 image has been published in this change, and real PikPak operations have not been rerun. Mocked tests do not prove real PikPak operations.
+An additional isolated first-run browser test passed English setup, automatic login, logout, translated wrong-password errors and switching back to Traditional Chinese.
+
+Functional commit `7893767` passed GitHub Actions:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, localization, Docker startup/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37147066885) |
+| main/latest amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37147066868) |
+| v0.5.0 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37147207385) |
+| Anonymous latest pulls and container persistence on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37147258471) |
+| Anonymous v0.5.0 pulls and container persistence on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37147403033) |
+
+This development machine has no Docker; container checks ran in Actions. Real PikPak operations have not been rerun, and no VPS was deployed. Mocked tests do not prove real PikPak operations.
 
 ## Reproduce
 
