@@ -18,6 +18,8 @@ Linux CI 加跑 `go test -race ./...`；容器建置後使用 `scripts/container
 
 v0.2.0 測試新增：資料夾分頁與檔案過濾、同名資料夾的 ID 身分、循環路徑、建立同名項目阻擋、建立回應遺失後不重送、CSRF／帳號切換隔離；重命名關閉、數字／具名群組、移除匹配、字面 `$`、所有匹配替換、未匹配保留原名、無效群組／空檔名、舊訂閱與任務規則相容、選取 ID 及開關重啟持久化。正式 worker 測試確認未勾選時沒有 rename 呼叫，仍執行 move；Regex 模式逐檔替換，不使用 RSS 標題回退。
 
+v0.3.0 測試新增：RSS 標題／Magnet 顯示名稱／真實種子檔名的來源區分；v1 多檔、UTF-8 路徑、v2 file tree；五筆來源、三次種子讀取與中繼資料／私人網路限制；來源 API 登入／CSRF 保護、敏感 URL 不回傳、同帳號原始檔名記錄、換帳號不沿用舊名稱；讀取範例不新建任務或修改基準。以使用者提供的 `\[(\d+)\]` → `S01E$1` 和含 `/` 的中英標題，驗證原始替換結果、實際檔名與警告。Worker 驗證新暫存目錄位於目標內，以及舊 staging ID 重試時保持原位置。容器 smoke 亦驗證 raw_name 與正規化提示。
+
 ## 真實 PikPak 實測（2026-10-03，台灣時間）
 
 用本機使用者提供的 PAT 透過官方 MCP 實測，PAT 不進入測試輸出、Git 或 Actions。測試目錄：`_pikpak-rss-manager-test/run-20261002T201936-d8752c`。所有測試 mutation 僅限本專案建立的測試目錄；測試檔案與任務保留供核對，未刪除既有內容。
@@ -69,5 +71,9 @@ Remove-Item Env:PIKPAK_LIVE_FOLDERS_TEST
 v0.2.0 介面以獨立的 mocked PikPak 帳號與資料目錄測試：新增訂閱預設不重命名；資料夾導覽、建立、選取與重新載入；勾選後顯示 Regex／替換欄位；前綴移除與具名群組新舊預覽；1280px 桌面與 390px 手機檢查。頁面與對話框沒有橫向溢出。此 UI 測試不讀取 PAT、不呼叫真實 PikPak，雲端資料夾真實驗證由上一節分開記錄。畫面：`docs/screenshots/folder-picker.png`、`docs/screenshots/subscription-editor.png`、`docs/screenshots/mobile-editor.png`。
 
 這次功能更新的版本為 [`v0.2.0`](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.2.0)，本機 Go 測試、vet、CGO-free build 與 JavaScript／Python 語法檢查通過；對應 CI、多架構發布與匿名容器 smoke 的實際結果附於 Release。
+
+v0.3.0 已通過本機完整 Go 測試、vet、CGO-free build 與 JavaScript／Python 語法檢查。介面使用獨立 localhost RSS／小型種子中繼資料與 mocked PikPak，驗證來源選擇與自動預覽、含 `/` 的原始替換及實際檔名分列、按鈕開啟小型新增資料夾視窗、Enter 建立與 Escape 取消、選取保存與重新載入。1280px 桌面及 390px 手機沒有頁面或對話框橫向溢出，瀏覽器無錯誤；沒有讀取 PAT 或新增真實雲端任務。新增畫面：`docs/screenshots/source-preview.png`、`docs/screenshots/folder-create.png`；既有資料夾／訂閱／手機截圖亦已更新。容器與發布的最終結果附於 [v0.3.0 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.0)。
+
+OAuth 調研僅讀取官方公開文件及 discovery（無憑證），確認宣告的端點與流程；沒有註冊 client、完成同意流程或測試 refresh token，不代表 OAuth 已可在本服務使用。詳見 [授權比較](auth-comparison.md)。
 
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。

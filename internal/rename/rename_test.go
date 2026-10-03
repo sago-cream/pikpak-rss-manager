@@ -3,6 +3,7 @@ package rename
 import (
 	"encoding/json"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +53,20 @@ func TestOptionalRegexReplacement(t *testing.T) {
 	r.Replacement, r.Regex = "", `^.*$`
 	if _, err := Render(r, "", "x.mp4", false); err == nil {
 		t.Fatal("empty output accepted")
+	}
+}
+
+func TestPreviewSeparatesReplacementFromFilenameNormalization(t *testing.T) {
+	on := true
+	r := model.Rule{Title: "FX戰士", RenameEnabled: &on, Mode: "replace", Regex: `\[(\d+)\]`, Replacement: `S01E$1`}
+	original := `[北宇治字幕组] FX战士久留美 / FX Senshi Kurumi-chan [01][WebRip][HEVC_AAC][繁日内嵌]`
+	p, err := Render(r, "", original, false)
+	if err != nil || p.RawName != `[北宇治字幕组] FX战士久留美 / FX Senshi Kurumi-chan S01E01[WebRip][HEVC_AAC][繁日内嵌]` || !strings.Contains(p.Name, " _ FX Senshi") || len(p.Warnings) != 1 {
+		t.Fatal("replacement was confused with filename normalization", p, err)
+	}
+	p, err = Render(r, "", "作品 [01].mkv", false)
+	if err != nil || p.Name != "作品 S01E01.mkv" || p.RawName != p.Name || len(p.Warnings) != 0 {
+		t.Fatal("normal filename changed or warned unnecessarily", p, err)
 	}
 }
 

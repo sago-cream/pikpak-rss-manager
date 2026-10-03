@@ -53,6 +53,7 @@ type Server struct {
 	Version     string
 	hash        []byte
 	passwordKey []byte
+	feeds       *feed.Client
 	templates   *template.Template
 	mu          sync.Mutex
 	sessions    map[string]session
@@ -75,7 +76,7 @@ func New(c config.Config, db *store.Store, m CloudManager, w *worker.Worker, ver
 	if err != nil {
 		return nil, err
 	}
-	return &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, passwordKey: passwordKey, templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}, nil
+	return &Server{DB: db, Manager: m, Worker: w, Config: c, Version: version, hash: hash, passwordKey: passwordKey, feeds: feed.New(c.AllowPrivateFeeds), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}, nil
 }
 
 // Keyed, printable pre-hashing preserves the entire password while keeping the
@@ -247,6 +248,7 @@ func (s *Server) Handler() http.Handler {
 		}
 		JSON(w, 200, map[string]bool{"ok": true})
 	}))
+	mux.HandleFunc("POST /api/feeds/samples", s.protected(s.sourceSamples))
 	mux.HandleFunc("POST /api/rules/preview", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Rule     model.Rule `json:"rule"`

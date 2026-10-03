@@ -90,6 +90,13 @@ with tempfile.TemporaryDirectory() as directory:
             "filename": "作品_03.mkv"})
         assert preview["old_name"] == "作品_03.mkv"
         assert preview["name"] == "作品 - E03.mkv" and preview["matched"] is True
+        assert preview["raw_name"] == preview["name"]
+        adjusted = request("/api/rules/preview", "POST", {
+            "rule": {"title": "命名測試", "rename_enabled": True, "mode": "replace",
+                     "regex": r"\[(\d+)\]", "replacement": "S01E$1"},
+            "filename": "中文 / English [01].mkv"})
+        assert adjusted["raw_name"] == "中文 / English S01E01.mkv"
+        assert adjusted["name"] == "中文 _ English S01E01.mkv" and adjusted["warnings"]
         compose("down")  # volume and AES key are intentionally retained
         compose("up", "-d", "--pull", "never")
         ready()

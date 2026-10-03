@@ -20,6 +20,8 @@ var unsafeName = regexp.MustCompile(`[\\/:*?"<>|\x00-\x1f]`)
 type Preview struct {
 	OldName   string            `json:"old_name"`
 	Name      string            `json:"name"`
+	RawName   string            `json:"raw_name"`
+	Warnings  []string          `json:"warnings,omitempty"`
 	Matched   bool              `json:"matched"`
 	Variables map[string]string `json:"variables"`
 }
@@ -153,6 +155,7 @@ func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (P
 	}
 	if !r.Renaming() {
 		p.Name = filename
+		p.RawName = filename
 		return p, nil
 	}
 	re := regexp.MustCompile(r.Regex)
@@ -162,11 +165,14 @@ func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (P
 		}
 		p.Matched = re.MatchString(filename)
 		p.Name = filename
+		p.RawName = filename
 		if !p.Matched {
 			return p, nil
 		}
-		name, err := safeName(re.ReplaceAllString(filename, r.Replacement))
+		p.RawName = re.ReplaceAllString(filename, r.Replacement)
+		name, err := safeName(p.RawName)
 		p.Name = name
+		p.nameWarnings()
 		return p, err
 	}
 	values, err := captures(re, filename)
@@ -217,13 +223,21 @@ func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (P
 	if renderErr != nil {
 		return p, renderErr
 	}
+	p.RawName = name
 	name, err = safeName(name)
 	if err != nil {
 		return p, err
 	}
 	p.Name = name
+	p.nameWarnings()
 	p.Matched = true
 	return p, nil
+}
+
+func (p *Preview) nameWarnings() {
+	if p.RawName != p.Name && p.Name != "" {
+		p.Warnings = append(p.Warnings, "Regex／範本替換結果含檔名不適用的字元（例如 / 或 \\），或前後空白／句點；實際儲存時已替換為底線或移除。")
+	}
 }
 
 func safeName(name string) (string, error) {

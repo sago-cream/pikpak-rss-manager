@@ -90,12 +90,13 @@ function openSubscription(id) {
   $('#rename-mode-label').classList.toggle('hidden',!sub||sub.rename_mode==='replace');
   $('#sub-template').value=sub?.template||'{title} - S{season:02}E{ep:02}.{ext}';
   $('#sub-regex').value=sub?.regex??'^\\[[^\\]]+\\]\\s*'; $('#sub-replacement').value=sub?.replacement||'';
-  closeFolderBrowser(); updateRenameOptions(); $('#browse-folders').disabled=!data.status.connected||!!data.status.paused;
+  closeFolderBrowser(); clearSourceSamples(); updateRenameOptions(); $('#browse-folders').disabled=!data.status.connected||!!data.status.paused;
   $('#destination-help').textContent=data.status.connected?'從 PikPak 選取資料夾，也可手動輸入路徑。':'綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。';
   $('#subscription-dialog').showModal();
 }
 function formRule(){return {title:$('#sub-name').value.trim(),season:Number($('#sub-season').value),regex:$('#sub-regex').value,template:$('#sub-template').value,rename_enabled:$('#sub-rename-enabled').checked,mode:$('#sub-rename-mode').value,replacement:$('#sub-replacement').value};}
 function updateRenameOptions(){
+  previewRequest++;
   const enabled=$('#sub-rename-enabled').checked, legacy=$('#sub-rename-mode').value==='template';
   $('#rename-options').classList.toggle('hidden',!enabled); $('#legacy-options').classList.toggle('hidden',!legacy); $('#replacement-options').classList.toggle('hidden',legacy); $('#preview-title-label').classList.toggle('hidden',!legacy);
   for(const id of ['sub-regex','sub-replacement','sub-template','sub-season','sub-rename-mode'])$('#'+id).disabled=!enabled;
@@ -104,8 +105,15 @@ function updateRenameOptions(){
   $('#preview-result').className='preview-result'; $('#preview-result').textContent='輸入原始檔名，預覽替換結果。';
 }
 
-let folderState=null, folderRequest=0;
-function closeFolderBrowser(){folderRequest++;folderState=null;$('#folder-browser').classList.add('hidden');$('#folder-list').innerHTML='';$('#new-folder-name').value='';}
+let folderState=null, folderRequest=0, folderCreateContext=null;
+function closeFolderBrowser(){folderRequest++;folderState=null;folderCreateContext=null;$('#folder-create-dialog').close();$('#folder-browser').classList.add('hidden');$('#folder-list').innerHTML='';}
+function openFolderCreate(){
+  if(!folderState)return;
+  folderCreateContext={parent_id:folderState.current.id,account_ref:folderState.account_ref};
+  $('#folder-create-form').reset();$('#folder-create-error').textContent='';$('#folder-create-location').textContent=`建立位置：${folderState.current.path||'根目錄'}`;
+  $('#folder-create-form button[type=submit]').disabled=false;
+  $('#folder-create-dialog').showModal();
+}
 function renderFolders(){
   if(!folderState)return;
   $('#folder-breadcrumbs').innerHTML=folderState.breadcrumbs.map(d=>`<button type="button" class="text-button" data-folder="${escapeHTML(d.id)}">${escapeHTML(d.name)}</button>`).join('<span>/</span>');
@@ -127,7 +135,36 @@ async function loadFolders(parent='',token='',append=false){
   finally{if(sequence===folderRequest)$('#folder-more').disabled=false;}
 }
 function showRenamePreview(result){
-  const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>原始檔名</span><code>${escapeHTML(result.old_name)}</code></div><div class="rename-preview-row"><span>新檔名</span><code>${escapeHTML(result.name)}</code></div>${result.matched?'':'<p class="field-help">Regex 未匹配，保留原名。</p>'}`;
+  const adjusted=result.raw_name!==undefined&&result.raw_name!==result.name;
+  const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>原始內容</span><code>${escapeHTML(result.old_name)}</code></div>${adjusted?`<div class="rename-preview-row"><span>Regex 替換結果</span><code>${escapeHTML(result.raw_name)}</code></div>`:''}<div class="rename-preview-row"><span>${adjusted?'實際儲存檔名':'新檔名'}</span><code>${escapeHTML(result.name)}</code></div>${(result.warnings||[]).map(w=>`<p class="preview-warning">${escapeHTML(w)}</p>`).join('')}${result.matched?'':'<p class="field-help">Regex 未匹配，保留原名。</p>'}`;
+}
+let sourceSamples=[],sourceRequest=0;
+const sampleLabels={torrent_file:'種子檔名',downloaded_file:'已下載原始檔名',magnet_name:'Magnet 顯示名稱',rss_title:'RSS 標題（示意）'};
+function clearSourceSamples(){sourceRequest++;previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='可從 RSS／種子取得範例，也可手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
+async function selectSourceSample(){
+  const sample=sourceSamples[Number($('#preview-source').value)];if(!sample)return;
+  $('#preview-filename').value=sample.filename;$('#preview-title').value=sample.title;
+  $('#preview-source-help').textContent=sample.kind==='torrent_file'?'已從種子中繼資料取得檔名，不下載媒體。':sample.kind==='downloaded_file'?'使用此訂閱近期任務記錄中的原始檔名。':'此來源只有發布／顯示名稱，無法保證與實際檔名一致；副檔名及多檔內容需以種子或已下載檔案確認。';
+  if($('#sub-name').value.trim())await previewRule();
+}
+async function loadSourceSamples(){
+  const url=$('#sub-url').value.trim();if(!url)throw new Error('請先填寫 RSS 連結');
+  const sequence=++sourceRequest;$('#source-samples').disabled=true;$('#preview-source-help').textContent='正在讀取來源中繼資料…';
+  try{
+    const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0});
+    if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
+    sourceSamples=result.items;$('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">【${escapeHTML(sampleLabels[s.kind]||'來源')}】${escapeHTML(s.filename)}</option>`).join('');
+    $('#preview-source-label').classList.toggle('hidden',!sourceSamples.length);
+    if(sourceSamples.length){$('#preview-source').value='0';await selectSourceSample();}else $('#preview-source-help').textContent='目前 RSS 沒有可用的種子／Magnet 範例，可手動輸入檔名。';
+    if(result.notices?.length)toast(result.notices[0]);
+  }catch(e){if(sequence===sourceRequest)$('#preview-source-help').textContent=e.message;}
+  finally{if(sequence===sourceRequest)$('#source-samples').disabled=false;}
+}
+let previewRequest=0;
+async function previewRule(){
+  const sequence=++previewRequest;
+  try{const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:$('#preview-filename').value});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
+  catch(e){if(sequence===previewRequest){$('#preview-result').className='preview-result error';$('#preview-result').textContent=e.message;}}
 }
 async function showJob(id) {
   try { const details=await api(`/api/jobs/${encodeURIComponent(id)}`); const j=details.job;
@@ -145,6 +182,8 @@ document.addEventListener('click',async event=>{
   if(button.dataset.edit){openSubscription(button.dataset.edit);return;}
   if(button.id==='browse-folders'){await loadFolders($('#sub-destination-id').value);return;}
   if(button.id==='folder-close'){closeFolderBrowser();return;}
+  if(button.id==='folder-create'){openFolderCreate();return;}
+  if(button.classList.contains('close-folder-create')){folderCreateContext=null;$('#folder-create-dialog').close();return;}
   if(button.hasAttribute('data-folder')){await loadFolders(button.dataset.folder);return;}
   if(button.id==='folder-more'&&folderState){await loadFolders(folderState.current.id,folderState.next_token,true);return;}
   if(button.id==='folder-select'&&folderState){$('#sub-destination').value=folderState.current.path;$('#sub-destination-id').value=folderState.current.id;$('#sub-destination-account-ref').value=folderState.account_ref;closeFolderBrowser();return;}
@@ -152,14 +191,14 @@ document.addEventListener('click',async event=>{
   if(button.dataset.filter){jobFilter=button.dataset.filter;for(const b of document.querySelectorAll('[data-filter]'))b.classList.toggle('selected',b===button);render();return;}
   button.disabled=true;
   try {
-    if(button.id==='folder-create'&&folderState){const name=$('#new-folder-name').value;if(!name.trim())throw new Error('請輸入資料夾名稱');const result=await api('/api/pikpak/folders','POST',{parent_id:folderState.current.id,name,account_ref:folderState.account_ref});$('#new-folder-name').value='';await loadFolders(result.folder.id);toast('資料夾已建立，可按「使用此資料夾」選取');}
     if(button.id==='refresh'){await load();toast('已更新面板');}
     if(button.dataset.check||button.dataset.backfill){const id=button.dataset.check||button.dataset.backfill;if(button.dataset.backfill&&!confirm('補抓 RSS 中現有的項目？符合規則的項目會建立雲端任務並使用 PikPak 配額。'))return;await api(`/api/subscriptions/${id}/check`,'POST',{backfill:!!button.dataset.backfill});toast('訂閱檢查完成');await load();}
     if(button.dataset.delete){if(!confirm('刪除這筆訂閱？已建立的任務與雲端檔案會保留。'))return;await api(`/api/subscriptions/${button.dataset.delete}`,'DELETE');toast('訂閱已刪除');await load();}
     if(button.dataset.retry){await api(`/api/jobs/${button.dataset.retry}/retry`,'POST',{});$('#job-dialog').close();toast('已重新核對或排入接續處理');await load();}
     if(button.id==='check-connection'){await api('/api/settings/pikpak/check','POST',{});toast('PikPak 連線已更新；暫停的任務可個別接續');await load();}
     if(button.id==='logout'||button.id==='logout-mobile'){await api('/api/logout','POST',{});location.reload();}
-    if(button.id==='preview-button'){const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:$('#preview-filename').value});showRenamePreview(result);}
+    if(button.id==='preview-button')await previewRule();
+    if(button.id==='source-samples')await loadSourceSamples();
   }catch(e){if(button.id==='preview-button'){$('#preview-result').className='preview-result error';$('#preview-result').textContent=e.message;}else toast(e.message,true);}
   finally{button.disabled=false;}
 });
@@ -169,12 +208,22 @@ async function start(){
     $('#login-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;$('#login-error').textContent='';try{await api('/api/login','POST',{password:$('#password').value});location.reload();}catch(e){$('#login-error').textContent=e.message;}finally{button.disabled=false;}});return;
   }
   $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();await api(`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),season:rule.season,regex:rule.regex,template:rule.template,rename_enabled:rule.rename_enabled,rename_mode:rule.mode,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast('訂閱設定已儲存');await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
+  $('#folder-create-form').addEventListener('submit',async event=>{
+    event.preventDefault();if(!folderCreateContext)return;
+    const context=folderCreateContext,sequence=folderRequest,button=event.target.querySelector('button[type=submit]');
+    button.disabled=true;$('#folder-create-error').textContent='';
+    try{const result=await api('/api/pikpak/folders','POST',{...context,name:$('#new-folder-name').value});if(context!==folderCreateContext||sequence!==folderRequest||!$('#subscription-dialog').open)return;$('#folder-create-dialog').close();await loadFolders(result.folder.id);toast('資料夾已建立，可按「使用此資料夾」選取');}
+    catch(e){if(context===folderCreateContext)$('#folder-create-error').textContent=e.message;}
+    finally{if(context===folderCreateContext||!$('#folder-create-dialog').open)button.disabled=false;}
+  });
+  $('#folder-create-dialog').addEventListener('cancel',()=>{folderCreateContext=null;});
+  $('#subscription-dialog').addEventListener('close',()=>{closeFolderBrowser();clearSourceSamples();});
   $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast('PAT 已驗證並安全保存');await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=!!data.status.external;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);$('#sub-rename-mode').addEventListener('change',updateRenameOptions);
   $('#sub-destination').addEventListener('input',()=>{$('#sub-destination-id').value='';$('#sub-destination-account-ref').value='';});
   $('#folder-search').addEventListener('input',renderFolders);
-  $('#new-folder-name').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();$('#folder-create').click();}});
+  $('#sub-url').addEventListener('input',clearSourceSamples);$('#preview-source').addEventListener('change',selectSourceSample);
   setInterval(()=>{if(!document.hidden&&!$('#subscription-dialog').open&&!$('#job-dialog').open)load(true);},15000);
 }
 start().catch(e=>{if($('#login-error'))$('#login-error').textContent=e.message;else toast(e.message,true);});

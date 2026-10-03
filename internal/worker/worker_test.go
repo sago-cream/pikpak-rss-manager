@@ -194,6 +194,38 @@ func TestSelectedFolderIDAndChangedAccount(t *testing.T) {
 		t.Fatal("changed account still queued selected-folder downloads")
 	}
 }
+func TestStagingInsideDestinationAndLegacyIDResumption(t *testing.T) {
+	w, cloud, _, _, sub, _ := setup(t)
+	ctx := context.Background()
+	j := enqueue(t, w, sub, "queued")
+	if err := w.Process(ctx, j.ID); err != nil {
+		t.Fatal(err)
+	}
+	j = saved(t, w, j)
+	stage := cloud.Files[j.StagingID]
+	container := cloud.Files[stage.ParentID]
+	if container.Name != "_PikPak-RSS-Staging" || container.ParentID != j.DestinationID || j.DestinationID == "" || stage.Name != j.ID {
+		t.Fatal("staging was created outside the destination")
+	}
+	for _, file := range cloud.Files {
+		if file.Name == "_PikPak-RSS-Staging" && file.ParentID == "" {
+			t.Fatal("new default staging polluted the account root")
+		}
+	}
+	legacy := enqueue(t, w, sub, "queued")
+	legacy.DestinationID = j.DestinationID
+	legacy.StagingID = "legacy-stage"
+	cloud.Files["legacy-root"] = pikpak.File{ID: "legacy-root", Name: "_PikPak-RSS-Staging", Kind: "drive#folder"}
+	cloud.Files[legacy.StagingID] = pikpak.File{ID: legacy.StagingID, Name: legacy.ID, ParentID: "legacy-root", Kind: "drive#folder"}
+	if err := w.DB.SaveJob(ctx, &legacy); err != nil {
+		t.Fatal(err)
+	}
+	before := cloud.Calls["mkdir"]
+	if err := w.Process(ctx, legacy.ID); err != nil || saved(t, w, legacy).StagingID != legacy.StagingID || cloud.Calls["mkdir"] != before {
+		t.Fatal("saved legacy staging was moved or recreated", err)
+	}
+}
+
 func TestUncertainSubmitAndCrashNeverResubmit(t *testing.T) {
 	w, c, _, _, sub, _ := setup(t)
 	ctx := context.Background()

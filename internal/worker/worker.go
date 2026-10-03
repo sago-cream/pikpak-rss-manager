@@ -244,11 +244,15 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 			}
 		}
 		if j.StagingID == "" {
+			stagingParent := j.DestinationID
 			stagingPath := w.StagingPath
 			if stagingPath == "" {
 				stagingPath = "_PikPak-RSS-Staging"
+			} else {
+				// Explicit paths are reserved for isolated cloud test namespaces.
+				stagingParent = ""
 			}
-			root, e := ensurePath(ctx, api, "", stagingPath)
+			root, e := ensurePath(ctx, api, stagingParent, stagingPath)
 			if e != nil {
 				return w.failure(ctx, &j, e, false)
 			}
