@@ -37,7 +37,7 @@ func TestSamplesAllReadsOnceConcurrentlyAndKeepsEveryFilename(t *testing.T) {
 		defer active.Add(-1)
 		for old := peak.Load(); n > old && !peak.CompareAndSwap(old, n); old = peak.Load() {
 		}
-		if n == 3 {
+		if n == 5 {
 			once.Do(func() { close(release) })
 		}
 		select {
@@ -56,7 +56,7 @@ func TestSamplesAllReadsOnceConcurrentlyAndKeepsEveryFilename(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	out, err := New(true).SamplesAll(ctx, srv.URL+"/feed")
-	if err != nil || len(out.Items) != 8*65+1 || len(out.Notices) != 0 || out.NextCursor != "" || feedReads.Load() != 1 || peak.Load() != 3 {
+	if err != nil || len(out.Items) != 8*65+1 || len(out.Notices) != 0 || out.NextCursor != "" || feedReads.Load() != 1 || peak.Load() != 5 {
 		t.Fatal("all-source read failed", len(out.Items), out.Notices, feedReads.Load(), peak.Load(), err)
 	}
 	for i := range reads {
@@ -148,7 +148,7 @@ func TestSamplesAllBoundsTotalMetadata(t *testing.T) {
 	}))
 	defer srv.Close()
 	out, err := New(true).SamplesAll(context.Background(), srv.URL+"/feed")
-	if err != nil || requests.Load() > 34 || requests.Load() < 32 || len(out.Notices) == 0 || !strings.Contains(out.Notices[0], "32 MiB") {
+	if err != nil || requests.Load() > 36 || requests.Load() < 32 || len(out.Notices) == 0 || !strings.Contains(out.Notices[0], "32 MiB") {
 		t.Fatal("total metadata budget not enforced", requests.Load(), out.Notices, err)
 	}
 }

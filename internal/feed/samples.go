@@ -34,8 +34,9 @@ type Samples struct {
 const sampleEntriesPerPage = 5
 const sampleTorrentsPerPage = 3
 const sampleNamesPerPage = 30
+const sampleTorrentConcurrency = 5
 
-// SamplesAll reads one feed snapshot and each distinct torrent once. Three
+// SamplesAll reads one feed snapshot and each distinct torrent once. Five
 // workers bound simultaneous requests; request-wide budgets bound retained data.
 func (c *Client) SamplesAll(ctx context.Context, feedURL string) (Samples, error) {
 	out := Samples{Items: []Sample{}, Notices: []string{}}
@@ -60,7 +61,7 @@ func (c *Client) SamplesAll(ctx context.Context, feedURL string) (Samples, error
 	var overBudget atomic.Bool
 	queue := make(chan int)
 	var workers sync.WaitGroup
-	for range min(3, len(urls)) {
+	for range min(sampleTorrentConcurrency, len(urls)) {
 		workers.Go(func() {
 			for index := range queue {
 				if readCtx.Err() != nil {

@@ -70,6 +70,43 @@ func TestPreviewSeparatesReplacementFromFilenameNormalization(t *testing.T) {
 	}
 }
 
+func TestReplacementPreviewDoesNotRequireSubscriptionTitle(t *testing.T) {
+	on, off := true, false
+	for _, title := range []string{"", "   ", strings.Repeat("x", 501)} {
+		r := model.Rule{Title: title, RenameEnabled: &on, Mode: "replace", Regex: "^prefix-", Replacement: ""}
+		for original, want := range map[string]string{"prefix-作品.mkv": "作品.mkv", "original.mp4": "original.mp4"} {
+			p, err := Render(r, "RSS title", original, true)
+			if err != nil || p.Name != want || p.RawName != want {
+				t.Fatal("replacement depends on unused subscription title", p, err)
+			}
+		}
+		if Validate(r) == nil {
+			t.Fatal("subscription without valid title can be saved")
+		}
+		r.RenameEnabled = &off
+		p, err := Render(r, "", "original.mp4", false)
+		if err != nil || p.Name != "original.mp4" || Validate(r) == nil {
+			t.Fatal("disabled rendering or subscription validation changed", p, err)
+		}
+		r.RenameEnabled, r.Mode, r.Season, r.Template = &on, "template", 1, DefaultTemplate
+		if _, err := Render(r, "", "S01E03.mkv", false); err == nil {
+			t.Fatal("template accepted invalid title")
+		}
+		r.Mode = ""
+		if _, err := Render(r, "", "S01E03.mkv", false); err == nil {
+			t.Fatal("legacy template accepted invalid title")
+		}
+	}
+	r := model.Rule{RenameEnabled: &on, Mode: "replace", Regex: "(prefix)-", Replacement: "$2"}
+	if _, err := Render(r, "", "prefix-file.mkv", false); err == nil || !strings.Contains(err.Error(), "捕捉群組") {
+		t.Fatal("missing title hid invalid replacement", err)
+	}
+	r.Regex, r.Replacement = "(?<=prefix)", ""
+	if _, err := Render(r, "", "prefix-file.mkv", false); err == nil || !strings.Contains(err.Error(), "RE2") {
+		t.Fatal("missing title hid invalid regex", err)
+	}
+}
+
 func TestLegacyRulesKeepRenaming(t *testing.T) {
 	var r model.Rule
 	if err := json.Unmarshal([]byte(`{"title":"作品","season":1,"regex":"S(?P<season>[0-9]+)E(?P<ep>[0-9]+)","template":"{title} - S{season:02}E{ep:02}.{ext}"}`), &r); err != nil {

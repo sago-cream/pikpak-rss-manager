@@ -30,8 +30,17 @@ func Validate(r model.Rule) error {
 	if strings.TrimSpace(r.Title) == "" || len(r.Title) > 500 {
 		return errors.New("作品名稱必須為 1–500 位元組")
 	}
+	return validateNaming(r)
+}
+
+// Filename replacement does not use a subscription title. Only persisted rules
+// and legacy templates require it; previews validate the naming operation itself.
+func validateNaming(r model.Rule) error {
 	if !r.Renaming() {
 		return nil
+	}
+	if (r.Mode == "" || r.Mode == "template") && (strings.TrimSpace(r.Title) == "" || len(r.Title) > 500) {
+		return errors.New("作品名稱必須為 1–500 位元組")
 	}
 	if len(r.Regex) > 4096 {
 		return errors.New("正則表達式過長")
@@ -147,7 +156,7 @@ func captures(re *regexp.Regexp, input string) (map[string]string, error) {
 
 func Render(r model.Rule, rssTitle, filename string, allowTitleFallback bool) (Preview, error) {
 	p := Preview{OldName: filename, Variables: map[string]string{}}
-	if err := Validate(r); err != nil {
+	if err := validateNaming(r); err != nil {
 		return p, err
 	}
 	if len(rssTitle) > 8192 || len(filename) > 8192 {

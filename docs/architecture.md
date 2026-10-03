@@ -88,7 +88,7 @@ RSS 與檔案整理排程每五秒掃描到期紀錄；預設訂閱間隔十分�
 | `POST /api/subscriptions/{id}/check` | `{ "backfill": false }`，手動檢查 |
 | `GET /api/pikpak/folders?parent_id=…&token=…` | 目前資料夾、路徑導覽、子資料夾、next_token、account_ref |
 | `POST /api/pikpak/folders` | `{ "parent_id": "…", "name": "…", "account_ref": "…" }`，在目前位置新增資料夾 |
-| `POST /api/feeds/samples` | UI 使用 `{ "url": "https://…", "subscription_id": 1, "all": true }` 一次讀取所有檔名；回傳 items（title、filename、kind）及 notices，RSS／每個不同種子 URL 只讀一次，最多三個並行；保留部分成功結果並提示限制／失敗；不建立任務。未指定 all 時保留舊 cursor 分頁 API 相容性 |
+| `POST /api/feeds/samples` | UI 使用 `{ "url": "https://…", "subscription_id": 1, "all": true }` 一次讀取所有檔名；回傳 items（title、filename、kind）及 notices，RSS／每個不同種子 URL 只讀一次，最多五個並行；保留部分成功結果並提示限制／失敗；不建立任務。未指定 all 時保留舊 cursor 分頁 API 相容性 |
 | `POST /api/rules/preview` | `{ "rule": {title, rename_enabled, mode: "replace", regex, replacement}, "filename": "actual.mkv" }`；回傳 old_name、raw_name、name、matched、warnings |
 | `GET /api/jobs`、`GET /api/jobs/{id}` | 任務及逐檔紀錄 |
 | `POST /api/jobs/{id}/retry` | 從安全階段接續／核對 |

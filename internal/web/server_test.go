@@ -187,6 +187,22 @@ func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 	if code != 400 {
 		t.Fatal("trailing JSON accepted")
 	}
+	on := true
+	replacementRule := model.Rule{RenameEnabled: &on, Mode: "replace", Regex: "^prefix-", Replacement: ""}
+	preview, _ = json.Marshal(map[string]any{"rule": replacementRule, "title": "RSS title", "filename": "prefix-作品.mp4"})
+	code, body, _ = request("POST", "/api/rules/preview", string(preview), info.CSRF, srv.URL)
+	var result rename.Preview
+	if err := json.Unmarshal([]byte(body), &result); code != 200 || err != nil || result.Name != "作品.mp4" || result.RawName != result.Name {
+		t.Fatal("replacement preview requires subscription title", code, body)
+	}
+	unnamed := sub
+	unnamed.ID, unnamed.Name, unnamed.RenameEnabled, unnamed.RenameMode = 0, "", &on, "replace"
+	unnamed.Regex, unnamed.Replacement = replacementRule.Regex, replacementRule.Replacement
+	b, _ = json.Marshal(unnamed)
+	code, body, _ = request("POST", "/api/subscriptions", string(b), info.CSRF, srv.URL)
+	if code != 400 || !strings.Contains(body, "作品名稱") {
+		t.Fatal("unnamed subscription was saved", code, body)
+	}
 	secret := "unique-provider-secret-for-this-test"
 	_ = db.SetSetting(context.Background(), "pikpak_token", secret)
 	j := model.Job{ID: store.ID(), SubscriptionID: sub.ID, AccountID: "private-account-id", ResourceKey: "btih:one", ResourceURL: "magnet:?private=test-tracker-key", State: "queued"}
