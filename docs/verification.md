@@ -152,3 +152,15 @@ v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接
 Regex 替換的共享 renderer 改為驗證命名操作本身，避免尚未填寫訂閱名稱時阻擋檔名預覽。新增測試確認空白、全空白及過長的訂閱名稱不影響 Regex 匹配／非匹配結果；無效 Regex 或捕捉群組仍回傳相應錯誤。停用重命名保留原檔名；既有範本仍要求有效作品名稱，儲存訂閱仍拒絕無效名稱。HTTP 回歸測試驗證空白名稱的替換預覽成功，同樣的未命名訂閱儲存仍拒絕。
 
 本機完整 `go test ./...`、`go vet ./...` 與 CGO-free build 通過，`dev.ps1 -Version` 顯示 `v0.4.2`。瀏覽器使用隔離 mocked 帳號與 `.local/all-ui-data2`：新增訂閱不填名稱，讀取 72 個實際檔名後成功顯示替換結果；選取第 65 個檔名後結果亦正確更新，console 無錯誤／警告。畫面僅含 fixture：`docs/screenshots/preview-without-title.png`。此次未讀取使用者 PAT、呼叫真實 PikPak 或建立下載任務；本機沒有 Docker，容器及多架構發布結果於完成後記錄在 [v0.4.2 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.2)。
+
+功能提交 `9f2de74` 的 GitHub Actions 已全部通過：
+
+| 驗證 | 實際結果／證據 |
+|---|---|
+| Linux race、vet、build、容器啟動／登入／資料持久化 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143623273) |
+| main/latest 的 amd64、arm64 映像發布 | [main 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143623264) |
+| v0.4.2 的 amd64、arm64 映像發布 | [Tag 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143623521) |
+| v0.4.2 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [公開映像 smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143807114) |
+| latest 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [latest smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143827497) |
+
+v0.4.2 匿名 manifest 亦確認含兩種 Linux 架構。以上容器驗證不代表真實 PikPak 操作或 VPS 部署。
