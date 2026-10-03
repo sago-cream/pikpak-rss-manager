@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/wade00754/pikpak-rss-manager/internal/app"
 	"github.com/wade00754/pikpak-rss-manager/internal/config"
@@ -9,14 +10,21 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata"
 )
 
-var version = "dev"
+//go:embed VERSION
+var releaseVersion string
+
+var version string
 
 func main() {
+	if version == "" {
+		version = strings.TrimSpace(releaseVersion)
+	}
 	command := "serve"
 	if len(os.Args) > 1 {
 		command = os.Args[1]

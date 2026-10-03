@@ -12,15 +12,30 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
+      - name: Verify release version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          source_version="$(cat cmd/pikpak-rss-manager/VERSION)"
+          [[ "$source_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(go run ./cmd/pikpak-rss-manager version)" = "$source_version"
+          if [[ -n "$RELEASE_TAG" && "$RELEASE_TAG" != "$source_version" ]]; then
+            echo "::error::Release tag must match cmd/pikpak-rss-manager/VERSION"
+            exit 1
+          fi
+          echo "version=$source_version" >> "$GITHUB_OUTPUT"
       - run: go test -race ./...
       - run: go vet ./...
-      - run: docker build --build-arg VERSION=${{ github.sha }} -t pikpak-rss-manager:smoke .
-      - run: python3 scripts/container-smoke.py pikpak-rss-manager:smoke
+      - run: docker build -t pikpak-rss-manager:smoke .
+      - run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" python3 scripts/container-smoke.py pikpak-rss-manager:smoke
   publish:
     needs: validate
     runs-on: ubuntu-latest
@@ -54,7 +69,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+          build-args: VERSION=${{ needs.validate.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Verify published architectures

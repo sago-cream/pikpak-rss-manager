@@ -72,12 +72,24 @@ with tempfile.TemporaryDirectory() as directory:
         user = subprocess.check_output(["docker", "inspect", "--format", "{{.Config.User}}", container], text=True).strip()
         assert user == "65532:65532", user
         subprocess.check_call(["docker", "exec", container, "/app/pikpak-rss-manager", "healthcheck"])
+        reported_version = subprocess.check_output(
+            ["docker", "exec", container, "/app/pikpak-rss-manager", "version"], text=True).strip()
+        expected_version = os.environ.get("SMOKE_EXPECTED_VERSION")
+        if expected_version:
+            assert reported_version == expected_version, reported_version
+        assert request("/healthz")["version"] == reported_version
+        assert request("/api/session")["version"] == reported_version
+        version_label = '<span class="version">' + reported_version + '</span>'
+        with opener.open(base + "/", timeout=10) as page:
+            assert version_label in page.read().decode("utf-8"), "login version missing"
         try:
             request("/api/subscriptions")
             raise AssertionError("anonymous management API access allowed")
         except urllib.error.HTTPError as error:
             assert error.code == 401
         login()
+        with opener.open(base + "/", timeout=10) as page:
+            assert version_label in page.read().decode("utf-8"), "dashboard version missing"
         subscription = request("/api/subscriptions", "POST", {
             "name": "持久化測試", "rss_url": "https://example.org/feed?private=ci-only",
             "destination": "Test", "enabled": False, "interval_minutes": 10,
@@ -105,6 +117,6 @@ with tempfile.TemporaryDirectory() as directory:
         assert len(restored) == 1 and restored[0]["id"] == subscription["id"]
         assert restored[0]["rss_url"].endswith("private=ci-only")
         assert restored[0]["rename_enabled"] is False and restored[0]["rename_mode"] == "replace"
-        print("PASS: Compose startup, health, login, Regex preview, non-root and encrypted data persistence")
+        print("PASS: Compose startup, version " + reported_version + ", health, login, Regex preview, non-root and encrypted data persistence")
     finally:
         compose("down", "--volumes", "--remove-orphans")

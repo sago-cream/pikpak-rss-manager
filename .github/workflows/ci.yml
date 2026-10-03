@@ -22,12 +22,14 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Build
-        run: CGO_ENABLED=0 go build -trimpath ./cmd/pikpak-rss-manager
+        run: |
+          CGO_ENABLED=0 go build -trimpath ./cmd/pikpak-rss-manager
+          test "$(./pikpak-rss-manager version)" = "$(cat cmd/pikpak-rss-manager/VERSION)"
   container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build container
-        run: docker build --build-arg VERSION=ci -t pikpak-rss-manager:ci .
+        run: docker build -t pikpak-rss-manager:ci .
       - name: Startup, authentication, non-root and persisted data
-        run: python3 scripts/container-smoke.py pikpak-rss-manager:ci
+        run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" python3 scripts/container-smoke.py pikpak-rss-manager:ci

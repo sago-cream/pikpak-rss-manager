@@ -25,6 +25,15 @@ jobs:
         run: |
           docker logout ghcr.io || true
           docker pull --platform "$SMOKE_PLATFORM" "$IMAGE"
+      - name: Expected application version
+        env:
+          IMAGE_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ "$IMAGE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "SMOKE_EXPECTED_VERSION=v${IMAGE_TAG#v}" >> "$GITHUB_ENV"
+          elif [[ "$IMAGE_TAG" == "latest" || "$IMAGE_TAG" == "main" ]]; then
+            echo "SMOKE_EXPECTED_VERSION=$(cat cmd/pikpak-rss-manager/VERSION)" >> "$GITHUB_ENV"
+          fi
       - name: Compose startup and persisted data from the published image
         run: python3 scripts/container-smoke.py "$IMAGE"
       - name: Both architectures available anonymously

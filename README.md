@@ -128,7 +128,7 @@ Regex 使用 Go RE2，具名群組寫成 `(?P<ep>...)`、`(?P<season>...)`、`(?
 
 ## 本機開發
 
-需要 Git 與支援自動下載 toolchain 的 Go。`go.mod` 固定 Go 1.27.1；`GOTOOLCHAIN=auto` 可自動取得，不會更改系統 Go 安裝。
+需要支援自動下載 toolchain 的 Go；取得儲存庫與提交變更時使用 Git。`go.mod` 固定 Go 1.27.1；`GOTOOLCHAIN=auto` 可自動取得，不會更改系統 Go 安裝。
 
 ```sh
 cp .env.example .env  # 僅限尚未存在 .env；不要覆蓋既有權杖
@@ -140,13 +140,15 @@ go vet ./...
 
 Windows 可用 `./scripts/dev.ps1` 與 `./scripts/verify.ps1`。測試預設不使用真實 PAT 或網路雲端操作；[驗證文件](docs/verification.md) 說明選擇性實測與限制。JSON API 需要登入 Cookie；修改請求須同時帶 `pp_csrf` Cookie 與 `X-CSRF-Token`。詳細資料結構及流程見 [架構文件](docs/architecture.md)。
 
-`./scripts/dev.ps1` 自動將目前 Git 版本傳入程式，例如 `v0.3.3-dev`；標籤後的提交與未提交變更也會顯示。`./scripts/dev.ps1 -Version` 可只查看版本，不讀取設定或啟動服務。沒有可用的 Git 資訊，或直接執行未指定版本的 `go run`／`go build` 時，版本顯示 `dev`；發布映像由建置流程傳入正式標籤或提交。
+目前版本號保存在 `cmd/pikpak-rss-manager/VERSION` 並內建至程式。`./scripts/dev.ps1`、直接執行 `go run`／`go build` 與發布映像都顯示同一版本號（目前 `v0.3.4`），不依賴 Git 資訊；下載原始碼壓縮檔也能顯示。`./scripts/dev.ps1 -Version` 可只查看版本，不讀取設定或啟動服務。更新後需重新啟動服務。
 
 管理密碼沒有長度與字元限制，短密碼、中文及超過 72 位元組的密碼皆可使用；仍需自行設定密碼，沒有預設值。本機腳本會遮蔽密碼輸入，啟動後以同一組密碼登入。
 
 ## 發布、更新與備份
 
 GitHub Actions 在推送 `main` 或 Tag 時，先執行測試、vet 及 Compose 啟動／資料持久化測試，再發布兩種架構。`main` 產生 `latest`、`main`、`sha-...`；Tag 產生對應 Tag、版本與提交標籤。使用 `GITHUB_TOKEN`，不需自行保存 GHCR 發布權杖。[GitHub 官方 GHCR 文件](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)。
+
+每次發布前更新 `cmd/pikpak-rss-manager/VERSION`；發布工作流會核對程式實際版本，並拒絕與版本檔不符的 Tag。`latest` 與正式 Tag 映像的介面皆顯示版本號，提交資訊保留在映像標籤與 OCI metadata。
 
 公開映像另以未登入 GHCR 的 Runner 驗證匿名拉取、Compose 啟動與重建後資料保留；包含 amd64 與 QEMU arm64。驗證結果與真實 PikPak 實測限制記錄於 [verification.md](docs/verification.md)。
 

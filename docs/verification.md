@@ -92,10 +92,18 @@ OAuth 調研僅讀取官方公開文件及 discovery（無憑證），確認宣�
 
 以獨立的 `.local/paging-ui-data`、mocked PikPak 與 localhost v1／v2 小型種子，驗證三批取得 3／6／8 個檔名，追加時保留目前選項與手動檔名／即時結果，結束後收起續讀按鈕；更換 RSS 清除舊選項與分頁狀態。1280px 桌面與 390px 手機沒有頁面或對話框橫向溢出，瀏覽器無錯誤或警告。畫面：`docs/screenshots/source-paging.jpg`、`docs/screenshots/source-paging-mobile.jpg`。此次未讀取 PAT、未呼叫真實 PikPak。容器與發布結果請見 [v0.3.2 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.2)。
 
-### 本機開發版本顯示（2026-10-03）
+### v0.3.3 本機開發版本顯示（2026-10-03）
 
-修正 `main.go` 固定使用 `0.3.0-dev`、`dev.ps1` 未傳入版本的問題。腳本現在以 `git describe` 取得版本並透過 Go linker 傳入，含標籤後的提交與未提交變更；無可用 Git 資訊時顯示 `dev`。發布映像仍由原有建置流程傳入正式標籤或提交。
+v0.3.3 修正 `main.go` 固定使用 `0.3.0-dev`、`dev.ps1` 未傳入版本的問題。該版腳本以 `git describe` 取得版本並透過 Go linker 傳入，含標籤後的提交與未提交變更；無可用 Git 資訊時顯示 `dev`。該版發布映像由建置流程傳入正式標籤或提交。
 
 本機完整 `go test ./...`、`go vet ./...`、CGO-free build、PowerShell 語法與 diff 空白檢查通過。實際執行 `./scripts/dev.ps1 -Version`，結果 `v0.3.2-dirty-dev` 與當時 Git 版本一致；未注入版本的建置執行 `version` 顯示 `dev`。在獨立 PowerShell 程序模擬沒有 Git 及無法讀取 Git 資訊，兩者皆回退至 `dev` 且正常結束。版本查詢會在設定載入與密碼提示前返回；此次未讀取 PAT、未啟動正式服務或呼叫 PikPak。容器與發布結果請見 [v0.3.3 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.3)。
+
+### 內建目前版本號（2026-10-03）
+
+v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接沿用此版本號。正式版本檔隨發布更新；CI 核對建置執行檔的版本，發布工作流亦核對 Tag 與版本檔一致。`latest` 與 Tag 映像皆使用此版本號；預設容器建置不傳入版本時也使用內建值。
+
+本機完整 `go test ./...`、`go vet ./...`、CGO-free build、PowerShell／Python 語法與 diff 空白檢查通過。實際執行 `dev.ps1 -Version`、直接 `go run ... version`、不嵌入 VCS metadata 的建置，以及使用空白 linker 版本參數的建置，全部顯示 `v0.3.4`。從獨立測試程序的 PATH 移除 Git 並確認不可用後，`dev.ps1 -Version` 仍顯示 `v0.3.4`。這些查詢不讀取設定或 PAT，也不啟動正式服務。
+
+容器 smoke 新增核對執行檔、健康／session API、登入頁與登入後頁面的版本，並比較預期的正式版本號；公開 smoke 會檢查正式 Tag 或目前 `latest`／`main` 的版本。容器與發布的實際結果請見 [v0.3.4 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.4)。本機沒有 Docker；此次未呼叫真實 PikPak。
 
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。
