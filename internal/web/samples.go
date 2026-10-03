@@ -13,6 +13,7 @@ func (s *Server) sourceSamples(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		URL            string `json:"url"`
 		SubscriptionID int64  `json:"subscription_id"`
+		Cursor         string `json:"cursor"`
 	}
 	if err := decode(w, r, &in); err != nil {
 		failure(w, err)
@@ -21,14 +22,14 @@ func (s *Server) sourceSamples(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
 	in.URL = strings.TrimSpace(in.URL)
-	out, err := s.feeds.Samples(ctx, in.URL)
+	out, err := s.feeds.SamplesPage(ctx, in.URL, in.Cursor)
 	if err != nil {
 		failure(w, err)
 		return
 	}
 	// Persisted action plans provide actual original names for a saved
 	// subscription without making another cloud request or download task.
-	if in.SubscriptionID > 0 && s.DB != nil && s.Manager != nil {
+	if in.Cursor == "" && in.SubscriptionID > 0 && s.DB != nil && s.Manager != nil {
 		sub, err := s.DB.Subscription(ctx, in.SubscriptionID)
 		_, account := s.Manager.Snapshot()
 		if err == nil && sub.RSSURL == strings.TrimSpace(in.URL) && account != "" {

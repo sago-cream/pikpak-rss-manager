@@ -91,7 +91,12 @@ func (c *Client) read(ctx context.Context, v string) ([]byte, error) {
 
 var magnetRE = regexp.MustCompile(`magnet:\?[^\s"'<>]+`)
 
-func sourceLink(item *gofeed.Item, base *url.URL) string {
+func sourceLink(item *gofeed.Item, base *url.URL, preferTorrent bool) string {
+	if preferTorrent {
+		if source := torrentLink(item, base); source != "" {
+			return source
+		}
+	}
 	for _, v := range []string{item.Link, item.Description, item.Content} {
 		if m := magnetRE.FindString(html.UnescapeString(v)); m != "" {
 			return m
@@ -114,14 +119,39 @@ func sourceLink(item *gofeed.Item, base *url.URL) string {
 	}
 	return ""
 }
+
+func torrentLink(item *gofeed.Item, base *url.URL) string {
+	for _, enclosure := range item.Enclosures {
+		u, err := url.Parse(enclosure.URL)
+		if err != nil || u.Scheme == "magnet" {
+			continue
+		}
+		if strings.Contains(strings.ToLower(enclosure.Type), "bittorrent") || strings.HasSuffix(strings.ToLower(u.Path), ".torrent") {
+			return base.ResolveReference(u).String()
+		}
+	}
+	if u, err := url.Parse(item.Link); err == nil && strings.HasSuffix(strings.ToLower(u.Path), ".torrent") {
+		return base.ResolveReference(u).String()
+	}
+	return ""
+}
+
 func (c *Client) Fetch(ctx context.Context, v string) ([]Item, error) {
+	return c.fetch(ctx, v, false)
+}
+
+func (c *Client) fetch(ctx context.Context, v string, preferTorrent bool) ([]Item, error) {
 	b, err := c.read(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	return Parse(b, v)
+	return parse(b, v, preferTorrent)
 }
 func Parse(b []byte, baseURL string) ([]Item, error) {
+	return parse(b, baseURL, false)
+}
+
+func parse(b []byte, baseURL string, preferTorrent bool) ([]Item, error) {
 	if len(b) > MaxMetadata {
 		return nil, errors.New("RSS 過大")
 	}
@@ -138,7 +168,7 @@ func Parse(b []byte, baseURL string) ([]Item, error) {
 		return nil, errors.New("RSS 項目超過 2000 筆")
 	}
 	for _, item := range f.Items {
-		source := sourceLink(item, base)
+		source := sourceLink(item, base, preferTorrent)
 		if source == "" {
 			continue
 		}

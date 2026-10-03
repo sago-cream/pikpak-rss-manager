@@ -85,7 +85,7 @@ RSS 與檔案整理排程每五秒掃描到期紀錄；預設訂閱間隔十分�
 | `POST /api/subscriptions/{id}/check` | `{ "backfill": false }`，手動檢查 |
 | `GET /api/pikpak/folders?parent_id=…&token=…` | 目前資料夾、路徑導覽、子資料夾、next_token、account_ref |
 | `POST /api/pikpak/folders` | `{ "parent_id": "…", "name": "…", "account_ref": "…" }`，在目前位置新增資料夾 |
-| `POST /api/feeds/samples` | `{ "url": "https://…", "subscription_id": 1 }`；回傳 items（title、filename、kind）及 notices；不建立任務 |
+| `POST /api/feeds/samples` | `{ "url": "https://…", "subscription_id": 1, "cursor": "" }`；回傳 items（title、filename、kind）、notices 及可選的 next_cursor；每批最多五筆來源／三次種子讀取／三十筆範例，使用 next_cursor 接續讀取；不建立任務 |
 | `POST /api/rules/preview` | `{ "rule": {title, rename_enabled, mode: "replace", regex, replacement}, "filename": "actual.mkv" }`；回傳 old_name、raw_name、name、matched、warnings |
 | `GET /api/jobs`、`GET /api/jobs/{id}` | 任務及逐檔紀錄 |
 | `POST /api/jobs/{id}/retry` | 從安全階段接續／核對 |

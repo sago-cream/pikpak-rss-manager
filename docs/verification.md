@@ -84,4 +84,12 @@ OAuth 調研僅讀取官方公開文件及 discovery（無憑證），確認宣�
 
 1280px 桌面與 390px 手機下，頁面及對話框沒有橫向溢出，瀏覽器無錯誤或警告。此次未讀取 PAT、未呼叫真實 PikPak，亦未新建下載任務。畫面：`docs/screenshots/source-preview.jpg`、`docs/screenshots/realtime-mobile.jpg`。本機無 Docker，容器驗證由 GitHub Actions 執行；發布後的容器驗證結果請見 [v0.3.1 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.1)。
 
+### 分批讀取更多種子檔名（2026-10-03）
+
+本機 `go test ./...`、`go vet ./...`、`CGO_ENABLED=0 go build -trimpath`、JavaScript 語法與 diff 空白檢查通過。新增測試驗證七個種子在每批三次讀取的限制內全部處理、混合 Magnet 的五筆來源限制、前批讀取失敗後仍會接續檢查未讀取的種子，以及 65 個多檔檔名以 30／30／5 接續讀取，沒有遺漏或重複。
+
+續讀位置只含偏移與內容摘要；測試涵蓋無效位置在網路請求前拒絕、RSS 或種子檔名變更時拒絕舊位置、不回傳私密 URL／帳號，以及來源同時提供 Magnet 和 `.torrent` 時預覽讀取實際種子檔名。既有下載來源優先順序保持通過原有測試。HTTP 分頁測試涵蓋 CSRF、同帳號快取檔名只附於首次回應、帳號切換隔離，以及不修改基準或建立雲端任務。
+
+以獨立的 `.local/paging-ui-data`、mocked PikPak 與 localhost v1／v2 小型種子，驗證三批取得 3／6／8 個檔名，追加時保留目前選項與手動檔名／即時結果，結束後收起續讀按鈕；更換 RSS 清除舊選項與分頁狀態。1280px 桌面與 390px 手機沒有頁面或對話框橫向溢出，瀏覽器無錯誤或警告。畫面：`docs/screenshots/source-paging.jpg`、`docs/screenshots/source-paging-mobile.jpg`。此次未讀取 PAT、未呼叫真實 PikPak。容器與發布結果請見 [v0.3.2 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.3.2)。
+
 尚未在使用者的 Linux VPS 或實際 1Panel 版本上部署；1Panel 操作步驟依標準 Compose 編排說明。官方 MCP 的未來 API 變更、不同帳號配額和來源可用性不屬於 mocked tests 能保證的範圍。

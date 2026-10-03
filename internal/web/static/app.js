@@ -137,26 +137,32 @@ function showRenamePreview(result){
   const adjusted=result.raw_name!==undefined&&result.raw_name!==result.name;
   const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>替換結果</span><code>${escapeHTML(result.name)}</code></div>${adjusted?'<p class="preview-warning">檔名含不適用字元，已自動替換或移除。</p>':''}`;
 }
-let sourceSamples=[],sourceRequest=0;
-function clearSourceSamples(){sourceRequest++;clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='讀取 RSS 中的種子檔名，或手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
+let sourceSamples=[],sourceRequest=0,sourceCursor='';
+function clearSourceSamples(){sourceRequest++;clearTimeout(previewTimer);previewRequest++;sourceSamples=[];sourceCursor='';$('#source-samples').disabled=false;$('#source-more').disabled=false;$('#source-more').classList.add('hidden');$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='讀取 RSS 中的種子檔名，或手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
 function selectSourceSample(){
   const sample=sourceSamples[Number($('#preview-source').value)];if(!sample)return;
   $('#preview-filename').value=sample.filename;$('#preview-title').value=sample.title;
   $('#preview-source-help').textContent='已從種子中繼資料取得檔名。';
   scheduleRenamePreview();
 }
-async function loadSourceSamples(){
+async function loadSourceSamples(append=false){
   const url=$('#sub-url').value.trim();if(!url)throw new Error('請先填寫 RSS 連結');
-  const sequence=++sourceRequest;$('#source-samples').disabled=true;$('#preview-source-help').textContent='正在讀取來源中繼資料…';
+  if(append&&!sourceCursor)return;
+  const cursor=append?sourceCursor:'',sequence=++sourceRequest,selected=$('#preview-source').value,previousCount=append?sourceSamples.length:0;
+  $('#source-samples').disabled=true;$('#source-more').disabled=true;$('#preview-source-help').textContent='正在讀取來源中繼資料…';
   try{
-    const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0});
+    const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0,cursor});
     if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
-    sourceSamples=result.items.filter(s=>s.kind==='torrent_file');$('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">${escapeHTML(s.filename)}</option>`).join('');
+    if(!append)sourceSamples=[];
+    const known=new Set(sourceSamples.map(s=>JSON.stringify([s.title,s.filename])));
+    for(const sample of result.items.filter(s=>s.kind==='torrent_file')){const key=JSON.stringify([sample.title,sample.filename]);if(!known.has(key)){sourceSamples.push(sample);known.add(key);}}
+    sourceCursor=result.next_cursor||'';$('#source-more').classList.toggle('hidden',!sourceCursor);
+    $('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">${escapeHTML(s.filename)}</option>`).join('');
     $('#preview-source-label').classList.toggle('hidden',!sourceSamples.length);
-    if(sourceSamples.length){$('#preview-source').value='0';selectSourceSample();}else $('#preview-source-help').textContent='目前 RSS 沒有可用的種子檔名，可手動輸入檔名。';
-    if(sourceSamples.length&&result.notices?.length)$('#preview-source-help').textContent='部分種子檔名無法取得，可手動輸入檔名。';
+    if(sourceSamples.length&&previousCount===0){$('#preview-source').value='0';if(!append||!$('#preview-filename').value)selectSourceSample();else $('#preview-source').value='';}else if(append&&previousCount)$('#preview-source').value=selected;
+    $('#preview-source-help').textContent=sourceSamples.length?`已載入 ${sourceSamples.length} 個種子檔名。${result.notices?.length?'部分種子無法讀取，可手動輸入檔名。':''}`:sourceCursor?'此批沒有可用的種子檔名，可載入更多或手動輸入。':'目前 RSS 沒有可用的種子檔名，可手動輸入檔名。';
   }catch(e){if(sequence===sourceRequest)$('#preview-source-help').textContent=e.message;}
-  finally{if(sequence===sourceRequest)$('#source-samples').disabled=false;}
+  finally{if(sequence===sourceRequest){$('#source-samples').disabled=false;$('#source-more').disabled=false;}}
 }
 let previewRequest=0,previewTimer;
 function scheduleRenamePreview(event){
@@ -184,6 +190,7 @@ document.addEventListener('click',async event=>{
   if(button.classList.contains('new-subscription')){openSubscription();return;}
   if(button.classList.contains('close-dialog')){closeFolderBrowser();$('#subscription-dialog').close();return;}
   if(button.classList.contains('close-job')){$('#job-dialog').close();return;}
+  if(button.id==='source-samples'||button.id==='source-more'){try{await loadSourceSamples(button.id==='source-more');}catch(e){toast(e.message,true);}return;}
   if(button.dataset.edit){openSubscription(button.dataset.edit);return;}
   if(button.id==='browse-folders'){await loadFolders($('#sub-destination-id').value);return;}
   if(button.id==='folder-close'){closeFolderBrowser();return;}
@@ -202,7 +209,6 @@ document.addEventListener('click',async event=>{
     if(button.dataset.retry){await api(`/api/jobs/${button.dataset.retry}/retry`,'POST',{});$('#job-dialog').close();toast('已重新核對或排入接續處理');await load();}
     if(button.id==='check-connection'){await api('/api/settings/pikpak/check','POST',{});toast('PikPak 連線已更新；暫停的任務可個別接續');await load();}
     if(button.id==='logout'||button.id==='logout-mobile'){await api('/api/logout','POST',{});location.reload();}
-    if(button.id==='source-samples')await loadSourceSamples();
   }catch(e){toast(e.message,true);}
   finally{button.disabled=false;}
 });
