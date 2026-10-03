@@ -12,7 +12,7 @@
     <div class="dialog-heading"><div><h2 id="dialog-title">新增訂閱</h2></div><button type="button" class="icon-button close-dialog" aria-label="關閉">×</button></div>
     <input id="sub-id" type="hidden"><input id="sub-destination-id" type="hidden"><input id="sub-destination-account-ref" type="hidden">
     <div class="form-grid">
-      <label class="full"><span id="sub-name-label">訂閱名稱</span><input id="sub-name" required maxlength="100" placeholder="訂閱名稱"></label>
+      <label id="sub-name-field" class="full"><span id="sub-name-label">訂閱名稱</span><input id="sub-name" required maxlength="100" placeholder="訂閱名稱"></label>
       <label class="full"><span id="sub-url-label">RSS 連結</span><input id="sub-url" required type="url" placeholder="https://…"></label>
       <div class="full destination-field"><label for="sub-destination">PikPak 目標資料夾</label><div class="destination-input"><input id="sub-destination" placeholder="根目錄，或輸入 Anime/Series"><button id="browse-folders" type="button" class="button subtle"><img class="folder-icon" src="/static/folder.svg" alt=""> 選擇資料夾</button></div><span id="destination-help" class="field-help">從 PikPak 選取資料夾，也可手動輸入路徑。</span></div>
       <div id="folder-browser" class="folder-browser full hidden">

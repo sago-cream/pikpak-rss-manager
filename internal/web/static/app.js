@@ -79,8 +79,9 @@ function openSubscription(id, manual=false) {
   manualTask=manual;
   const sub=data.subscriptions.find(s=>s.id===Number(id)); $('#subscription-form').reset();
   $('#sub-id').value=sub?.id||''; $('#dialog-title').textContent=manual?t('新增任務'):sub?t('編輯訂閱'):t('新增訂閱');
-  $('#sub-name-label').textContent=manual?t('任務名稱'):t('訂閱名稱');
-  $('#sub-name').placeholder=manual?t('任務名稱'):t('訂閱名稱');
+  $('#sub-name-field').classList.toggle('hidden',manual);
+  $('#sub-name').required=!manual;
+  $('#sub-name').disabled=manual;
   $('#sub-url-label').textContent=manual?t('下載連結'):t('RSS 連結');
   $('#sub-url').type=manual?'text':'url';
   $('#sub-url').placeholder=manual?'magnet:?xt=… / https://…':'https://…';
@@ -236,7 +237,7 @@ async function start(){
   if($('#login-form')){
     $('#login-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;$('#login-error').textContent='';try{await api('/api/login','POST',{password:$('#password').value});$('#password').value='';location.reload();}catch(e){$('#password').value='';$('#login-error').textContent=e.message;}finally{button.disabled=false;}});return;
   }
-  $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();if(manualTask){await api('/api/jobs','POST',{name:$('#sub-name').value.trim(),url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value});}else await api(tr`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),season:rule.season,regex:rule.regex,template:rule.template,rename_enabled:rule.rename_enabled,rename_mode:rule.mode,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast(manualTask?t('任務已新增'):t('訂閱設定已儲存'));await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
+  $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();if(manualTask){await api('/api/jobs','POST',{url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value});}else await api(tr`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),season:rule.season,regex:rule.regex,template:rule.template,rename_enabled:rule.rename_enabled,rename_mode:rule.mode,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast(manualTask?t('任務已新增'):t('訂閱設定已儲存'));await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#folder-create-form').addEventListener('submit',async event=>{
     event.preventDefault();if(!folderCreateContext)return;
     const context=folderCreateContext,sequence=folderRequest,button=event.target.querySelector('button[type=submit]');

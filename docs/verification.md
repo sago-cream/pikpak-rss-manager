@@ -1,5 +1,13 @@
 # Verification
 
+## Manual tasks without a name field (2026-10-04)
+
+Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, JavaScript syntax/localization checks and `git diff --check`.
+
+Manual tasks accept an omitted name. Display names use Magnet `dn`, resolved torrent metadata, or the final HTTP URL path segment (host for a root URL); missing, oversized or unsafe names fall back to the resource key. Names persist in the job/rule snapshot without enabling renaming. Explicit names from existing API clients remain supported and validated. Tests cover unnamed authenticated/CSRF-protected requests, v1/v2 resources, Unicode filenames, query exclusion, invalid names, deduplication and original filename preservation.
+
+Headless Edge with the isolated mock account in `.local/unnamed-tasks-ui-data` passed Magnet, HTTP and torrent task creation without `name` or `source_type` fields, generated names in the task list, duplicate rejection, Chinese/English dialogs and switching back to subscriptions with their name field still required. Desktop and 390×844 mobile layouts have no horizontal overflow or browser errors. Visually inspected fixture screenshots: [desktop](screenshots/unnamed-task-desktop.png), [mobile](screenshots/unnamed-task-mobile.png). No real PikPak operation was performed.
+
 ## Login and setup language-selector layout (2026-10-04)
 
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, localization checks and `git diff --check`.

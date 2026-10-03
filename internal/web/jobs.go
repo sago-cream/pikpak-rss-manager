@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -33,9 +34,11 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	off := false
 	sub := model.Subscription{Name: strings.TrimSpace(in.Name), Destination: in.Destination, DestinationID: in.DestinationID, DestinationAccountRef: in.AccountRef, RenameEnabled: &off, RenameMode: "replace"}
-	if err := rename.Validate(sub.Rule()); err != nil {
-		failure(w, err)
-		return
+	if sub.Name != "" {
+		if err := rename.Validate(sub.Rule()); err != nil {
+			failure(w, err)
+			return
+		}
 	}
 	if sub.DestinationID == "" {
 		destination, err := rename.Destination(sub.Destination)
@@ -80,6 +83,9 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		failure(w, err)
 		return
 	}
+	if sub.Name == "" {
+		sub.Name = manualJobName(resource)
+	}
 	s.Worker.Gate.Lock()
 	defer s.Worker.Gate.Unlock()
 	_, account, err := s.directoryAPI()
@@ -111,4 +117,24 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	JSON(w, http.StatusCreated, job)
+}
+
+// Derive display names without exposing URL queries or fetching direct downloads.
+// Torrent resolution already supplies the metadata name in the magnet's dn field.
+func manualJobName(resource feed.Resource) string {
+	if u, err := url.Parse(resource.URL); err == nil {
+		var name string
+		if u.Scheme == "magnet" {
+			name = strings.TrimSpace(u.Query().Get("dn"))
+		} else {
+			name = path.Base(u.Path)
+			if name == "." || name == "/" {
+				name = u.Hostname()
+			}
+		}
+		if name != "" && len(name) <= 500 && !strings.ContainsAny(name, "\x00\r\n") {
+			return name
+		}
+	}
+	return resource.Key
 }
