@@ -2,7 +2,19 @@
 
 ## v1.0.0 release (2026-10-04)
 
-Passed locally: `scripts/verify.ps1`, `git diff --check` and the built executable reporting `v1.0.0`. This release includes automatic manual-task link/name detection, administrator password changes, the shared brand icon and unused-file/code cleanup. Linux race tests, Docker startup/persistence, multiarch publishing and anonymous image pulls are validated separately in Actions; links will be recorded after completion. Real PikPak operations were not rerun.
+Passed locally: `scripts/verify.ps1`, `git diff --check` and the built executable reporting `v1.0.0`. This release includes automatic manual-task link/name detection, administrator password changes, the shared brand icon and unused-file/code cleanup.
+
+Release commit `d807d2f` passed GitHub Actions:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, localization, non-root Docker startup/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37153145948) |
+| main/latest amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37153145983) |
+| v1.0.0 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37153147857) |
+| Anonymous v1.0.0 pulls and container persistence on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37153359325) |
+| Anonymous latest pulls and container persistence on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37153360876) |
+
+The development machine has no Docker; container checks ran in Actions. Real PikPak operations were not rerun, and no VPS was deployed. Local secret-exclusion checks covered staged files and the release tree before publication; credentials remain local.
 
 ## Unused-file and code cleanup (2026-10-04)
 
