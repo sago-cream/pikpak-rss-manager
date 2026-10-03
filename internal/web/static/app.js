@@ -139,45 +139,44 @@ function showRenamePreview(result){
   const element=$('#preview-result');element.className='preview-result success';element.innerHTML=`<div class="rename-preview-row"><span>替換結果</span><code>${escapeHTML(result.name)}</code></div>${adjusted?'<p class="preview-warning">檔名含不適用字元，已自動替換或移除。</p>':''}`;
 }
 let sourceSamples=[],sourceRequest=0,sourceController;
-function clearSourceSamples(){sourceRequest++;sourceController?.abort();clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#source-samples').textContent='讀取種子檔名';$('#source-samples').setAttribute('aria-busy','false');$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='一次讀取 RSS 中所有可取得的種子檔名，或手動輸入檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='輸入原始檔名，預覽替換結果。';}
+function selectedSourceSample(){const value=$('#preview-source').value;return value===''?undefined:sourceSamples[Number(value)];}
+function clearSourceSamples(){sourceRequest++;sourceController?.abort();clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#source-samples').textContent='讀取種子檔名';$('#source-samples').setAttribute('aria-busy','false');$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-title').value='';$('#preview-source-help').textContent='一次讀取 RSS 中所有可取得的種子檔名。';$('#preview-result').className='preview-result';$('#preview-result').textContent='選擇種子檔名，預覽替換結果。';}
 function selectSourceSample(){
-  const sample=sourceSamples[Number($('#preview-source').value)];if(!sample)return;
-  $('#preview-filename').value=sample.filename;$('#preview-title').value=sample.title;
+  const sample=selectedSourceSample();$('#preview-title').value=sample?.title||'';
   scheduleRenamePreview();
 }
 async function loadSourceSamples(){
   const url=$('#sub-url').value.trim();if(!url)throw new Error('請先填寫 RSS 連結');
-  const sequence=++sourceRequest,selected=sourceSamples[Number($('#preview-source').value)],filename=$('#preview-filename').value,title=$('#preview-title').value;
+  const sequence=++sourceRequest;
   sourceController?.abort();const controller=new AbortController();sourceController=controller;
   $('#source-samples').disabled=true;$('#source-samples').textContent='讀取中…';$('#source-samples').setAttribute('aria-busy','true');$('#preview-source-help').textContent='正在讀取全部種子檔名…';
   try{
     const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0,all:true},controller.signal);
     if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
-    sourceSamples=[];
+    const selected=selectedSourceSample();sourceSamples=[];
     const known=new Set(sourceSamples.map(s=>JSON.stringify([s.title,s.filename])));
     for(const sample of result.items.filter(s=>s.kind==='torrent_file')){const key=JSON.stringify([sample.title,sample.filename]);if(!known.has(key)){sourceSamples.push(sample);known.add(key);}}
     $('#preview-source').innerHTML=sourceSamples.map((s,i)=>`<option value="${i}">${escapeHTML(s.filename)}</option>`).join('');
     $('#preview-source-label').classList.toggle('hidden',!sourceSamples.length);
     const selectedIndex=selected?sourceSamples.findIndex(s=>s.title===selected.title&&s.filename===selected.filename):-1;
-    const unchanged=$('#preview-filename').value===filename&&$('#preview-title').value===title;
-    if(selectedIndex>=0&&unchanged&&filename===selected.filename)$('#preview-source').value=String(selectedIndex);
-    else if(sourceSamples.length&&!filename&&unchanged){$('#preview-source').value='0';selectSourceSample();}
-    else $('#preview-source').value='';
-    $('#preview-source-help').textContent=(sourceSamples.length?`已讀取 ${sourceSamples.length} 個種子檔名。`:'目前 RSS 沒有可用的種子檔名，可手動輸入檔名。')+(result.notices?.length?` ${[...new Set(result.notices)].join(' ')}`:'');
+    $('#preview-source').value=sourceSamples.length?String(selectedIndex>=0?selectedIndex:0):'';
+    selectSourceSample();
+    $('#preview-source-help').textContent=(sourceSamples.length?`已讀取 ${sourceSamples.length} 個種子檔名。`:'目前 RSS 沒有可用的種子檔名。')+(result.notices?.length?` ${[...new Set(result.notices)].join(' ')}`:'');
   }catch(e){if(sequence===sourceRequest)$('#preview-source-help').textContent=e.message;}
   finally{if(sequence===sourceRequest){$('#source-samples').disabled=false;$('#source-samples').textContent='讀取種子檔名';$('#source-samples').setAttribute('aria-busy','false');}}
 }
 let previewRequest=0,previewTimer;
 function scheduleRenamePreview(event){
   clearTimeout(previewTimer);previewRequest++;
-  const element=$('#preview-result'),filename=$('#preview-filename').value;
-  element.className='preview-result';element.textContent=filename?'正在更新預覽…':'輸入原始檔名，預覽替換結果。';
+  const element=$('#preview-result'),filename=selectedSourceSample()?.filename;
+  element.className='preview-result';element.textContent=filename?'正在更新預覽…':'選擇種子檔名，預覽替換結果。';
   if(!$('#subscription-dialog').open||!$('#sub-rename-enabled').checked||!filename||event?.isComposing)return;
   previewTimer=setTimeout(previewRule,200);
 }
 async function previewRule(){
+  const sample=selectedSourceSample();if(!sample)return;
   const sequence=++previewRequest;
-  try{const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:$('#preview-filename').value});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
+  try{const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:sample.filename});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
   catch(e){if(sequence===previewRequest){$('#preview-result').className='preview-result error';$('#preview-result').textContent=e.message;}}
 }
 async function showJob(id) {
@@ -250,7 +249,7 @@ async function start(){
   $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast('網站設定已儲存');}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);$('#sub-rename-mode').addEventListener('change',updateRenameOptions);
-  for(const id of ['sub-name','sub-regex','sub-replacement','sub-template','sub-season','preview-title','preview-filename']){
+  for(const id of ['sub-name','sub-regex','sub-replacement','sub-template','sub-season','preview-title']){
     $('#'+id).addEventListener('input',scheduleRenamePreview);$('#'+id).addEventListener('compositionend',scheduleRenamePreview);
   }
   $('#sub-destination').addEventListener('input',()=>{$('#sub-destination-id').value='';$('#sub-destination-account-ref').value='';});

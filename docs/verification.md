@@ -164,3 +164,11 @@ Regex 替換的共享 renderer 改為驗證命名操作本身，避免尚未填�
 | latest 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [latest smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37143827497) |
 
 v0.4.2 匿名 manifest 亦確認含兩種 Linux 架構。以上容器驗證不代表真實 PikPak 操作或 VPS 部署。
+
+## v0.4.3 預覽直接選取種子檔名（2026-10-04）
+
+介面移除「原始檔名」輸入框，預覽請求直接使用下拉選單所選樣本的實際檔名；沒有可選樣本時顯示「選擇種子檔名，預覽替換結果。」初始、重設與讀取失敗提示亦不再引導手動輸入。來源 API 保留實際檔名與 provenance，命名 renderer 和執行規則維持共用。
+
+本機完整 `go test ./...`、`go vet ./...`、CGO-free build、JavaScript 語法與 diff 空白檢查通過；`dev.ps1 -Version` 顯示 `v0.4.3`。隔離 mocked 帳號與 `.local/all-ui-data2` 瀏覽器驗證：DOM 無原始檔名輸入框，首次讀取 72 筆後直接產生結果；切換第 65 個種子檔名及編輯 Regex／替換格式自動更新，重新讀取保留選項，更換 RSS 清除選項與舊結果並恢復選擇提示。390×844 手機沒有頁面或對話框橫向溢出，console 無錯誤／警告。畫面：`docs/screenshots/filename-selection.png`、`docs/screenshots/filename-selection-mobile.png`，僅含 fixture。
+
+此次未讀取使用者 PAT、呼叫真實 PikPak 或建立下載任務。本機沒有 Docker，Linux／容器／多架構發布與公開拉取的實際結果於完成後記錄在 [v0.4.3 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.3)。

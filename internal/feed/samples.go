@@ -128,7 +128,7 @@ enqueue:
 		}
 	}
 	if failed {
-		out.Notices = append(out.Notices, "部分種子無法取得或解析檔名，可重新讀取或手動輸入檔名。")
+		out.Notices = append(out.Notices, "部分種子無法取得或解析檔名，可重新讀取。")
 	}
 	return out, nil
 }
