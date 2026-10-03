@@ -116,4 +116,13 @@ v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接
 
 瀏覽器使用獨立 `.local` 資料目錄與「介面測試帳號」mock，通過：兩次密碼不一致的提示、首次初始化後自動進入系統設定、mock PAT 綁定後清空輸入框、網站設定儲存及重載、實際重啟測試服務後用原密碼登入。1280×900 與 390×844 檢查首次設定；手機系統設定也未橫向溢出，未觀察到 console error／warning。畫面僅含 fixture：`docs/screenshots/setup-desktop.jpg`、`setup-mobile.jpg`、`web-settings-desktop.jpg`。
 
-此 UI 測試沒有讀取使用者 PAT、連線真實 PikPak 或建立下載任務；mock 綁定不證明真實授權操作。既有 `.env` 保留未改寫。容器 smoke 已改為從 Web API 初始化並驗證重建後登入；Linux race、容器及新 GHCR 映像驗證交由 GitHub Actions，結果待回填。
+此 UI 測試沒有讀取使用者 PAT、連線真實 PikPak 或建立下載任務；mock 綁定不證明真實授權操作。既有 `.env` 保留未改寫。容器 smoke 已改為從 Web API 初始化並驗證重建後登入；下列 GitHub Actions 已全部通過，對應功能提交 `4dbe268`：
+
+| 驗證 | 實際結果／證據 |
+|---|---|
+| Linux race、vet、build、容器啟動／網頁初始化／重建登入／資料保留 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37138343219) |
+| main/latest 的 amd64、arm64 映像發布及 manifest | [main 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37138343227) |
+| v0.4.0 的 amd64、arm64 映像發布及 manifest | [Tag 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37138512990) |
+| 未登入 GHCR，兩種架構匿名拉取、網頁初始化與重建後雜湊登入 | [Public image smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37138687394) |
+
+固定映像：`ghcr.io/wade00754/pikpak-rss-manager:v0.4.0`；`latest` 同步發布。這些容器與 UI 測試使用隔離 fixture，未重跑真實 PikPak 下載／重命名／移動，也未部署至 VPS。
