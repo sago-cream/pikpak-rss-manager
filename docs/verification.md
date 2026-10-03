@@ -133,4 +133,14 @@ v0.3.4 將 `cmd/pikpak-rss-manager/VERSION` 內建至程式，開發腳本直接
 
 瀏覽器以獨立 `.local/all-ui-data2`、mocked PikPak 帳號及 localhost v1／v2 種子測試：單次按「讀取種子檔名」取得 72 個實際檔名，來源伺服器記錄一次 RSS、八次不同種子請求，畫面沒有「載入更多」按鈕。紫色按鈕在讀取期間停用並顯示「讀取中…」；重新讀取保留手動檔名，變更 RSS 取消舊請求且不接受舊結果。選取第 65 個多檔檔名仍正確更新替換結果。1280×900 桌面與 390×844 手機沒有頁面或對話框橫向溢出，瀏覽器無錯誤或警告。畫面：`docs/screenshots/source-all.png`、`docs/screenshots/source-all-mobile.png`。
 
-此次未讀取使用者 PAT、連線真實 PikPak 或建立下載任務。本機沒有 Docker；容器、Linux race、多架構發布與匿名拉取的實際結果於發布後記錄在 [v0.4.1 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.1)。
+此次未讀取使用者 PAT、連線真實 PikPak 或建立下載任務。本機沒有 Docker；功能提交 `085f61d` 的 GitHub Actions 實際結果如下，亦附於 [v0.4.1 Release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v0.4.1)：
+
+| 驗證 | 實際結果／證據 |
+|---|---|
+| Linux race、vet、build、容器啟動／登入／資料持久化 | [CI 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37141237867) |
+| main/latest 的 amd64、arm64 映像發布 | [main 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37141237861) |
+| v0.4.1 的 amd64、arm64 映像發布 | [Tag 發布通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37141237849) |
+| v0.4.1 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [公開映像 smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37141454859) |
+| latest 無 GHCR 登入的兩架構拉取、初始化與重建登入 | [latest smoke 通過](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37141457210) |
+
+匿名 manifest 亦確認兩個標籤皆含 `linux/amd64`、`linux/arm64`。以上容器測試使用隔離 fixture，不證明真實 PikPak 操作；未部署至 VPS。
