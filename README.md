@@ -48,4 +48,4 @@ make dev
 make verify
 ```
 
-Use `make help` for individual targets. [Test commands and verification](docs/verification.md) · [Architecture/API](docs/architecture.md) · [PAT/OAuth](docs/auth-comparison.md).
+Use `make help` for individual targets. [Architecture/API](docs/architecture.md) · [Authentication](docs/architecture.md#authentication) · [Testing](docs/architecture.md#testing).
