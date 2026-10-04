@@ -18,7 +18,7 @@ func TestMissingTaskFromOfficialMCP(t *testing.T) {
 	defer cancel()
 	server := mcp.NewServer(&mcp.Implementation{Name: "test", Version: "1"}, nil)
 	var queries atomic.Int32
-	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv"} {
+	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename"} {
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object"}}, func(_ context.Context, r *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			if r.Params.Name == "task_get" {
 				queries.Add(1)

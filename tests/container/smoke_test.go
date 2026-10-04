@@ -283,8 +283,7 @@ func (c *smokeClient) checkInitial(ctx context.Context, version string) error {
 type smokeSubscription struct {
 	ID            int64
 	RSSURL        string `json:"rss_url"`
-	RenameEnabled *bool  `json:"rename_enabled"`
-	RenameMode    string `json:"rename_mode"`
+	RenameEnabled bool   `json:"rename_enabled"`
 }
 
 func (c *smokeClient) initialize(ctx context.Context, password, version string) (int64, error) {
@@ -317,11 +316,11 @@ func (c *smokeClient) initialize(ctx context.Context, password, version string) 
 	if err := c.request(ctx, "POST", "/api/subscriptions", map[string]any{
 		"name": "持久化測試", "rss_url": "https://example.org/feed?private=ci-only",
 		"destination": "Test", "enabled": false, "interval_minutes": 10,
-		"rename_enabled": false, "rename_mode": "replace", "regex": "", "replacement": "",
+		"rename_enabled": false, "regex": "", "replacement": "",
 	}, 200, &subscription); err != nil {
 		return 0, err
 	}
-	if subscription.ID <= 0 || subscription.RenameEnabled == nil || *subscription.RenameEnabled {
+	if subscription.ID <= 0 || subscription.RenameEnabled {
 		return 0, errors.New("subscription did not preserve disabled naming")
 	}
 	for _, sample := range []struct {
@@ -339,7 +338,7 @@ func (c *smokeClient) initialize(ctx context.Context, password, version string) 
 			Warnings []string
 		}
 		if err := c.request(ctx, "POST", "/api/rules/preview", map[string]any{
-			"rule":     map[string]any{"title": "命名測試", "rename_enabled": true, "mode": "replace", "regex": sample.regex, "replacement": sample.replacement},
+			"rule":     map[string]any{"title": "命名測試", "rename_enabled": true, "regex": sample.regex, "replacement": sample.replacement},
 			"filename": sample.filename,
 		}, 200, &preview); err != nil {
 			return 0, err
@@ -366,7 +365,7 @@ func (c *smokeClient) checkRestored(ctx context.Context, password string, subscr
 	if err := c.request(ctx, "GET", "/api/subscriptions", nil, 200, &subscriptions); err != nil {
 		return err
 	}
-	if len(subscriptions) != 1 || subscriptions[0].ID != subscriptionID || subscriptions[0].RSSURL != "https://example.org/feed?private=ci-only" || subscriptions[0].RenameEnabled == nil || *subscriptions[0].RenameEnabled || subscriptions[0].RenameMode != "replace" {
+	if len(subscriptions) != 1 || subscriptions[0].ID != subscriptionID || subscriptions[0].RSSURL != "https://example.org/feed?private=ci-only" || subscriptions[0].RenameEnabled {
 		return errors.New("subscription data did not persist after restart")
 	}
 	return nil

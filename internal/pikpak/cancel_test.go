@@ -18,7 +18,7 @@ func TestOfficialTaskCancellationPreservesFilesAndDoesNotRetry(t *testing.T) {
 	defer cancel()
 	server := mcp.NewServer(&mcp.Implementation{Name: "fixture", Version: "1"}, nil)
 	var calls atomic.Int32
-	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv", "task_rm"} {
+	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "task_rm"} {
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object"}}, func(_ context.Context, r *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			if r.Params.Name == "task_rm" {
 				var args struct {

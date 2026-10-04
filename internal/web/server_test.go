@@ -163,7 +163,7 @@ func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 	if !strings.Contains(headers.Get("Set-Cookie"), "HttpOnly") || !strings.Contains(headers.Get("Set-Cookie"), "SameSite=Strict") {
 		t.Fatal("session cookie protections missing")
 	}
-	sub := model.Subscription{Name: "葬送的芙莉蓮", RSSURL: "https://rss.test/feed?private=test-rss-key", Destination: "Anime/芙莉蓮", IntervalMinutes: 10, Enabled: false, Season: 1, Regex: rename.DefaultRegex, Template: rename.DefaultTemplate}
+	sub := model.Subscription{Name: "葬送的芙莉蓮", RSSURL: "https://rss.test/feed?private=test-rss-key", Destination: "Anime/芙莉蓮", IntervalMinutes: 10, Enabled: false, RenameEnabled: true, Regex: `original`, Replacement: "S01E03"}
 	b, _ := json.Marshal(sub)
 	code, _, _ = request("POST", "/api/subscriptions", string(b), "", "")
 	if code != 403 {
@@ -177,7 +177,7 @@ func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 	if sub.ID == 0 {
 		t.Fatal("created subscription missing id")
 	}
-	preview, _ := json.Marshal(map[string]any{"rule": sub.Rule(), "title": "[字幕組] S01E03", "filename": "original.mp4"})
+	preview, _ := json.Marshal(map[string]any{"rule": sub.Rule(), "filename": "original.mp4"})
 	code, body, _ = request("POST", "/api/rules/preview", string(preview), info.CSRF, srv.URL)
 	if code != 200 || !strings.Contains(body, "S01E03.mp4") {
 		t.Fatal("preview API mismatch", body)
@@ -187,15 +187,15 @@ func TestAuthenticatedAPIAndSecretBoundaries(t *testing.T) {
 		t.Fatal("trailing JSON accepted")
 	}
 	on := true
-	replacementRule := model.Rule{RenameEnabled: &on, Mode: "replace", Regex: "^prefix-", Replacement: ""}
-	preview, _ = json.Marshal(map[string]any{"rule": replacementRule, "title": "RSS title", "filename": "prefix-作品.mp4"})
+	replacementRule := model.Rule{RenameEnabled: on, Regex: "^prefix-", Replacement: ""}
+	preview, _ = json.Marshal(map[string]any{"rule": replacementRule, "filename": "prefix-作品.mp4"})
 	code, body, _ = request("POST", "/api/rules/preview", string(preview), info.CSRF, srv.URL)
 	var result rename.Preview
 	if err := json.Unmarshal([]byte(body), &result); code != 200 || err != nil || result.Name != "作品.mp4" || result.RawName != result.Name {
 		t.Fatal("replacement preview requires subscription title", code, body)
 	}
 	unnamed := sub
-	unnamed.ID, unnamed.Name, unnamed.RenameEnabled, unnamed.RenameMode = 0, "", &on, "replace"
+	unnamed.ID, unnamed.Name, unnamed.RenameEnabled = 0, "", on
 	unnamed.Regex, unnamed.Replacement = replacementRule.Regex, replacementRule.Replacement
 	b, _ = json.Marshal(unnamed)
 	code, body, _ = request("POST", "/api/subscriptions", string(b), info.CSRF, srv.URL)

@@ -104,7 +104,7 @@ func TestFolderAPIAuthenticationSelectionAndAccountIsolation(t *testing.T) {
 		t.Fatal("duplicate folder was created")
 	}
 	off := false
-	sub := model.Subscription{Name: "測試作品", RSSURL: "https://rss.test", Destination: "spoofed", DestinationID: "two", DestinationAccountRef: listing.AccountRef, IntervalMinutes: 10, RenameEnabled: &off, RenameMode: "replace"}
+	sub := model.Subscription{Name: "測試作品", RSSURL: "https://rss.test", Destination: "spoofed", DestinationID: "two", DestinationAccountRef: listing.AccountRef, IntervalMinutes: 10, RenameEnabled: off}
 	r = request("POST", "/api/subscriptions", sub, true, true)
 	if r.Code != 200 {
 		t.Fatal("selected destination could not be saved", r.Body.String())

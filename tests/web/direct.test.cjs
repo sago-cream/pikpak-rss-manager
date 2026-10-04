@@ -17,15 +17,12 @@ vm.runInContext(source.slice(start,end),ctx);
 (async()=>{
   for(const language of ['en','zh-Hant']){
     vm.runInContext('language='+JSON.stringify(language),ctx);
-    details={job:{id:'fixture',rule:{title:'Fixture'},title:'Fixture',destination:'Downloads',state:'complete',download_mode:'direct',task_id:'fixture-task'},
+    details={job:{id:'fixture',rule:{title:'Fixture'},title:'Fixture',destination:'Downloads',state:'complete',task_id:'fixture-task'},
       files:[{state:'done',original_name:'old.mkv',target_name:'new.mkv',actual_name:'new (1).mkv'}]};
     await vm.runInContext("showJob('fixture')",ctx);
     assert.ok(!panel.innerHTML.includes('Staging folder ID')&&!panel.innerHTML.includes('專用暫存目錄 ID'));
     assert.ok(panel.innerHTML.includes('<strong>new (1).mkv</strong>'));
-    delete details.job.download_mode;
-    details.job.staging_id='legacy-stage';
-    await vm.runInContext("showJob('fixture')",ctx);
-    assert.ok(panel.innerHTML.includes('legacy-stage'));
+
   }
-  console.log('Direct and legacy task detail checks passed.');
+  console.log('Direct task detail checks passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

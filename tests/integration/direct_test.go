@@ -49,9 +49,9 @@ func TestLiveDirectDownloadAndRename(t *testing.T) {
 	off, on := false, true
 	var files []pikpak.File
 	for i := 0; i < 3; i++ {
-		sub := model.Subscription{Name: "Public Domain Alice", Destination: run, DestinationID: destination, RenameEnabled: &off}
+		sub := model.Subscription{Name: "Public Domain Alice", Destination: run, DestinationID: destination, RenameEnabled: off}
 		if i == 2 {
-			sub.RenameEnabled, sub.RenameMode = &on, "replace"
+			sub.RenameEnabled = on
 			sub.Regex, sub.Replacement = `^alice.*\.txt$`, "direct-renamed.txt"
 		}
 		j, added, err := w.EnqueueManual(ctx, account.ID, feed.Resource{Key: "direct:" + store.ID(), URL: fixtureBase + "alice.txt"}, sub)
@@ -62,7 +62,7 @@ func TestLiveDirectDownloadAndRename(t *testing.T) {
 			t.Fatal("direct fixture did not finish; preserved run", run)
 		}
 		j, err = db.Job(ctx, j.ID)
-		if err != nil || j.DownloadMode != "direct" || j.StagingID != "" || j.StagingCleanup != nil || j.FileID == "" {
+		if err != nil || j.FileID == "" {
 			t.Fatal("direct job or reliable file ID not verified", err)
 		}
 		f, err := api.Get(ctx, j.FileID)

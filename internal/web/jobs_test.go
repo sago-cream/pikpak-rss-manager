@@ -77,13 +77,12 @@ func TestManualJobAuthenticationRepeatDownloadsAndDestination(t *testing.T) {
 	if stored.Title != stored.ResourceKey || stored.Rule.Title != stored.Title {
 		t.Fatal("missing durable automatic title")
 	}
-	in["name"] = "Legacy manual fixture"
 	if r := request(in, true, true); r.Code != 201 {
 		t.Fatal("repeat source suppressed")
 	}
 	// Feed and manual jobs can explicitly queue the same normalized resource.
 	off := false
-	sub := model.Subscription{Name: "Feed fixture", RSSURL: "https://example.test/feed", IntervalMinutes: 10, RenameEnabled: &off}
+	sub := model.Subscription{Name: "Feed fixture", RSSURL: "https://example.test/feed", IntervalMinutes: 10, RenameEnabled: off}
 	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
 		t.Fatal(err)
 	}
@@ -125,8 +124,8 @@ func TestManualJobAuthenticationRepeatDownloadsAndDestination(t *testing.T) {
 	if strings.Contains(r.Body.String(), "private=fixture") {
 		t.Fatal("private source exposed")
 	}
-	if json.Unmarshal(r.Body.Bytes(), &job) != nil || job.Title != in["name"] {
-		t.Fatal("legacy explicit name not preserved")
+	if json.Unmarshal(r.Body.Bytes(), &job) != nil || job.Title != "file.mp4" {
+		t.Fatal("automatic title not preserved")
 	}
 	for _, bad := range []string{"file:///private", "http://user:password@example.test/file", "", strings.Repeat("x", 8193)} {
 		in["url"] = bad
@@ -135,16 +134,6 @@ func TestManualJobAuthenticationRepeatDownloadsAndDestination(t *testing.T) {
 		}
 	}
 	in["url"] = "https://example.test/file"
-	in["source_type"] = "unknown"
-	if r := request(in, true, true); r.Code != 400 {
-		t.Fatal("unknown source type accepted")
-	}
-	in["source_type"] = "url"
-	in["name"] = strings.Repeat("x", 501)
-	if r := request(in, true, true); r.Code != 400 {
-		t.Fatal("oversized explicit name accepted")
-	}
-	in["name"] = "Legacy manual fixture"
 	in["destination"] = "../unsafe"
 	if r := request(in, true, true); r.Code != 400 {
 		t.Fatal("invalid destination accepted")
@@ -173,8 +162,7 @@ func TestManualTorrentMetadataPrivateNetworkPolicy(t *testing.T) {
 				t.Fatal(err)
 			}
 			for _, body := range []string{
-				`{"name":"Torrent fixture","url":"` + source.URL + `/fixture.ToRrEnT?token=fixture"}`,
-				`{"name":"Torrent fixture","source_type":"torrent","url":"` + source.URL + `"}`,
+				`{"url":"` + source.URL + `/fixture.ToRrEnT?token=fixture"}`,
 			} {
 				r := httptest.NewRequest("POST", "/api/jobs", strings.NewReader(body))
 				r.Header.Set("Content-Type", "application/json")
@@ -205,23 +193,22 @@ func TestManualAutomaticSourceDetection(t *testing.T) {
 	}))
 	defer source.Close()
 	for _, tc := range []struct {
-		name, url, sourceType, key, title string
-		status, reads                     int
+		name, url, key, title string
+		status, reads         int
 	}{
-		{"v1 magnet", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567", "", "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
-		{"v2 magnet", "magnet:?xt=urn:btmh:1220" + strings.Repeat("A", 64), "auto", "btmh:1220" + strings.Repeat("a", 64), "btmh:1220" + strings.Repeat("a", 64), 201, 0},
-		{"magnet display name", torrent.URL, "", torrent.Key, "fixture.txt", 201, 0},
-		{"torrent", source.URL + "/fixture.TORRENT?token=fixture", "", torrent.Key, "fixture.txt", 201, 1},
-		{"http", source.URL + "/file.mp4?token=private-fixture", "", "url:", "file.mp4", 201, 0},
-		{"https share", "https://example.test/share/fixture?file=fixture.torrent", "", "url:", "fixture", 201, 0},
-		{"root URL", "https://example.test/?token=private-fixture", "", "url:", "example.test", 201, 0},
-		{"encoded filename", "https://example.test/%E6%AA%94%E6%A1%88%20fixture.mp4?token=private-fixture", "", "url:", "檔案 fixture.mp4", 201, 0},
-		{"oversized display name", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567&dn=" + strings.Repeat("x", 501), "", "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
-		{"unsafe display name", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567&dn=fixture%0Aprivate-fixture", "", "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
-		{"legacy direct", source.URL + "/direct.torrent", "url", "url:", "direct.torrent", 201, 0},
-		{"invalid magnet", "magnet:?dn=fixture", "", "", "", 400, 0},
-		{"invalid scheme", "file:///fixture.torrent", "", "", "", 400, 0},
-		{"embedded credentials", "https://user:password@example.test/fixture.torrent", "", "", "", 400, 0},
+		{"v1 magnet", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567", "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
+		{"v2 magnet", "magnet:?xt=urn:btmh:1220" + strings.Repeat("A", 64), "btmh:1220" + strings.Repeat("a", 64), "btmh:1220" + strings.Repeat("a", 64), 201, 0},
+		{"magnet display name", torrent.URL, torrent.Key, "fixture.txt", 201, 0},
+		{"torrent", source.URL + "/fixture.TORRENT?token=fixture", torrent.Key, "fixture.txt", 201, 1},
+		{"http", source.URL + "/file.mp4?token=private-fixture", "url:", "file.mp4", 201, 0},
+		{"https share", "https://example.test/share/fixture?file=fixture.torrent", "url:", "fixture", 201, 0},
+		{"root URL", "https://example.test/?token=private-fixture", "url:", "example.test", 201, 0},
+		{"encoded filename", "https://example.test/%E6%AA%94%E6%A1%88%20fixture.mp4?token=private-fixture", "url:", "檔案 fixture.mp4", 201, 0},
+		{"oversized display name", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567&dn=" + strings.Repeat("x", 501), "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
+		{"unsafe display name", "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567&dn=fixture%0Aprivate-fixture", "btih:0123456789abcdef0123456789abcdef01234567", "btih:0123456789abcdef0123456789abcdef01234567", 201, 0},
+		{"invalid magnet", "magnet:?dn=fixture", "", "", 400, 0},
+		{"invalid scheme", "file:///fixture.torrent", "", "", 400, 0},
+		{"embedded credentials", "https://user:password@example.test/fixture.torrent", "", "", 400, 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db, err := store.Open(t.TempDir())
@@ -236,7 +223,7 @@ func TestManualAutomaticSourceDetection(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			body, _ := json.Marshal(map[string]string{"url": "  " + tc.url + "  ", "source_type": tc.sourceType})
+			body, _ := json.Marshal(map[string]string{"url": "  " + tc.url + "  "})
 			r := httptest.NewRequest("POST", "/api/jobs", bytes.NewReader(body))
 			r.Header.Set("Content-Type", "application/json")
 			result := httptest.NewRecorder()

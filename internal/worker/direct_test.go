@@ -16,13 +16,13 @@ func directFixture(t *testing.T) (*Worker, *testutil.Cloud, model.Job, string) {
 	t.Helper()
 	w, c, _, _, sub, dir := setup(t)
 	on := true
-	sub.RenameEnabled, sub.RenameMode = &on, "replace"
+	sub.RenameEnabled = on
 	sub.Regex, sub.Replacement = `^old`, "new"
 	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
 		t.Fatal(err)
 	}
 	j := enqueue(t, w, sub, "organizing")
-	j.DownloadMode, j.DestinationID, j.FileID = "direct", "dest", "media"
+	j.DestinationID, j.FileID = "dest", "media"
 	c.Files["dest"] = pikpak.File{ID: "dest", Name: "Downloads", Kind: "drive#folder"}
 	c.Files["media"] = pikpak.File{ID: "media", ParentID: "dest", Name: "old.mkv", Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
 	if err := w.DB.SaveJob(context.Background(), &j); err != nil {
@@ -43,7 +43,7 @@ func TestDirectSubmissionAndNoRename(t *testing.T) {
 		t.Run("parent="+parent, func(t *testing.T) {
 			w, c, j, _ := directFixture(t)
 			off := false
-			j.Rule.RenameEnabled, j.DestinationID, j.Destination, j.FileID, j.State = &off, parent, "", "", "queued"
+			j.Rule.RenameEnabled, j.DestinationID, j.Destination, j.FileID, j.State = off, parent, "", "", "queued"
 			c.OnSubmit = func(got, source string) (pikpak.Task, error) {
 				if got != parent {
 					t.Fatal("wrong submission parent", got)
@@ -58,7 +58,7 @@ func TestDirectSubmissionAndNoRename(t *testing.T) {
 			if err := w.Process(ctx, j.ID); err != nil {
 				t.Fatal(err)
 			}
-			if got := saved(t, w, j); got.FileID != "media" || got.StagingID != "" || got.StagingCleanup != nil {
+			if got := saved(t, w, j); got.FileID != "media" {
 				t.Fatal("submission IDs not saved", got)
 			}
 			if err := w.Process(ctx, j.ID); err != nil {
@@ -153,7 +153,7 @@ func TestDirectSubmissionAuthQuotaAndRate(t *testing.T) {
 	for _, kind := range []string{"auth", "quota", "rate"} {
 		w, c, p, _, sub, _ := setup(t)
 		j := enqueue(t, w, sub, "queued")
-		j.DownloadMode, j.Destination, j.DestinationID = "direct", "", ""
+		j.Destination, j.DestinationID = "", ""
 		c.Fail["submit"] = &pikpak.Error{Kind: kind, Message: "fixture failure"}
 		ctx := context.Background()
 		if err := w.DB.SaveJob(ctx, &j); err != nil {
@@ -265,10 +265,55 @@ func TestDirectUnknownSubmissionNeverScansOrResubmits(t *testing.T) {
 	assertDirectOnly(t, c)
 }
 
+func TestPendingSubmissionSurvivesAccountPauseAndRestart(t *testing.T) {
+	w, c, j, dir := directFixture(t)
+	j.State, j.FileID = "queued", ""
+	c.Fail["submit"] = errors.New("lost response")
+	ctx := context.Background()
+	if err := w.DB.SaveJob(ctx, &j); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Process(ctx, j.ID); err == nil {
+		t.Fatal("expected unknown submission")
+	}
+	c.AccountID = "different-account"
+	if err := w.Process(ctx, j.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.DB.Close(); err != nil {
+		t.Fatal(err)
+	}
+	db, err := store.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	w.DB = db
+	if got := saved(t, w, j); got.State != "paused_account" || !got.SubmissionPending {
+		t.Fatal("account pause lost submission intent", got)
+	}
+	if _, err := w.DeleteJob(ctx, j.ID, false); err == nil {
+		t.Fatal("unconfirmed task deletion did not require manual cancellation")
+	}
+	c.AccountID = "test-account"
+	if err := w.Retry(ctx, j.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Process(ctx, j.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := saved(t, w, j); got.State != "submission_unknown" || c.Calls["submit"] != 1 {
+		t.Fatal("paused submission was repeated", got)
+	}
+	if n, err := w.DeleteJob(ctx, j.ID, true); err != nil || n != 1 {
+		t.Fatal("confirmed local deletion failed", n, err)
+	}
+}
+
 func TestDirectCompletionWithoutFileID(t *testing.T) {
 	for _, renaming := range []bool{false, true} {
 		w, c, j, _ := directFixture(t)
-		j.Rule.RenameEnabled, j.State, j.TaskID, j.FileID = &renaming, "downloading", "task", ""
+		j.Rule.RenameEnabled, j.State, j.TaskID, j.FileID = renaming, "downloading", "task", ""
 		c.Tasks["task"] = pikpak.Task{ID: "task", Status: "complete"}
 		ctx := context.Background()
 		if err := w.DB.SaveJob(ctx, &j); err != nil {
@@ -349,7 +394,7 @@ func TestRSSCreatesDirectJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs, err := w.DB.Jobs(context.Background(), 10)
-	if err != nil || len(jobs) != 1 || jobs[0].DownloadMode != "direct" || jobs[0].Overwrite {
+	if err != nil || len(jobs) != 1 {
 		t.Fatal("RSS job not direct", err)
 	}
 }

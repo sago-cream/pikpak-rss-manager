@@ -45,7 +45,7 @@ function showView(name) {
 function empty(title, description, button = '') { return tr`<div class="empty-state"><h3>${escapeHTML(title)}</h3>${description?tr`<p>${escapeHTML(description)}</p>`:''}${button}</div>`; }
 function subscriptionCards(items) {
   if (!items.length) return empty(t('尚無訂閱'),'',translateLiteral('<button class="button primary new-subscription">＋ 新增訂閱</button>'));
-  return items.map((s,i) => tr`<article class="subscription-card"><div class="card-top"><span class="subscription-icon color-${i%4}">${escapeHTML(s.name.slice(0,1))}</span><span class="badge ${s.enabled ? 'green' : ''}">${s.enabled ? t('追蹤中') : t('已停用')}</span></div><h3>${escapeHTML(s.name)}</h3><div class="card-path"><span>↳</span>${escapeHTML(s.destination || t('根目錄'))}</div><div class="card-rule"><span>${s.rename_enabled === false ? t('保留原始檔名') : s.rename_mode === 'replace' ? t('Regex 尋找／替換') : t('命名範本')}</span><code>${s.rename_enabled === false ? t('只移動，不重命名') : escapeHTML(s.rename_mode === 'replace' ? tr`${s.regex} → ${s.replacement || t('（移除匹配部分）')}` : s.template)}</code></div>${s.last_error ? tr`<p class="error compact">${escapeHTML(s.last_error)}</p>` : ''}<div class="card-meta"><span>每 ${s.interval_minutes} 分鐘</span><span>${date(s.last_checked)}</span></div><div class="card-actions"><button class="text-button" data-edit="${s.id}">編輯訂閱</button><div><button class="text-button" data-check="${s.id}" title="檢查新的發布">檢查</button><button class="text-button" data-backfill="${s.id}" title="處理 RSS 中仍可取得的現有項目">補抓</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}">×</button></div></div></article>`).join('');
+  return items.map((s,i) => tr`<article class="subscription-card"><div class="card-top"><span class="subscription-icon color-${i%4}">${escapeHTML(s.name.slice(0,1))}</span><span class="badge ${s.enabled ? 'green' : ''}">${s.enabled ? t('追蹤中') : t('已停用')}</span></div><h3>${escapeHTML(s.name)}</h3><div class="card-path"><span>↳</span>${escapeHTML(s.destination || t('根目錄'))}</div><div class="card-rule"><span>${!s.rename_enabled ? t('保留原始檔名') : t('Regex 尋找／替換')}</span><code>${!s.rename_enabled ? t('保留原始檔名') : escapeHTML(tr`${s.regex} → ${s.replacement || t('（移除匹配部分）')}`)}</code></div>${s.last_error ? tr`<p class="error compact">${escapeHTML(s.last_error)}</p>` : ''}<div class="card-meta"><span>每 ${s.interval_minutes} 分鐘</span><span>${date(s.last_checked)}</span></div><div class="card-actions"><button class="text-button" data-edit="${s.id}">編輯訂閱</button><div><button class="text-button" data-check="${s.id}" title="檢查新的發布">檢查</button><button class="text-button" data-backfill="${s.id}" title="處理 RSS 中仍可取得的現有項目">補抓</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}">×</button></div></div></article>`).join('');
 }
 function jobsTable(items) {
   if (!items.length) return empty(t('尚無任務'),'');
@@ -89,23 +89,19 @@ function openSubscription(id, manual=false) {
   $('#save-subscription').textContent=manual?t('新增任務'):t('儲存訂閱');
   $('#sub-name').value=sub?.name||''; $('#sub-url').value=sub?.rss_url||''; $('#sub-destination').value=sub?.destination||'';
   $('#sub-destination-id').value=sub?.destination_id||''; $('#sub-destination-account-ref').value=sub?.destination_account_ref||'';
-  $('#sub-interval').value=sub?.interval_minutes||10; $('#sub-season').value=sub?.season||1; $('#sub-enabled').checked=sub?.enabled??true;
-  $('#sub-rename-enabled').checked=sub ? sub.rename_enabled??true : false;
-  $('#sub-rename-mode').value=sub?.rename_mode||(sub?'template':'replace');
-  $('#rename-mode-label').classList.toggle('hidden',!sub||sub.rename_mode==='replace');
-  $('#sub-template').value=sub?.template||'{title} - S{season:02}E{ep:02}.{ext}';
+  $('#sub-interval').value=sub?.interval_minutes||10; $('#sub-enabled').checked=sub?.enabled??true;
+  $('#sub-rename-enabled').checked=sub?.rename_enabled??false;
   $('#sub-regex').value=sub?.regex??'\\[(\\d+)\\]'; $('#sub-replacement').value=sub?.replacement??'S01E$1';
   closeFolderBrowser(); clearSourceSamples(); updateRenameOptions(); $('#browse-folders').disabled=!data.status.connected||!!data.status.paused;
   $('#destination-help').textContent=data.status.connected?t('從 PikPak 選取資料夾，也可手動輸入路徑。'):t('綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。');
   $('#subscription-dialog').showModal();
 }
-function formRule(){return {title:$('#sub-name').value.trim(),season:Number($('#sub-season').value),regex:$('#sub-regex').value,template:$('#sub-template').value,rename_enabled:$('#sub-rename-enabled').checked,mode:$('#sub-rename-mode').value,replacement:$('#sub-replacement').value};}
+function formRule(){return {title:$('#sub-name').value.trim(),regex:$('#sub-regex').value,rename_enabled:$('#sub-rename-enabled').checked,replacement:$('#sub-replacement').value};}
 function updateRenameOptions(){
-  const enabled=$('#sub-rename-enabled').checked, legacy=$('#sub-rename-mode').value==='template';
-  $('#rename-options').classList.toggle('hidden',!enabled); $('#legacy-options').classList.toggle('hidden',!legacy); $('#replacement-options').classList.toggle('hidden',legacy); $('#preview-title-label').classList.toggle('hidden',!legacy);
-  for(const id of ['sub-regex','sub-replacement','sub-template','sub-season','sub-rename-mode'])$('#'+id).disabled=!enabled;
-  $('#sub-template').required=enabled&&legacy; $('#sub-season').required=enabled&&legacy; $('#sub-template').disabled=!enabled||!legacy; $('#sub-season').disabled=!enabled||!legacy; $('#sub-regex').required=enabled&&!legacy;
-  $('#regex-label').textContent=legacy?t('提取 Regex（既有規則）'):t('尋找 Regex');
+  const enabled=$('#sub-rename-enabled').checked;
+  $('#rename-options').classList.toggle('hidden',!enabled);
+  for(const id of ['sub-regex','sub-replacement'])$('#'+id).disabled=!enabled;
+  $('#sub-regex').required=enabled;
   scheduleRenamePreview();
 }
 
@@ -144,9 +140,8 @@ function showRenamePreview(result){
 }
 let sourceSamples=[],sourceRequest=0,sourceController;
 function selectedSourceSample(){const value=$('#preview-source').value;return value===''?undefined:sourceSamples[Number(value)];}
-function clearSourceSamples(){sourceRequest++;sourceController?.abort();clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#source-samples').textContent=t('讀取種子檔名');$('#source-samples').setAttribute('aria-busy','false');$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-title').value='';$('#preview-source-help').textContent='';$('#preview-result').className='preview-result';$('#preview-result').textContent=t('選擇種子檔名');}
+function clearSourceSamples(){sourceRequest++;sourceController?.abort();clearTimeout(previewTimer);previewRequest++;sourceSamples=[];$('#source-samples').disabled=false;$('#source-samples').textContent=t('讀取種子檔名');$('#source-samples').setAttribute('aria-busy','false');$('#preview-source').innerHTML='';$('#preview-source-label').classList.add('hidden');$('#preview-source-help').textContent='';$('#preview-result').className='preview-result';$('#preview-result').textContent=t('選擇種子檔名');}
 function selectSourceSample(){
-  const sample=selectedSourceSample();$('#preview-title').value=sample?.title||'';
   scheduleRenamePreview();
 }
 async function loadSourceSamples(){
@@ -155,7 +150,7 @@ async function loadSourceSamples(){
   sourceController?.abort();const controller=new AbortController();sourceController=controller;
   $('#source-samples').disabled=true;$('#source-samples').textContent=t('讀取中…');$('#source-samples').setAttribute('aria-busy','true');$('#preview-source-help').textContent=t('正在讀取全部種子檔名…');
   try{
-    const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0,all:true},controller.signal);
+    const result=await api('/api/feeds/samples','POST',{url,subscription_id:Number($('#sub-id').value)||0},controller.signal);
     if(sequence!==sourceRequest||!$('#subscription-dialog').open||$('#sub-url').value.trim()!==url)return;
     const selected=selectedSourceSample();sourceSamples=[];
     const known=new Set();
@@ -180,13 +175,13 @@ function scheduleRenamePreview(event){
 async function previewRule(){
   const sample=selectedSourceSample();if(!sample)return;
   const sequence=++previewRequest;
-  try{const result=await api('/api/rules/preview','POST',{rule:formRule(),title:$('#preview-title').value,filename:sample.filename});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
+  try{const result=await api('/api/rules/preview','POST',{rule:formRule(),filename:sample.filename});if(sequence===previewRequest&&$('#subscription-dialog').open)showRenamePreview(result);}
   catch(e){if(sequence===previewRequest){$('#preview-result').className='preview-result error';$('#preview-result').textContent=e.message;}}
 }
 async function showJob(id) {
   try { const details=await api(tr`/api/jobs/${encodeURIComponent(id)}`); const j=details.job;
-    const fileLabels={pending:t('等待整理'),renaming:t('改名中'),renamed:t('已重命名'),done:t('已完成'),review:t('保留原名')};
-    $('#job-details').innerHTML=tr`<h3>${escapeHTML(j.rule.title)}</h3><p class="muted">${escapeHTML(j.title)}</p><div class="detail-meta">${badge(j.state)}<span>目標：${escapeHTML(j.destination||t('根目錄'))}</span></div>${j.error?tr`<p class="notice">${escapeHTML(j.error)}</p>`:''}<dl class="id-list"><dt>任務識別</dt><dd>${escapeHTML(j.id)}</dd><dt>PikPak 任務 ID</dt><dd>${escapeHTML(j.task_id||t('尚未取得'))}</dd>${j.download_mode!=='direct'?tr`<dt>專用暫存目錄 ID</dt><dd>${escapeHTML(j.staging_id||t('尚未建立'))}</dd>`:''}</dl>${details.files.length?details.files.map(f=>tr`<article class="file-detail"><span class="badge ${f.state==='done'?'green':'orange'}">${escapeHTML(fileLabels[f.state]||f.state)}</span><p>${escapeHTML(f.original_name)}</p><strong>${escapeHTML(f.actual_name||f.target_name||t('保留原名'))}</strong>${f.error?tr`<small class="error">${escapeHTML(f.error)}</small>`:''}</article>`).join(''):translateLiteral('<p class="muted">尚無逐檔整理紀錄。</p>')}<div class="dialog-footer"><button class="button subtle danger" data-delete-job="${escapeHTML(j.id)}">刪除任務</button>${reviewStates.includes(j.state)&&j.state!=='failed'?tr`<button class="button primary" data-retry="${j.id}">${j.state==='submission_unknown'?t('重新核對結果'):t('重新整理／接續任務')}</button>`:''}</div>`;
+    const fileLabels={pending:t('等待整理'),renaming:t('改名中'),done:t('已完成'),review:t('保留原名')};
+    $('#job-details').innerHTML=tr`<h3>${escapeHTML(j.rule.title)}</h3><p class="muted">${escapeHTML(j.title)}</p><div class="detail-meta">${badge(j.state)}<span>目標：${escapeHTML(j.destination||t('根目錄'))}</span></div>${j.error?tr`<p class="notice">${escapeHTML(j.error)}</p>`:''}<dl class="id-list"><dt>任務識別</dt><dd>${escapeHTML(j.id)}</dd><dt>PikPak 任務 ID</dt><dd>${escapeHTML(j.task_id||t('尚未取得'))}</dd></dl>${details.files.length?details.files.map(f=>tr`<article class="file-detail"><span class="badge ${f.state==='done'?'green':'orange'}">${escapeHTML(fileLabels[f.state]||f.state)}</span><p>${escapeHTML(f.original_name)}</p><strong>${escapeHTML(f.actual_name||f.target_name||t('保留原名'))}</strong>${f.error?tr`<small class="error">${escapeHTML(f.error)}</small>`:''}</article>`).join(''):translateLiteral('<p class="muted">尚無逐檔整理紀錄。</p>')}<div class="dialog-footer"><button class="button subtle danger" data-delete-job="${escapeHTML(j.id)}">刪除任務</button>${reviewStates.includes(j.state)&&j.state!=='failed'?tr`<button class="button primary" data-retry="${j.id}">${j.state==='submission_unknown'?t('重新核對結果'):t('重新整理／接續任務')}</button>`:''}</div>`;
     $('#job-dialog').showModal();
   }catch(e){toast(e.message,true);}
 }
@@ -210,7 +205,7 @@ document.addEventListener('click',async event=>{
   button.disabled=true;
   try {
     if(button.id==='refresh'){await load();toast(t('已更新面板'));}
-    if(button.dataset.deleteJob){const job=data.jobs.find(j=>j.id===button.dataset.deleteJob);const localOnly=job&&!job.task_id&&['submitting','submission_unknown','paused_account'].includes(job.state);if(!confirm(localOnly?t('尚無 PikPak 任務 ID，無法自動取消。請先至 PikPak 取消，再刪除此紀錄？'):t('刪除這筆任務並取消 PikPak 下載？已完成的雲端檔案會保留。')))return;await api(`/api/jobs/${encodeURIComponent(button.dataset.deleteJob)}`,'DELETE',{local_only:!!localOnly});$('#job-dialog').close();toast(t('任務已刪除'));await load();}
+    if(button.dataset.deleteJob){const job=data.jobs.find(j=>j.id===button.dataset.deleteJob);const localOnly=job&&!job.task_id&&(job.submission_pending||['submitting','submission_unknown'].includes(job.state));if(!confirm(localOnly?t('尚無 PikPak 任務 ID，無法自動取消。請先至 PikPak 取消，再刪除此紀錄？'):t('刪除這筆任務並取消 PikPak 下載？已完成的雲端檔案會保留。')))return;await api(`/api/jobs/${encodeURIComponent(button.dataset.deleteJob)}`,'DELETE',{local_only:!!localOnly});$('#job-dialog').close();toast(t('任務已刪除'));await load();}
     if(button.id==='clear-completed-jobs'){if(!confirm(t('清除所有已完成任務紀錄？雲端檔案會保留。')))return;await api('/api/jobs/completed','DELETE');toast(t('已清除已完成任務'));await load();}
     if(button.dataset.backfill){await openBackfill(button.dataset.backfill);}
     if(button.dataset.check){await api(`/api/subscriptions/${button.dataset.check}/check`,'POST',{backfill:false});toast(t('訂閱檢查完成'));await load();}
@@ -240,7 +235,7 @@ async function start(){
   if($('#login-form')){
     $('#login-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button');button.disabled=true;$('#login-error').textContent='';try{await api('/api/login','POST',{password:$('#password').value});$('#password').value='';location.reload();}catch(e){$('#password').value='';$('#login-error').textContent=e.message;}finally{button.disabled=false;}});return;
   }
-  $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();if(manualTask){await api('/api/jobs','POST',{url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value});}else await api(tr`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),season:rule.season,regex:rule.regex,template:rule.template,rename_enabled:rule.rename_enabled,rename_mode:rule.mode,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast(manualTask?t('任務已新增'):t('訂閱設定已儲存'));await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
+  $('#subscription-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{const id=$('#sub-id').value;const rule=formRule();if(manualTask){await api('/api/jobs','POST',{url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value});}else await api(tr`/api/subscriptions${id?'/'+id:''}`,id?'PUT':'POST',{name:rule.title,rss_url:$('#sub-url').value.trim(),destination:$('#sub-destination').value.trim(),destination_id:$('#sub-destination-id').value,destination_account_ref:$('#sub-destination-account-ref').value,enabled:$('#sub-enabled').checked,interval_minutes:Number($('#sub-interval').value),regex:rule.regex,rename_enabled:rule.rename_enabled,replacement:rule.replacement});closeFolderBrowser();$('#subscription-dialog').close();toast(manualTask?t('任務已新增'):t('訂閱設定已儲存'));await load();}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#folder-create-form').addEventListener('submit',async event=>{
     event.preventDefault();if(!folderCreateContext)return;
     const context=folderCreateContext,sequence=folderRequest,button=event.target.querySelector('button[type=submit]');
@@ -265,8 +260,8 @@ async function start(){
   const settings=await api('/api/settings/app');$('#settings-public-url').value=settings.public_url;$('#settings-private-feeds').checked=settings.allow_private_feeds;
   $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast(t('網站設定已儲存'));}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
-  $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);$('#sub-rename-mode').addEventListener('change',updateRenameOptions);
-  for(const id of ['sub-name','sub-regex','sub-replacement','sub-template','sub-season','preview-title']){
+  $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);
+  for(const id of ['sub-name','sub-regex','sub-replacement']){
     $('#'+id).addEventListener('input',scheduleRenamePreview);$('#'+id).addEventListener('compositionend',scheduleRenamePreview);
   }
   $('#sub-destination').addEventListener('input',()=>{$('#sub-destination-id').value='';$('#sub-destination-account-ref').value='';});

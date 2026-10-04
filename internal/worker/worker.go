@@ -7,7 +7,6 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
-	"github.com/wade00754/pikpak-rss-manager/internal/rename"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 	"path"
 	"strings"
@@ -24,12 +23,11 @@ type Feeds interface {
 	Resolve(context.Context, string) (feed.Resource, error)
 }
 type Worker struct {
-	DB          *store.Store
-	Provider    Provider
-	Feeds       Feeds
-	StagingPath string
-	Gate        sync.Mutex
-	subMu       sync.Mutex
+	DB       *store.Store
+	Provider Provider
+	Feeds    Feeds
+	Gate     sync.Mutex
+	subMu    sync.Mutex
 }
 
 func New(db *store.Store, p Provider, f Feeds) *Worker { return &Worker{DB: db, Provider: p, Feeds: f} }
@@ -184,7 +182,7 @@ func (w *Worker) Check(ctx context.Context, id int64, backfill bool) error {
 			continue
 		}
 		now := time.Now().Unix()
-		j := model.Job{DownloadMode: "direct", ID: store.ID(), SubscriptionID: id, AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: item.Title, Rule: sub.Rule(), Destination: sub.Destination, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
+		j := model.Job{ID: store.ID(), SubscriptionID: id, AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: item.Title, Rule: sub.Rule(), Destination: sub.Destination, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
 		j.DestinationID = sub.DestinationID
 		added, err := w.DB.Enqueue(ctx, j, item.Fingerprint)
 		if err != nil {
@@ -237,14 +235,11 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		j.Error = "舊帳號任務已暫停"
 		return w.DB.SaveJob(ctx, &j)
 	}
-	if j.State == "complete" && j.DownloadMode == "direct" {
+	if j.State == "complete" {
 		return nil
 	}
-	if j.State == "complete" {
-		return w.cleanupCompleted(ctx, api, &j)
-	}
 	if j.State == "submitting" {
-		return w.reconcile(ctx, api, &j)
+		return w.reconcile(ctx, &j)
 	}
 	if j.State == "queued" {
 		if strings.HasPrefix(j.ResourceURL, "magnet:") {
@@ -268,42 +263,19 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 				return w.failure(ctx, &j, &pikpak.Error{Kind: "permanent", Message: "目標資料夾已變更，請重新選取"}, false)
 			}
 		}
-		if j.StagingID == "" && j.DownloadMode != "direct" {
-			stagingParent := j.DestinationID
-			stagingPath := w.StagingPath
-			if stagingPath == "" {
-				stagingPath = "_PikPak-RSS-Staging"
-			} else {
-				// Explicit paths are reserved for isolated cloud test namespaces.
-				stagingParent = ""
-			}
-			root, e := ensurePath(ctx, api, stagingParent, stagingPath)
-			if e != nil {
-				return w.failure(ctx, &j, e, false)
-			}
-			j.StagingID, err = pikpak.EnsureFolder(ctx, api, root, j.ID)
-			if err != nil {
-				return w.failure(ctx, &j, err, false)
-			}
-			j.StagingCleanup = &model.StagingCleanup{ParentID: root, Pending: true}
-		}
 		// Persist intent BEFORE calling the non-idempotent cloud operation.
 		j.State = "submitting"
+		j.SubmissionPending = true
 		if err := w.DB.SaveJob(ctx, &j); err != nil {
 			return err
 		}
-		parent := j.StagingID
-		if j.DownloadMode == "direct" {
-			parent = j.DestinationID
-		}
-		task, e := api.Submit(ctx, parent, j.ResourceURL)
+		task, e := api.Submit(ctx, j.DestinationID, j.ResourceURL)
 		if e != nil {
 			return w.failure(ctx, &j, e, true)
 		}
+		j.SubmissionPending = false
 		j.TaskID = task.ID
-		if j.DownloadMode == "direct" {
-			j.FileID = task.FileID
-		}
+		j.FileID = task.FileID
 		j.State = "downloading"
 		j.Error = ""
 		j.Attempts = 0
@@ -330,31 +302,14 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 			if task.FileID != "" {
 				j.FileID = task.FileID
 			}
-			if j.DownloadMode == "direct" {
-				j.Progress = 100
-				if !j.Rule.Renaming() {
-					return w.completeDirect(ctx, &j)
-				}
-				if j.FileID == "" {
-					return w.reviewDirect(ctx, &j, "下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對")
-				}
-				j.State = "organizing"
-				break
+			j.Progress = 100
+			if !j.Rule.Renaming() {
+				return w.completeDirect(ctx, &j)
 			}
 			if j.FileID == "" {
-				roots, e := pikpak.ListAll(ctx, api, j.StagingID)
-				if e != nil {
-					return w.failure(ctx, &j, e, false)
-				}
-				if len(roots) != 1 {
-					j.State = "needs_review"
-					j.Error = "任務完成但無法唯一定位雲端檔案"
-					return w.DB.SaveJob(ctx, &j)
-				}
-				j.FileID = roots[0].ID
+				return w.reviewDirect(ctx, &j, "下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對")
 			}
 			j.State = "organizing"
-			j.Progress = 100
 		case "error", "failed":
 			if e := pikpak.Classify(errors.New(task.Message)); e.Kind == "auth" || e.Kind == "quota" {
 				return w.failure(ctx, &j, e, false)
@@ -377,17 +332,8 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		}
 	}
 	if j.State == "organizing" {
-		if j.DownloadMode == "direct" {
-			if err := w.renameDirect(ctx, api, &j); err != nil {
-				return w.failure(ctx, &j, err, false)
-			}
-			return nil
-		}
-		if err := w.organize(ctx, api, &j); err != nil {
+		if err := w.renameDirect(ctx, api, &j); err != nil {
 			return w.failure(ctx, &j, err, false)
-		}
-		if j.State == "complete" {
-			return w.cleanupCompleted(ctx, api, &j)
 		}
 	}
 	return nil
@@ -402,6 +348,7 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 		j.Error = "離線提交結果不明，請至 PikPak 核對任務"
 	} else if e.Kind == "auth" || e.Kind == "quota" {
 		if submitted {
+			j.SubmissionPending = false
 			j.State = "queued"
 		}
 		j.State = "paused_" + e.Kind
@@ -410,6 +357,7 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 		j.State = "needs_review"
 	} else {
 		if submitted {
+			j.SubmissionPending = false
 			j.State = "queued"
 		}
 		delays := []time.Duration{30 * time.Second, 2 * time.Minute, 10 * time.Minute, 30 * time.Minute, 2 * time.Hour}
@@ -426,28 +374,13 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 	return e
 }
 
-func (w *Worker) reconcile(ctx context.Context, api pikpak.API, j *model.Job) error {
-	if j.DownloadMode == "direct" {
-		if j.TaskID != "" {
-			j.State, j.Error, j.NextAttempt = "downloading", "", 0
-		} else {
-			j.State = "submission_unknown"
-			j.Error = "提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載"
-		}
-		return w.DB.SaveJob(ctx, j)
-	}
-	roots, err := pikpak.ListAll(ctx, api, j.StagingID)
-	if err != nil {
-		return err
-	}
-	if len(roots) == 1 && strings.Contains(strings.ToLower(roots[0].Phase), "complete") {
-		j.FileID = roots[0].ID
-		j.State = "organizing"
-		j.Error = ""
-		j.NextAttempt = 0
+func (w *Worker) reconcile(ctx context.Context, j *model.Job) error {
+	if j.TaskID != "" {
+		j.SubmissionPending = false
+		j.State, j.Error, j.NextAttempt = "downloading", "", 0
 	} else {
 		j.State = "submission_unknown"
-		j.Error = "提交結果仍不明，請至 PikPak 檢查暫存目錄"
+		j.Error = "提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載"
 	}
 	return w.DB.SaveJob(ctx, j)
 }
@@ -468,8 +401,8 @@ func (w *Worker) Retry(ctx context.Context, id string) error {
 	if j.State == "complete" {
 		return errors.New("任務已完成")
 	}
-	if j.State == "submission_unknown" || j.State == "submitting" {
-		return w.reconcile(ctx, api, &j)
+	if j.SubmissionPending || j.State == "submission_unknown" || j.State == "submitting" {
+		return w.reconcile(ctx, &j)
 	}
 	if j.State == "failed" && j.TaskID != "" {
 		return errors.New("遠端離線任務已失敗，請至 PikPak 檢查來源")
@@ -477,14 +410,12 @@ func (w *Worker) Retry(ctx context.Context, id string) error {
 	if sub, e := w.DB.Subscription(ctx, j.SubscriptionID); e == nil {
 		j.Rule = sub.Rule()
 	}
-	if j.DownloadMode == "direct" && j.TaskID != "" && j.Progress < 100 {
+	if j.TaskID != "" && j.Progress < 100 {
 		j.State = "downloading"
 	} else if j.FileID != "" {
 		j.State = "organizing"
 	} else if j.TaskID != "" {
 		j.State = "downloading"
-	} else if j.StagingID != "" && j.State == "paused_account" {
-		j.State = "submitting"
 	} else {
 		j.State = "queued"
 	}
@@ -531,225 +462,4 @@ func primary(name string) bool {
 		return true
 	}
 	return false
-}
-func (w *Worker) organize(ctx context.Context, api pikpak.API, j *model.Job) error {
-	actions, err := w.DB.Actions(ctx, j.ID)
-	if err != nil {
-		return err
-	}
-	known := map[string]model.FileAction{}
-	for _, a := range actions {
-		known[a.FileID] = a
-	}
-	root, err := api.Get(ctx, j.FileID)
-	if err != nil {
-		return err
-	}
-	entries := []entry{}
-	if err := walk(ctx, api, root, "", 0, &entries); err != nil {
-		return err
-	}
-	if j.FileCount == 0 {
-		j.FileCount = len(entries)
-		for _, e := range entries {
-			if primary(e.file.Name) {
-				j.PrimaryCount++
-			}
-		}
-		if j.PrimaryCount == 0 && j.FileCount == 1 {
-			j.PrimaryCount = 1
-		}
-		if j.FileCount == 0 {
-			return &pikpak.Error{Kind: "permanent", Message: "完成的任務沒有檔案，請至 PikPak 檢查"}
-		}
-		if err := w.DB.SaveJob(ctx, j); err != nil {
-			return err
-		}
-	}
-	for _, e := range entries {
-		a, exists := known[e.file.ID]
-		if exists && a.State != "review" {
-			continue
-		}
-		if !exists {
-			a = model.FileAction{JobID: j.ID, FileID: e.file.ID, OriginalName: e.file.Name, RelativePath: e.relative}
-		}
-		if !primary(a.OriginalName) && j.FileCount != 1 {
-			a.State = "pending"
-			a.TargetName = a.OriginalName
-			extraPath := "_附件/" + j.ID
-			if dir := path.Dir(a.RelativePath); dir != "." {
-				extraPath += "/" + dir
-			}
-			a.DestinationID, err = ensurePath(ctx, api, j.DestinationID, extraPath)
-			if err != nil {
-				return err
-			}
-			a.Error = ""
-		} else {
-			preview, parseErr := rename.Render(j.Rule, j.Title, a.OriginalName, j.PrimaryCount == 1)
-			if parseErr != nil {
-				a.State = "review"
-				a.Error = parseErr.Error()
-			} else {
-				a.State = "pending"
-				a.TargetName = preview.Name
-				a.DestinationID = j.DestinationID
-				a.Error = ""
-			}
-		}
-		if err := w.DB.SaveAction(ctx, a); err != nil {
-			return err
-		}
-		known[a.FileID] = a
-	}
-	// The complete action plan exists before the first rename or move.
-	actions, err = w.DB.Actions(ctx, j.ID)
-	if err != nil {
-		return err
-	}
-	review := false
-	planned := map[string][]int{}
-	for i, a := range actions {
-		if a.State != "review" {
-			k := a.DestinationID + "\x00" + strings.ToLower(a.TargetName)
-			planned[k] = append(planned[k], i)
-		}
-	}
-	for _, indices := range planned {
-		if len(indices) < 2 {
-			continue
-		}
-		for _, i := range indices {
-			if actions[i].State == "done" {
-				continue
-			}
-			actions[i].State = "review"
-			actions[i].Error = "多個檔案產生相同名稱，保留原名待處理"
-			if err := w.DB.SaveAction(ctx, actions[i]); err != nil {
-				return err
-			}
-		}
-	}
-	for _, a := range actions {
-		if a.State == "done" {
-			continue
-		}
-		if a.State == "review" {
-			review = true
-			continue
-		}
-		current, e := api.Get(ctx, a.FileID)
-		if e != nil {
-			return e
-		}
-		if current.Phase != "" && !strings.Contains(strings.ToLower(current.Phase), "complete") {
-			return &pikpak.Error{Kind: "transient", Message: "雲端檔案尚未完成，稍後整理"}
-		}
-		targets, e := pikpak.ListAll(ctx, api, a.DestinationID)
-		if e != nil {
-			return e
-		}
-		collision := false
-		blockedFolder := false
-		for _, target := range targets {
-			if target.ID != a.FileID && strings.EqualFold(target.Name, a.TargetName) {
-				collision = true
-				if target.Folder() {
-					blockedFolder = true
-				}
-			}
-		}
-		if collision && (!j.Overwrite || blockedFolder) {
-			a.State = "review"
-			a.Error = "目標已有同名檔案，保留原名；不覆寫"
-			review = true
-			if err := w.DB.SaveAction(ctx, a); err != nil {
-				return err
-			}
-			continue
-		}
-		if j.Overwrite {
-			if err := w.replaceTargets(ctx, api, j, &a, targets); err != nil {
-				return err
-			}
-		}
-		if current.Name != a.TargetName {
-			if err := api.Rename(ctx, a.FileID, a.TargetName); err != nil {
-				return err
-			}
-		}
-		a.State = "renamed"
-		if err := w.DB.SaveAction(ctx, a); err != nil {
-			return err
-		}
-		if current.ParentID != a.DestinationID {
-			if err := api.Move(ctx, a.FileID, a.DestinationID); err != nil {
-				return err
-			}
-		}
-		a.State = "done"
-		a.Error = ""
-		if err := w.DB.SaveAction(ctx, a); err != nil {
-			return err
-		}
-	}
-	j.Attempts = 0
-	j.Error = ""
-	j.State = "complete"
-	if review {
-		j.State = "needs_review"
-		j.Error = "部分檔案無法解析或有命名衝突；原檔已保留，修改規則後可重新整理"
-	}
-	if err := w.DB.SaveJob(ctx, j); err != nil {
-		return err
-	}
-	return w.DB.Event(ctx, j.ID, j.SubscriptionID, "info", map[bool]string{true: "雲端整理完成，部分檔案待處理", false: "離線下載與雲端整理完成"}[review])
-}
-
-// Persist the backup plan before moving old files. A restart or uncertain move
-// rechecks file IDs/parents rather than repeating a destructive action by name.
-func (w *Worker) replaceTargets(ctx context.Context, api pikpak.API, j *model.Job, a *model.FileAction, targets []pikpak.File) error {
-	known := map[string]bool{}
-	for _, id := range a.ReplacementIDs {
-		known[id] = true
-	}
-	for _, target := range targets {
-		if target.ID != a.FileID && strings.EqualFold(target.Name, a.TargetName) && !known[target.ID] {
-			a.ReplacementIDs = append(a.ReplacementIDs, target.ID)
-			known[target.ID] = true
-		}
-	}
-	if len(a.ReplacementIDs) == 0 {
-		return nil
-	}
-	if j.StagingID == "" {
-		return &pikpak.Error{Kind: "permanent", Message: "覆蓋備份目錄無法定位，請檢查任務"}
-	}
-	if a.BackupID == "" {
-		id, err := ensurePath(ctx, api, j.StagingID, "_Replaced/"+a.FileID)
-		if err != nil {
-			return err
-		}
-		a.BackupID = id
-	}
-	if err := w.DB.SaveAction(ctx, *a); err != nil {
-		return err
-	}
-	for _, id := range a.ReplacementIDs {
-		old, err := api.Get(ctx, id)
-		if err != nil {
-			return err
-		}
-		if old.ParentID == a.BackupID {
-			continue
-		}
-		if old.Folder() || old.ParentID != a.DestinationID || !strings.EqualFold(old.Name, a.TargetName) {
-			return &pikpak.Error{Kind: "permanent", Message: "同名舊檔已變更，請檢查覆蓋備份"}
-		}
-		if err := api.Move(ctx, id, a.BackupID); err != nil {
-			return err
-		}
-	}
-	return nil
 }

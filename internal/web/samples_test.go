@@ -110,7 +110,7 @@ func TestSourcePreviewIsAuthenticatedAndDoesNotQueueDownloads(t *testing.T) {
 	}
 }
 
-func TestSourcePagingProtectsCursorsAndDoesNotRepeatCachedNames(t *testing.T) {
+func TestSourceReadsAllFilenamesAndScopesCachedNames(t *testing.T) {
 	feedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, ".torrent") {
 			metadata, _ := bencode.EncodeBytes(map[string]any{"info": map[string]any{"name": strings.TrimPrefix(r.URL.Path, "/") + ".mkv", "length": 1, "piece length": 16384, "pieces": "01234567890123456789"}})
@@ -188,60 +188,21 @@ func TestSourcePagingProtectsCursorsAndDoesNotRepeatCachedNames(t *testing.T) {
 	body := map[string]any{"url": sub.RSSURL, "subscription_id": sub.ID}
 	code, data := post("/api/feeds/samples", body, true)
 	var first feed.Samples
-	if code != 200 || json.Unmarshal(data, &first) != nil || len(first.Items) != 4 || first.Items[0].Kind != "downloaded_file" || first.NextCursor == "" {
-		t.Fatal("first sample page or cached name failed", code)
+	if code != 200 || json.Unmarshal(data, &first) != nil || len(first.Items) != 6 || first.Items[0].Kind != "downloaded_file" {
+		t.Fatal("full sample list or cached name failed", code)
 	}
 	for _, private := range []string{"feed-sentinel", "torrent-sentinel", cloud.AccountID} {
 		if strings.Contains(string(data), private) {
-			t.Fatal("paging exposed private source metadata")
+			t.Fatal("preview exposed private source metadata")
 		}
 	}
-	body["cursor"] = first.NextCursor
-	if code, _ := post("/api/feeds/samples", body, false); code != 403 {
-		t.Fatal("continuation bypassed CSRF")
-	}
-	code, data = post("/api/feeds/samples", body, true)
-	var next feed.Samples
-	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 2 || next.NextCursor != "" {
-		t.Fatal("continuation failed", code)
-	}
-	for i, sample := range next.Items {
-		if sample.Kind != "torrent_file" || sample.Filename != fmt.Sprintf("%d.torrent.mkv", i+3) {
-			t.Fatal("cached names repeated or torrent skipped", sample)
-		}
-	}
-	body["cursor"] = ""
-	body["all"] = true
 	if code, _ := post("/api/feeds/samples", body, false); code != 403 {
 		t.Fatal("all-filenames request bypassed CSRF")
 	}
-	code, data = post("/api/feeds/samples", body, true)
-	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 6 || next.NextCursor != "" || next.Items[0].Kind != "downloaded_file" {
-		t.Fatal("all filenames or account-scoped original name missing", code)
-	}
-	body["cursor"] = "invalid"
-	if code, _ := post("/api/feeds/samples", body, true); code != 400 {
-		t.Fatal("all request accepted a cursor")
-	}
-	body["all"] = false
-	if code, _ := post("/api/feeds/samples", body, true); code != 400 {
-		t.Fatal("malformed continuation accepted")
-	}
+	var next feed.Samples
 	cloud.AccountID = "other-account"
-	body["cursor"] = ""
 	code, data = post("/api/feeds/samples", body, true)
-	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 3 || next.Items[0].Kind != "torrent_file" {
+	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 5 || next.Items[0].Kind != "torrent_file" {
 		t.Fatal("old account's cached filenames reused")
-	}
-	body["all"] = true
-	code, data = post("/api/feeds/samples", body, true)
-	next = feed.Samples{}
-	if code != 200 || json.Unmarshal(data, &next) != nil || len(next.Items) != 5 || next.NextCursor != "" || next.Items[0].Kind != "torrent_file" {
-		t.Fatal("all filenames reused old-account cache or omitted torrents", code)
-	}
-	stored, _ := db.Subscription(context.Background(), sub.ID)
-	jobs, _ := db.Jobs(context.Background(), 10)
-	if stored.Initialized || len(jobs) != 1 || cloud.Calls["submit"] != 0 || cloud.Calls["mkdir"] != 0 {
-		t.Fatal("source paging changed baseline or cloud content")
 	}
 }

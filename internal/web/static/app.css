@@ -958,20 +958,7 @@ dialog::backdrop {
   margin:18px 0
 }
 
-.token-hints {
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin:-7px 0 20px
-}
 
-.token-hints code {
-  font-size:9px;
-  color:#9a86b8;
-  background:#f5f1fb;
-  border-radius:4px;
-  padding:3px 6px
-}
 
 .preview-box {
   padding:19px;

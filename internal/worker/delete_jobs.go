@@ -21,7 +21,7 @@ func (w *Worker) DeleteJob(ctx context.Context, id string, localOnly bool) (int6
 		return 0, err
 	}
 	if j.State != "complete" {
-		if !localOnly && j.TaskID == "" && (j.State == "submitting" || j.State == "submission_unknown" || (j.State == "paused_account" && j.StagingID != "")) {
+		if !localOnly && j.TaskID == "" && (j.SubmissionPending || j.State == "submitting" || j.State == "submission_unknown") {
 			return 0, errors.New("尚無 PikPak 任務 ID，請先在 PikPak 取消後刪除本機紀錄")
 		}
 		if j.TaskID != "" {

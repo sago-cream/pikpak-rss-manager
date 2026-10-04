@@ -19,9 +19,7 @@ import (
 
 func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name          string `json:"name"`
 		URL           string `json:"url"`
-		SourceType    string `json:"source_type"`
 		Destination   string `json:"destination"`
 		DestinationID string `json:"destination_id"`
 		AccountRef    string `json:"destination_account_ref"`
@@ -32,14 +30,7 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
 	defer cancel()
-	off := false
-	sub := model.Subscription{Name: strings.TrimSpace(in.Name), Destination: in.Destination, DestinationID: in.DestinationID, DestinationAccountRef: in.AccountRef, RenameEnabled: &off, RenameMode: "replace"}
-	if sub.Name != "" {
-		if err := rename.Validate(sub.Rule()); err != nil {
-			failure(w, err)
-			return
-		}
-	}
+	sub := model.Subscription{Destination: in.Destination, DestinationID: in.DestinationID, DestinationAccountRef: in.AccountRef}
 	if sub.DestinationID == "" {
 		destination, err := rename.Destination(sub.Destination)
 		if err != nil {
@@ -59,33 +50,22 @@ func (s *Server) createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var resource feed.Resource
-	sourceType := in.SourceType
-	if sourceType == "" || sourceType == "auto" {
-		sourceType = "url"
-		if u, parseErr := url.Parse(source); parseErr == nil && (u.Scheme == "magnet" || strings.HasSuffix(strings.ToLower(u.Path), ".torrent")) {
-			sourceType = "torrent"
-		}
-	}
-	switch sourceType {
-	case "torrent":
+	u, parseErr := url.Parse(source)
+	if parseErr == nil && (u.Scheme == "magnet" || strings.HasSuffix(strings.ToLower(u.Path), ".torrent")) {
 		// Fetch metadata only, with the current private-network policy and limits.
 		resource, err = feed.New(s.appSettings().AllowPrivateFeeds).Resolve(ctx, source)
-	case "url":
+	} else {
 		err = feed.ValidateURL(source)
 		if err == nil {
 			hash := sha256.Sum256([]byte(source))
 			resource = feed.Resource{Key: "url:" + hex.EncodeToString(hash[:]), URL: source}
 		}
-	default:
-		err = errors.New("不支援的下載連結類型")
 	}
 	if err != nil {
 		failure(w, err)
 		return
 	}
-	if sub.Name == "" {
-		sub.Name = manualJobName(resource)
-	}
+	sub.Name = manualJobName(resource)
 	s.Worker.Gate.Lock()
 	defer s.Worker.Gate.Unlock()
 	_, account, err := s.directoryAPI()

@@ -2,14 +2,10 @@ package feed
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"net/url"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -26,14 +22,10 @@ type Sample struct {
 }
 
 type Samples struct {
-	Items      []Sample `json:"items"`
-	Notices    []string `json:"notices"`
-	NextCursor string   `json:"next_cursor,omitempty"`
+	Items   []Sample `json:"items"`
+	Notices []string `json:"notices"`
 }
 
-const sampleEntriesPerPage = 5
-const sampleTorrentsPerPage = 3
-const sampleNamesPerPage = 30
 const sampleTorrentConcurrency = 5
 
 // SamplesAll reads one feed snapshot and each distinct torrent once. Five
@@ -131,129 +123,6 @@ enqueue:
 		out.Notices = append(out.Notices, "部分種子無法取得或解析檔名，可重新讀取。")
 	}
 	return out, nil
-}
-
-// Samples reads feed/torrent metadata only. Magnet display names and RSS titles
-// are labeled separately because they need not match a downloaded filename.
-func (c *Client) Samples(ctx context.Context, feedURL string) (Samples, error) {
-	return c.SamplesPage(ctx, feedURL, "")
-}
-
-// SamplesPage continues at the next entry or filename without skipping sources
-// when a page's metadata budget is exhausted. Cursors contain only offsets and
-// content digests, never feed credentials or resource URLs.
-func (c *Client) SamplesPage(ctx context.Context, feedURL, cursor string) (Samples, error) {
-	out := Samples{Items: []Sample{}, Notices: []string{}}
-	index, fileOffset, revision, namesRevision, err := parseSampleCursor(cursor)
-	if err != nil {
-		return out, err
-	}
-	items, err := c.fetch(ctx, feedURL, true)
-	if err != nil {
-		return out, err
-	}
-	currentRevision := sampleRevision(items)
-	if cursor != "" && (revision != currentRevision || index >= len(items)) {
-		return out, errors.New("RSS 內容已更新，請重新讀取 RSS 範例")
-	}
-	torrentReads := 0
-	for scanned := 0; index < len(items) && scanned < sampleEntriesPerPage && len(out.Items) < sampleNamesPerPage; scanned++ {
-		if err := ctx.Err(); err != nil {
-			return out, errors.New("來源範例讀取逾時，請稍後再試")
-		}
-		item := items[index]
-		if strings.HasPrefix(item.URL, "magnet:") {
-			if fileOffset != 0 {
-				return out, errors.New("來源範例續讀位置無效，請重新讀取 RSS 範例")
-			}
-			if _, err := NormalizeMagnet(item.URL); err == nil {
-				u, _ := url.Parse(item.URL)
-				if name := u.Query().Get("dn"); validSampleName(name) {
-					out.Items = append(out.Items, Sample{item.Title, name, "magnet_name"})
-					index++
-					continue
-				}
-			}
-		} else {
-			if torrentReads >= sampleTorrentsPerPage {
-				break
-			}
-			torrentReads++
-			metadata, err := c.read(ctx, item.URL)
-			var names []string
-			if err == nil {
-				names, err = torrentNames(metadata)
-				if err == nil && len(names) > 0 {
-					currentNamesRevision := filenameRevision(names)
-					if fileOffset >= len(names) || (fileOffset > 0 && namesRevision != currentNamesRevision) {
-						return out, errors.New("種子內容已更新，請重新讀取 RSS 範例")
-					}
-					end := min(len(names), fileOffset+sampleNamesPerPage-len(out.Items))
-					for _, name := range names[fileOffset:end] {
-						out.Items = append(out.Items, Sample{item.Title, name, "torrent_file"})
-					}
-					if end < len(names) {
-						out.NextCursor = sampleCursor(index, end, currentRevision, currentNamesRevision)
-						return out, nil
-					}
-					fileOffset, namesRevision = 0, ""
-					index++
-					continue
-				}
-			}
-			if fileOffset > 0 {
-				return out, errors.New("種子檔名續讀失敗，請稍後再試或重新讀取 RSS 範例")
-			}
-			out.Notices = append(out.Notices, "部分種子中繼資料無法取得，可手動輸入檔名。")
-		}
-		if item.Title != "" {
-			out.Items = append(out.Items, Sample{item.Title, item.Title, "rss_title"})
-		}
-		index++
-	}
-	if index < len(items) {
-		out.NextCursor = sampleCursor(index, 0, currentRevision, "")
-	}
-	return out, nil
-}
-
-func sampleRevision(items []Item) string {
-	h := sha256.New()
-	for _, item := range items {
-		fmt.Fprintf(h, "%s\x00%s\x00%s\x00", item.Fingerprint, item.Title, item.URL)
-	}
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-func filenameRevision(names []string) string {
-	digest := sha256.Sum256([]byte(strings.Join(names, "\x00")))
-	return hex.EncodeToString(digest[:])
-}
-
-func sampleCursor(index, fileOffset int, revision, namesRevision string) string {
-	return fmt.Sprintf("%d:%d:%s:%s", index, fileOffset, revision, namesRevision)
-}
-
-func parseSampleCursor(cursor string) (index, fileOffset int, revision, namesRevision string, err error) {
-	if cursor == "" {
-		return
-	}
-	err = errors.New("來源範例續讀位置無效，請重新讀取 RSS 範例")
-	if len(cursor) > 160 {
-		return
-	}
-	parts := strings.Split(cursor, ":")
-	if len(parts) != 4 {
-		return
-	}
-	index, indexErr := strconv.Atoi(parts[0])
-	fileOffset, offsetErr := strconv.Atoi(parts[1])
-	revisionBytes, revisionErr := hex.DecodeString(parts[2])
-	namesBytes, namesErr := hex.DecodeString(parts[3])
-	if indexErr != nil || offsetErr != nil || index < 0 || index >= 2000 || fileOffset < 0 || revisionErr != nil || len(revisionBytes) != sha256.Size || namesErr != nil || (fileOffset == 0 && len(namesBytes) != 0) || (fileOffset > 0 && len(namesBytes) != sha256.Size) {
-		return
-	}
-	return index, fileOffset, parts[2], parts[3], nil
 }
 
 func validSampleName(name string) bool {

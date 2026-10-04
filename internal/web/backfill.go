@@ -107,9 +107,8 @@ func (s *Server) previewBackfill(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) confirmBackfill(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Token     string   `json:"token"`
-		Selected  []string `json:"selected"`
-		Overwrite bool     `json:"overwrite"`
+		Token    string   `json:"token"`
+		Selected []string `json:"selected"`
 	}
 	if err := decode(w, r, &in); err != nil {
 		failure(w, err)
@@ -185,7 +184,7 @@ func (s *Server) confirmBackfill(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		delete(selected, choice.ID)
-		jobs = append(jobs, model.Job{DownloadMode: "direct", ID: choice.ID, SubscriptionID: sub.ID, AccountID: account, ResourceKey: choice.source.Resource.Key, ResourceURL: choice.source.Resource.URL, Title: choice.Title, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now})
+		jobs = append(jobs, model.Job{ID: choice.ID, SubscriptionID: sub.ID, AccountID: account, ResourceKey: choice.source.Resource.Key, ResourceURL: choice.source.Resource.URL, Title: choice.Title, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now})
 		fingerprints = append(fingerprints, choice.source.Item.Fingerprint)
 	}
 	if len(selected) > 0 {

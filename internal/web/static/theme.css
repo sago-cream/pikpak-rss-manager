@@ -47,7 +47,6 @@ html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder { color:var(--muted); }
 html[data-theme="dark"] input:disabled { background:#292532; }
 html[data-theme="dark"] .account-avatar,
-html[data-theme="dark"] .token-hints code { background:var(--accent-light); color:var(--accent); }
 html[data-theme="dark"] .preview-result.success { background:#1e3429; border-color:#355342; }
 html[data-theme="dark"] dialog::backdrop { background:#0008; }
 html[data-theme="dark"] .toast { background:#423455; }

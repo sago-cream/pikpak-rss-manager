@@ -10,7 +10,6 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/feed"
 	"github.com/wade00754/pikpak-rss-manager/internal/model"
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
-	"github.com/wade00754/pikpak-rss-manager/internal/rename"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 	"github.com/wade00754/pikpak-rss-manager/internal/testutil"
 )
@@ -51,7 +50,7 @@ func setup(t *testing.T) (*Worker, *testutil.Cloud, *provider, *feeds, model.Sub
 	p := &provider{cloud: cloud}
 	f := &feeds{}
 	w := New(db, p, f)
-	sub := model.Subscription{Name: "作品", RSSURL: "https://rss.test", Destination: "Anime/作品", Enabled: true, IntervalMinutes: 10, Season: 1, Regex: rename.DefaultRegex, Template: rename.DefaultTemplate}
+	sub := model.Subscription{Name: "作品", RSSURL: "https://rss.test", Destination: "Anime/作品", Enabled: true, IntervalMinutes: 10, RenameEnabled: true, Regex: `^original`, Replacement: "作品"}
 	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
 		t.Fatal(err)
 	}
@@ -76,8 +75,7 @@ func saved(t *testing.T, w *Worker, j model.Job) model.Job {
 func prepareFiles(t *testing.T, w *Worker, c *testutil.Cloud, j *model.Job, files ...pikpak.File) {
 	t.Helper()
 	c.Files["dest"] = pikpak.File{ID: "dest", Kind: "drive#folder", Name: "作品"}
-	c.Files["stage"] = pikpak.File{ID: "stage", Kind: "drive#folder", Name: j.ID}
-	c.Files["root"] = pikpak.File{ID: "root", Kind: "drive#folder", ParentID: "stage", Name: "pack", Phase: "PHASE_TYPE_COMPLETE"}
+	c.Files["root"] = pikpak.File{ID: "root", Kind: "drive#folder", ParentID: "dest", Name: "pack", Phase: "PHASE_TYPE_COMPLETE"}
 	for _, f := range files {
 		if f.ParentID == "" {
 			f.ParentID = "root"
@@ -88,7 +86,6 @@ func prepareFiles(t *testing.T, w *Worker, c *testutil.Cloud, j *model.Job, file
 	}
 	j.FileID = "root"
 	j.DestinationID = "dest"
-	j.StagingID = "stage"
 	if err := w.DB.SaveJob(context.Background(), j); err != nil {
 		t.Fatal(err)
 	}
@@ -140,8 +137,7 @@ func TestDisabledRenamingAndRegexReplacement(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		t.Run(map[bool]string{false: "retain names", true: "regex replacement"}[enabled], func(t *testing.T) {
 			w, c, _, _, sub, _ := setup(t)
-			sub.RenameEnabled = &enabled
-			sub.RenameMode = "replace"
+			sub.RenameEnabled = enabled
 			sub.Regex = `^\[字幕組\]\s*`
 			sub.Replacement = ""
 			if err := w.SaveSubscription(context.Background(), &sub); err != nil {
@@ -152,8 +148,8 @@ func TestDisabledRenamingAndRegexReplacement(t *testing.T) {
 			if err := w.Process(context.Background(), j.ID); err != nil {
 				t.Fatal(err)
 			}
-			if saved(t, w, j).State != "complete" || c.Files["file1"].ParentID != "dest" || c.Files["file2"].ParentID != "dest" {
-				t.Fatal("optional naming did not finish moving")
+			if saved(t, w, j).State != "complete" || c.Files["file1"].ParentID != "root" || c.Files["file2"].ParentID != "root" {
+				t.Fatal("optional naming did not finish")
 			}
 			if !enabled && c.Calls["rename"] != 0 {
 				t.Fatal("unchecked option still renamed")
@@ -194,37 +190,6 @@ func TestSelectedFolderIDAndChangedAccount(t *testing.T) {
 		t.Fatal("changed account still queued selected-folder downloads")
 	}
 }
-func TestStagingInsideDestinationAndLegacyIDResumption(t *testing.T) {
-	w, cloud, _, _, sub, _ := setup(t)
-	ctx := context.Background()
-	j := enqueue(t, w, sub, "queued")
-	if err := w.Process(ctx, j.ID); err != nil {
-		t.Fatal(err)
-	}
-	j = saved(t, w, j)
-	stage := cloud.Files[j.StagingID]
-	container := cloud.Files[stage.ParentID]
-	if container.Name != "_PikPak-RSS-Staging" || container.ParentID != j.DestinationID || j.DestinationID == "" || stage.Name != j.ID {
-		t.Fatal("staging was created outside the destination")
-	}
-	for _, file := range cloud.Files {
-		if file.Name == "_PikPak-RSS-Staging" && file.ParentID == "" {
-			t.Fatal("new default staging polluted the account root")
-		}
-	}
-	legacy := enqueue(t, w, sub, "queued")
-	legacy.DestinationID = j.DestinationID
-	legacy.StagingID = "legacy-stage"
-	cloud.Files["legacy-root"] = pikpak.File{ID: "legacy-root", Name: "_PikPak-RSS-Staging", Kind: "drive#folder"}
-	cloud.Files[legacy.StagingID] = pikpak.File{ID: legacy.StagingID, Name: legacy.ID, ParentID: "legacy-root", Kind: "drive#folder"}
-	if err := w.DB.SaveJob(ctx, &legacy); err != nil {
-		t.Fatal(err)
-	}
-	before := cloud.Calls["mkdir"]
-	if err := w.Process(ctx, legacy.ID); err != nil || saved(t, w, legacy).StagingID != legacy.StagingID || cloud.Calls["mkdir"] != before {
-		t.Fatal("saved legacy staging was moved or recreated", err)
-	}
-}
 
 func TestUncertainSubmitAndCrashNeverResubmit(t *testing.T) {
 	w, c, _, _, sub, _ := setup(t)
@@ -249,87 +214,13 @@ func TestUncertainSubmitAndCrashNeverResubmit(t *testing.T) {
 	if err := w.DB.SaveJob(ctx, &j); err != nil {
 		t.Fatal(err)
 	}
-	c.Files["finished"] = pikpak.File{ID: "finished", ParentID: j.StagingID, Name: "original.mkv", Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
+	c.Files["finished"] = pikpak.File{ID: "finished", ParentID: j.DestinationID, Name: "original.mkv", Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
 	if err := w.Process(ctx, j.ID); err != nil {
 		t.Fatal(err)
 	}
 	j = saved(t, w, j)
-	if j.State != "organizing" || j.FileID != "finished" || c.Calls["submit"] != 1 {
+	if j.State != "submission_unknown" || j.FileID != "" || c.Calls["submit"] != 1 {
 		t.Fatal("failed to reconcile crash", j.State)
-	}
-}
-func TestRetryRenamedButNotMovedAfterRestart(t *testing.T) {
-	w, c, _, _, sub, dir := setup(t)
-	ctx := context.Background()
-	j := enqueue(t, w, sub, "organizing")
-	prepareFiles(t, w, c, &j, pikpak.File{ID: "a", Name: "original.mkv"})
-	c.Fail["move"] = errors.New("temporary disconnect")
-	if err := w.Process(ctx, j.ID); err == nil {
-		t.Fatal("expected move failure")
-	}
-	if c.Files["a"].Name != "作品 - S01E09.mkv" || c.Files["a"].ParentID == "dest" {
-		t.Fatal("rename/move boundary was not exercised")
-	}
-	if err := w.DB.Close(); err != nil {
-		t.Fatal(err)
-	}
-	db, err := store.Open(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	w.DB = db
-	defer db.Close()
-	if err := w.Process(ctx, j.ID); err != nil {
-		t.Fatal(err)
-	}
-	if saved(t, w, j).State != "complete" || c.Calls["rename"] != 1 || c.Files["a"].ParentID != "dest" {
-		t.Fatal("restart repeated rename or lost partial progress")
-	}
-}
-func TestMultiFileAmbiguityAndPreservedAttachments(t *testing.T) {
-	w, c, _, _, sub, _ := setup(t)
-	ctx := context.Background()
-	j := enqueue(t, w, sub, "organizing")
-	prepareFiles(t, w, c, &j, pikpak.File{ID: "a", Name: "unparsed.mkv"}, pikpak.File{ID: "b", Name: "作品 S01E02.mkv"}, pikpak.File{ID: "c", Name: "作品 S01E02.nfo"})
-	if err := w.Process(ctx, j.ID); err != nil {
-		t.Fatal(err)
-	}
-	if saved(t, w, j).State != "needs_review" || c.Files["a"].Name != "unparsed.mkv" || c.Files["a"].ParentID != "root" {
-		t.Fatal("ambiguous multi-file was renamed with RSS fallback")
-	}
-	if c.Files["b"].Name != "作品 - S01E02.mkv" || c.Files["b"].ParentID != "dest" || c.Files["c"].Name != "作品 S01E02.nfo" || c.Files["c"].ParentID == "root" {
-		t.Fatal("per-file episode or attachment preservation failed")
-	}
-	// After one primary was moved, its sibling still cannot use RSS fallback.
-	if err := w.Retry(ctx, j.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := w.Process(ctx, j.ID); err != nil {
-		t.Fatal(err)
-	}
-	if c.Files["a"].Name != "unparsed.mkv" {
-		t.Fatal("partial retry incorrectly became a single-file download")
-	}
-}
-func TestNameCollisionsDoNotChangeOriginals(t *testing.T) {
-	for _, internalCollision := range []bool{false, true} {
-		t.Run(map[bool]string{false: "existing", true: "planned"}[internalCollision], func(t *testing.T) {
-			w, c, _, _, sub, _ := setup(t)
-			j := enqueue(t, w, sub, "organizing")
-			files := []pikpak.File{{ID: "a", Name: "作品 S01E03.mkv"}}
-			if internalCollision {
-				files = append(files, pikpak.File{ID: "b", Name: "Other S01E03.mkv"})
-			} else {
-				c.Files["existing"] = pikpak.File{ID: "existing", ParentID: "dest", Name: "作品 - S01E03.mkv"}
-			}
-			prepareFiles(t, w, c, &j, files...)
-			if err := w.Process(context.Background(), j.ID); err != nil {
-				t.Fatal(err)
-			}
-			if saved(t, w, j).State != "needs_review" || c.Calls["rename"] != 0 || c.Calls["move"] != 0 {
-				t.Fatal("collision changed original files")
-			}
-		})
 	}
 }
 func TestAuthQuotaAndRateHandling(t *testing.T) {
@@ -387,7 +278,7 @@ func TestExplicitBackfillAllowsRepeatDownloads(t *testing.T) {
 		t.Fatal("new account's explicit backfill was suppressed by old feed fingerprints")
 	}
 	for _, j := range jobs {
-		if j.AccountID == "new-account" && (j.TaskID != "" || j.FileID != "" || j.StagingID != "") {
+		if j.AccountID == "new-account" && (j.TaskID != "" || j.FileID != "") {
 			t.Fatal("new account reused another account's cloud identifiers")
 		}
 	}

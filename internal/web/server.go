@@ -258,17 +258,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/rules/preview", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
 			Rule     model.Rule `json:"rule"`
-			Title    string     `json:"title"`
 			Filename string     `json:"filename"`
 		}
 		if err := decode(w, r, &in); err != nil {
 			failure(w, err)
 			return
 		}
-		if in.Filename == "" && in.Rule.Mode != "replace" {
-			in.Filename = "preview.mkv"
-		}
-		preview, err := rename.Render(in.Rule, in.Title, in.Filename, true)
+		preview, err := rename.Render(in.Rule, in.Filename)
 		if err != nil {
 			failure(w, err)
 			return

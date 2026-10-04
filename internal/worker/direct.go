@@ -62,14 +62,6 @@ func (w *Worker) renameDirect(ctx context.Context, api pikpak.API, j *model.Job)
 	}
 	if j.FileCount == 0 {
 		j.FileCount = len(entries)
-		for _, e := range entries {
-			if primary(e.file.Name) {
-				j.PrimaryCount++
-			}
-		}
-		if j.FileCount == 1 && j.PrimaryCount == 0 {
-			j.PrimaryCount = 1
-		}
 		if err := w.DB.SaveJob(ctx, j); err != nil {
 			return err
 		}
@@ -84,7 +76,7 @@ func (w *Worker) renameDirect(ctx context.Context, api pikpak.API, j *model.Job)
 		}
 		a.State, a.Error, a.TargetName = "pending", "", a.OriginalName
 		if primary(a.OriginalName) || j.FileCount == 1 {
-			p, renderErr := rename.Render(j.Rule, j.Title, a.OriginalName, j.PrimaryCount == 1)
+			p, renderErr := rename.Render(j.Rule, a.OriginalName)
 			if renderErr != nil {
 				a.State, a.Error = "review", renderErr.Error()
 			} else {

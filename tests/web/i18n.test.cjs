@@ -7,12 +7,6 @@ const ctx=vm.createContext({document,NodeFilter:{SHOW_TEXT:4},localStorage:{getI
 vm.runInContext(fs.readFileSync('internal/web/static/i18n.js','utf8'),ctx);
 const evaluate=code=>vm.runInContext(code,ctx);
 assert.equal(evaluate("t('新增任務')"),'Add task');
-const legacyError='PikPak 請求失敗或逾時；未記錄原始回應以保護私密資訊';
-const legacyStatus='提交結果仍不明；請在 PikPak 檢查此任務的專用暫存目錄，系統不會重複提交';
-const historicalCopy={error:legacyError,last_error:legacyError,message:legacyStatus,name:legacyError,filename:legacyError+'.mkv'};
-assert.deepEqual(JSON.parse(evaluate('JSON.stringify(localizeResponse('+JSON.stringify(historicalCopy)+'))')),{
- error:'PikPak request failed or timed out.',last_error:'PikPak request failed or timed out.',message:'Submission remains unconfirmed. Check the staging folder in PikPak.',name:legacyError,filename:legacyError+'.mkv'
-});
 assert.equal(evaluate("t('檢查完成：新增 2 筆、去重 3 筆')"),'Check complete: 2 added, 3 duplicates');
 assert.equal(evaluate("tr`<h3>目標：${'新增任務/作品.mkv'}</h3>`"),'<h3>Destination: 新增任務/作品.mkv</h3>');
 assert.equal(evaluate("JSON.stringify(localizeResponse({error:'密碼不正確',name:'總覽',filename:'新增任務.mkv',rule:{title:'系統設定',regex:'第[0-9]+'},notices:['部分種子無法取得或解析檔名，可重新讀取。']}))"),JSON.stringify({error:'Incorrect password.',name:'總覽',filename:'新增任務.mkv',rule:{title:'系統設定',regex:'第[0-9]+'},notices:['Some torrent filenames could not be read. Try again.']}));
@@ -31,9 +25,6 @@ for(const name of ['app','setup','login']){
  }
 }
 evaluate("language='zh-Hant'");
-assert.deepEqual(JSON.parse(evaluate('JSON.stringify(localizeResponse('+JSON.stringify(historicalCopy)+'))')),{
- error:'PikPak 請求失敗或逾時',last_error:'PikPak 請求失敗或逾時',message:'提交結果仍不明，請至 PikPak 檢查暫存目錄',name:legacyError,filename:legacyError+'.mkv'
-});
 assert.equal(evaluate("t('新增任務')"),'新增任務');
 assert.equal(evaluate("tr`目標：${'Series.mkv'}`"),'目標：Series.mkv');
 console.log('Localization checks passed.');

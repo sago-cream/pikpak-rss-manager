@@ -18,11 +18,11 @@ func TestRepeatDownloadMigrationPreservesJobActionsAndEncryption(t *testing.T) {
 	if err := s.SaveSubscription(ctx, &sub); err != nil {
 		t.Fatal(err)
 	}
-	j := model.Job{ID: ID(), SubscriptionID: sub.ID, AccountID: "fixture", ResourceKey: "btih:fixture", ResourceURL: "magnet:?xt=private-fixture", State: "organizing", StagingID: "persisted-stage", TaskID: "persisted-task"}
+	j := model.Job{ID: ID(), SubscriptionID: sub.ID, AccountID: "fixture", ResourceKey: "btih:fixture", ResourceURL: "magnet:?xt=private-fixture", State: "organizing", DestinationID: "persisted-destination", TaskID: "persisted-task"}
 	if _, err := s.Enqueue(ctx, j, "seen"); err != nil {
 		t.Fatal(err)
 	}
-	a := model.FileAction{JobID: j.ID, FileID: "file", State: "renamed", TargetName: "Fixture.mkv"}
+	a := model.FileAction{JobID: j.ID, FileID: "file", State: "renaming", TargetName: "Fixture.mkv"}
 	if err := s.SaveAction(ctx, a); err != nil {
 		t.Fatal(err)
 	}
@@ -39,11 +39,11 @@ func TestRepeatDownloadMigrationPreservesJobActionsAndEncryption(t *testing.T) {
 	}
 	defer s.Close()
 	got, err := s.Job(ctx, j.ID)
-	if err != nil || got.ResourceURL != j.ResourceURL || got.StagingID != j.StagingID || got.TaskID != j.TaskID {
+	if err != nil || got.ResourceURL != j.ResourceURL || got.DestinationID != j.DestinationID || got.TaskID != j.TaskID {
 		t.Fatal("migration lost private job or recovery IDs", err)
 	}
 	actions, err := s.Actions(ctx, j.ID)
-	if err != nil || len(actions) != 1 || actions[0].State != "renamed" {
+	if err != nil || len(actions) != 1 || actions[0].State != "renaming" {
 		t.Fatal("migration lost partial action", err)
 	}
 	rows, err := s.db.Query("PRAGMA foreign_key_check")

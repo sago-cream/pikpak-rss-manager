@@ -109,7 +109,6 @@ type API interface {
 	Submit(context.Context, string, string) (Task, error)
 	Task(context.Context, string) (Task, error)
 	Rename(context.Context, string, string) error
-	Move(context.Context, string, string) error
 }
 type Error struct {
 	Kind    string
@@ -164,7 +163,6 @@ type Client struct {
 	token, endpoint string
 	lastCall        time.Time
 	canCancel       bool
-	canTrash        bool
 }
 
 func New(ctx context.Context, token string) (*Client, error) {
@@ -181,7 +179,7 @@ func newEndpoint(ctx context.Context, token, endpoint string) (*Client, error) {
 		return nil, err
 	}
 	required := map[string]bool{}
-	for _, tool := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv"} {
+	for _, tool := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename"} {
 		required[tool] = false
 	}
 	for tool, err := range c.session.Tools(ctx, nil) {
@@ -194,9 +192,6 @@ func newEndpoint(ctx context.Context, token, endpoint string) (*Client, error) {
 		}
 		if tool.Name == "task_rm" {
 			c.canCancel = true
-		}
-		if tool.Name == "rm" {
-			c.canTrash = true
 		}
 	}
 	for name, found := range required {
@@ -328,17 +323,7 @@ func (c *Client) Task(ctx context.Context, id string) (Task, error) {
 func (c *Client) Rename(ctx context.Context, id, name string) error {
 	return c.call(ctx, "rename", map[string]any{"id": id, "name": name}, nil)
 }
-func (c *Client) Move(ctx context.Context, id, parent string) error {
-	return c.call(ctx, "mv", map[string]any{"id": id, "target": parent}, nil)
-}
 
-// Trash is recoverable and never calls purge or permanent deletion.
-func (c *Client) Trash(ctx context.Context, id string) error {
-	if !c.canTrash {
-		return &Error{"permanent", "官方 MCP 缺少必要工具 rm"}
-	}
-	return c.call(ctx, "rm", map[string]any{"ids": []string{id}}, nil)
-}
 func ListAll(ctx context.Context, api API, parent string) ([]File, error) {
 	out := []File{}
 	token := ""

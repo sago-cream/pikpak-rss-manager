@@ -18,7 +18,7 @@ func TestOptionalRenamingAndFolderIdentitySurviveRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	off := false
-	sub := model.Subscription{Name: "作品", RSSURL: "https://rss.test", RenameEnabled: &off, RenameMode: "replace", DestinationID: "chosen-folder", DestinationAccountID: "private-owner", DestinationAccountRef: "ephemeral-ref"}
+	sub := model.Subscription{Name: "作品", RSSURL: "https://rss.test", RenameEnabled: off, DestinationID: "chosen-folder", DestinationAccountID: "private-owner", DestinationAccountRef: "ephemeral-ref"}
 	if err := s.SaveSubscription(context.Background(), &sub); err != nil {
 		t.Fatal(err)
 	}
@@ -41,14 +41,7 @@ func TestOptionalRenamingAndFolderIdentitySurviveRestart(t *testing.T) {
 	if bytes.Contains(b, []byte(sub.DestinationAccountID)) {
 		t.Fatal("private account ID escaped subscription API")
 	}
-	legacy := model.Subscription{Name: "舊規則", RSSURL: "https://rss.test", Season: 1, Template: "{title}.{ext}"}
-	if err := s.SaveSubscription(context.Background(), &legacy); err != nil {
-		t.Fatal(err)
-	}
-	legacy, err = s.Subscription(context.Background(), legacy.ID)
-	if err != nil || !legacy.Rule().Renaming() {
-		t.Fatal("old settings were silently disabled")
-	}
+
 }
 
 func TestEncryptedPersistenceAndRepeatDownloads(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/wade00754/pikpak-rss-manager/internal/pikpak"
 )
 
-func TestQueuedLegacyMagnetIsCanonicalizedWithoutResubmission(t *testing.T) {
+func TestQueuedMagnetIsCanonicalizedWithoutResubmission(t *testing.T) {
 	ctx := context.Background()
 	w, c, _, _, sub, _ := setup(t)
 	j := enqueue(t, w, sub, "queued")
@@ -18,7 +18,7 @@ func TestQueuedLegacyMagnetIsCanonicalizedWithoutResubmission(t *testing.T) {
 	}
 	c.OnSubmit = func(parent, source string) (pikpak.Task, error) {
 		if !strings.HasPrefix(source, "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&") {
-			t.Fatal("legacy queued URL was not canonicalized")
+			t.Fatal("queued URL was not canonicalized")
 		}
 		return pikpak.Task{ID: "task", Status: "running"}, nil
 	}

@@ -44,7 +44,7 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 	m := &folderManager{cloud}
 	w := worker.New(db, m, feed.New(true))
 	off := false
-	sub := model.Subscription{Name: "Fixture", RSSURL: source.URL + "/feed", Destination: "Fixture", DestinationID: "dest", DestinationAccountID: cloud.AccountID, IntervalMinutes: 10, RenameEnabled: &off}
+	sub := model.Subscription{Name: "Fixture", RSSURL: source.URL + "/feed", Destination: "Fixture", DestinationID: "dest", DestinationAccountID: cloud.AccountID, IntervalMinutes: 10, RenameEnabled: off}
 	if err := w.SaveSubscription(context.Background(), &sub); err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,6 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 	if r := request("backfill", in, true, true); r.Code != 400 {
 		t.Fatal("empty selection accepted")
 	}
-	in["overwrite"] = true
 	in["selected"] = []string{"forged"}
 	if r := request("backfill", in, true, true); r.Code != 400 {
 		t.Fatal("forged selection accepted")
@@ -122,7 +121,7 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 		}
 	}
 	jobs, _ = db.Jobs(context.Background(), 10)
-	if len(jobs) != 1 || jobs[0].Title != choices[0].Title || jobs[0].Overwrite || jobs[0].DownloadMode != "direct" || jobs[0].State != "queued" || jobs[0].DestinationID != "dest" {
+	if len(jobs) != 1 || jobs[0].Title != choices[0].Title || jobs[0].State != "queued" || jobs[0].DestinationID != "dest" {
 		t.Fatal("selection/replay incorrect")
 	}
 	in["selected"] = []string{choices[1].ID}
@@ -132,7 +131,6 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 	// A fresh explicit selection of the same resource creates a new task.
 	token, choices = preview()
 	in["token"] = token
-	delete(in, "overwrite")
 	in["selected"] = []string{choices[0].ID}
 	if r := request("backfill", in, true, true); r.Code != 200 {
 		t.Fatal("redownload suppressed", r.Body.String())

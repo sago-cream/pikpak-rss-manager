@@ -18,7 +18,7 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	j, added, err := w.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Manual fixture", Destination: "Downloads", RenameEnabled: &off, RenameMode: "replace"})
+	j, added, err := w.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Manual fixture", Destination: "Downloads", RenameEnabled: off})
 	if err != nil || !added {
 		t.Fatal("queue manual job", err)
 	}
@@ -26,7 +26,7 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 		t.Fatal(err)
 	}
 	j, err = w.DB.Job(ctx, j.ID)
-	if err != nil || j.TaskID == "" || j.StagingID != "" || j.DownloadMode != "direct" || j.StagingCleanup != nil {
+	if err != nil || j.TaskID == "" {
 		t.Fatal("task intent not persisted", err)
 	}
 	if err := w.DB.Close(); err != nil {
@@ -44,10 +44,10 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 		t.Fatal(err)
 	}
 	completed, err := db.Job(ctx, j.ID)
-	if err != nil || completed.State != "complete" || completed.SubscriptionID != 0 || completed.StagingID != "" || c.Calls["submit"] != 1 || c.Calls["rename"] != 0 || c.Calls["move"] != 0 || c.Calls["trash"] != 0 || c.Files["original"].ParentID != j.DestinationID {
+	if err != nil || completed.State != "complete" || completed.SubscriptionID != 0 || c.Calls["submit"] != 1 || c.Calls["rename"] != 0 || c.Calls["move"] != 0 || c.Calls["trash"] != 0 || c.Files["original"].ParentID != j.DestinationID {
 		t.Fatal("manual job did not resume safely", err)
 	}
-	if _, added, err := restarted.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Duplicate", RenameEnabled: &off}); err != nil || !added {
+	if _, added, err := restarted.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Duplicate", RenameEnabled: off}); err != nil || !added {
 		t.Fatal("restart suppressed an explicit repeat download", err)
 	}
 }

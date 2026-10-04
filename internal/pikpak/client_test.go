@@ -20,19 +20,10 @@ func TestOfficialSDKStreamableAdapter(t *testing.T) {
 	defer cancel()
 	server := mcp.NewServer(&mcp.Implementation{Name: "test", Version: "1"}, nil)
 	var mutations atomic.Int32
-	var trashed atomic.Int32
-	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv", "rm"} {
+	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename"} {
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object"}}, func(_ context.Context, r *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			text := "{}"
 			switch r.Params.Name {
-			case "rm":
-				var args struct {
-					IDs []string `json:"ids"`
-				}
-				if err := json.Unmarshal(r.Params.Arguments, &args); err != nil || len(args.IDs) != 1 || args.IDs[0] != "empty-folder" {
-					t.Error("incorrect official trash arguments")
-				}
-				trashed.Add(1)
 			case "account_info":
 				text = `{"user_id":"test","name":"Test","storage":{"total":"100","used":"1"}}`
 			case "ls":
@@ -68,16 +59,14 @@ func TestOfficialSDKStreamableAdapter(t *testing.T) {
 	if err != nil || task.Percent() != 100 || task.State() != "completed" {
 		t.Fatal("string percentage response", err)
 	}
-	_, err = c.Submit(ctx, "stage", "magnet:?test")
+	_, err = c.Submit(ctx, "dest", "magnet:?test")
 	if Classify(err).Kind != "rate" || mutations.Load() != 1 {
 		t.Fatal("non-idempotent tool was repeated")
 	}
 	if err.Error() == "429 too many requests; private-url-must-never-escape" {
 		t.Fatal("raw provider error escaped")
 	}
-	if err := c.Trash(ctx, "empty-folder"); err != nil || trashed.Load() != 1 {
-		t.Fatal("official recoverable rm failed", err)
-	}
+
 }
 func TestProgressAndErrorClassification(t *testing.T) {
 	for _, status := range []string{"completed", "PHASE_TYPE_COMPLETE", "Complete (PHASE_TYPE_COMPLETE)"} {

@@ -56,7 +56,7 @@ func TestSamplesAllReadsOnceConcurrentlyAndKeepsEveryFilename(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	out, err := New(true).SamplesAll(ctx, srv.URL+"/feed")
-	if err != nil || len(out.Items) != 8*65+1 || len(out.Notices) != 0 || out.NextCursor != "" || feedReads.Load() != 1 || peak.Load() != 5 {
+	if err != nil || len(out.Items) != 8*65+1 || len(out.Notices) != 0 || feedReads.Load() != 1 || peak.Load() != 5 {
 		t.Fatal("all-source read failed", len(out.Items), out.Notices, feedReads.Load(), peak.Load(), err)
 	}
 	for i := range reads {
