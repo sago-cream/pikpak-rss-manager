@@ -12,7 +12,7 @@ docker compose up -d
 
 Open the site, create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**. There is no default password; credentials are configured through the UI.
 
-Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.0.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.0.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md).
+Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.1.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.1.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md) · [Release notes](docs/releases/v1.1.0.md).
 
 ## PAT permissions
 
@@ -40,7 +40,7 @@ Failed cancellation retains the task record. For an uncertain submission without
 
 Magnet links use a normalized infohash as their first parameter, with trackers and display names retained. Already submitted tasks keep their PikPak task IDs and are not automatically resubmitted when the link format changes.
 
-To update this reissued v1.0.0, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. [Upgrade and restore details](docs/deployment.md).
+To update, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. v1.1.0 migrates to schema 4; downgrade requires the pre-upgrade backup. [Upgrade and restore details](docs/deployment.md).
 
 ## Development
 
