@@ -1,5 +1,15 @@
 # Verification
 
+## Missing remote download tasks (2026-10-04)
+
+Passed locally with Go 1.27.1: `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, localization checks and `git diff --check`.
+
+The reported task's persisted infohash matched its public RSS torrent metadata. Read-only official MCP checks found a task-get 404, no matching remote task and an empty persisted staging folder. The user confirmed cancelling/deleting the remote task. These findings explain the stale local download status after cancellation; they do not establish why the download previously stayed at 0%.
+
+Real Magnet comparison used only the 163,783-byte public-domain Alice fixture under `_pikpak-rss-manager-test/magnet-20261004T073539-ac24ca`. The application's existing percent-encoded Magnet completed at 100%, with its expected cloud filename, complete phase and size confirmed. An equivalent Magnet with an unescaped, first-position infohash was accepted and initially reported 90%. All created cloud content was retained. No production download was resubmitted; no credentials were printed or sent to CI.
+
+Regression tests cover the official MCP's sanitized 404 classification, unique completed staging-file/folder recovery after a missing task, persisted organization after reopening SQLite, empty/ambiguous/partial/trashed staging content, invalid folder identity, absent staging IDs without root scans, authorization/quota pauses and transient/rate backoff. A missing task without confirmed completed content requires review immediately. The persisted task ID is retained, and recovery never submits another download. Docker and Linux race checks were not run locally.
+
 ## v1.0.0 republication (2026-10-04)
 
 The existing v1.0.0 tag was updated to functional commit `2a66034` after selected backfill/replacement, repeat downloads, dark mode and new naming defaults passed local verification. The published v1.0.0 and latest images both passed anonymous checks on linux/amd64 and linux/arm64.

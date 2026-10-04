@@ -31,6 +31,7 @@ type File struct {
 	Phase    string `json:"phase"`
 	Size     string `json:"size"`
 	MIME     string `json:"mime_type"`
+	Trashed  bool   `json:"trashed"`
 }
 
 func (f File) Folder() bool { return f.Kind == "drive#folder" || f.Kind == "folder" }
@@ -134,6 +135,8 @@ func Classify(err error) *Error {
 		return &Error{"auth", "PikPak 權限不足，請確認檔案讀寫及雲端下載權限"}
 	case strings.Contains(text, "429") || strings.Contains(text, "rate limit") || strings.Contains(text, "too many"):
 		return &Error{"rate", "PikPak 請求受到限流，稍後重試"}
+	case strings.Contains(text, "status 404") || strings.Contains(text, "http 404") || strings.Contains(text, "404 not found"):
+		return &Error{"not_found", "PikPak 項目不存在，請至 PikPak 檢查"}
 	default:
 		return &Error{"transient", "PikPak 請求失敗或逾時；未記錄原始回應以保護私密資訊"}
 	}

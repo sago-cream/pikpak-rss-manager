@@ -4,6 +4,8 @@
 let language='zh-Hant';
 try { language=localStorage.getItem('language')==='en'?'en':'zh-Hant'; } catch {}
 const translations = {
+  'PikPak 項目不存在，請至 PikPak 檢查':'PikPak item no longer exists. Check it in PikPak.',
+  'PikPak 離線任務不存在，無法確認下載結果；請核對 PikPak 任務及暫存目錄':'PikPak task no longer exists; download completion cannot be confirmed. Check the task and staging folder in PikPak.',
   '檔案名稱不可以包含下列字元：\\ / : * ? " < > |（及控制字元），已替換成：_。':'Filenames cannot contain: \\ / : * ? " < > | (or control characters). Replaced with: _.',
   '已移除檔名開頭或結尾的空白與句點。':'Leading/trailing spaces and periods were removed.',
   '語言':'Language','主要導覽':'Navigation','工作空間':'Workspace','總覽':'Overview','訂閱管理':'Subscriptions','離線任務':'Offline tasks','執行日誌':'Logs','系統設定':'Settings',

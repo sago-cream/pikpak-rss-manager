@@ -293,6 +293,9 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 	if j.State == "downloading" {
 		task, e := api.Task(ctx, j.TaskID)
 		if e != nil {
+			if pikpak.Classify(e).Kind == "not_found" {
+				return w.recoverMissingTask(ctx, api, &j)
+			}
 			return w.failure(ctx, &j, e, false)
 		}
 		j.Progress = task.Percent()
@@ -357,7 +360,7 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 		}
 		j.State = "paused_" + e.Kind
 		w.Provider.Pause(e)
-	} else if e.Kind == "permanent" || j.Attempts >= 6 {
+	} else if e.Kind == "permanent" || e.Kind == "not_found" || j.Attempts >= 6 {
 		j.State = "needs_review"
 	} else {
 		if submitted {
