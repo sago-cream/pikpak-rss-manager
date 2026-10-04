@@ -1,5 +1,19 @@
 # Verification
 
+## v1.1.0 release validation (2026-10-04)
+
+Source/release commit `0945359` passed GitHub Actions:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, UI localization, Docker startup/authentication/non-root/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37199416561) |
+| latest/main linux/amd64 and linux/arm64 publication and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37199416500) |
+| v1.1.0 linux/amd64 and linux/arm64 publication and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37199417887) |
+| Anonymous v1.1.0 pulls, Compose startup/persistence and manifests on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37199615837) |
+| Anonymous latest pulls, Compose startup/persistence and manifests on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37199632315) |
+
+The new [v1.1.0 release](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v1.1.0) retains existing tags. The Windows service at localhost:8080 was restarted after a complete local data backup; `/healthz` reports `v1.1.0` and `ok`. No production task was canceled or resubmitted, and no VPS was deployed. Documentation evidence uses `[skip ci]`; the application source and published images above received the full checks.
+
 ## Task deletion and completed-record clearing (2026-10-04)
 
 Delete buttons on task rows and details cancel incomplete PikPak downloads before deleting local records. Completed clearing removes all completed records, including those outside the latest-200 view. Cloud files, feed baselines and event history are retained. SQLite schema 4 keeps deleted-request IDs so a repeated backfill confirmation cannot recreate a removed task. Cancellation/account errors preserve records; unknown submissions without IDs require manual cancellation before explicit record deletion. Deletion is serialized with worker submissions/file actions and account switches.
@@ -10,7 +24,7 @@ Headless Edge used only an isolated mocked account/data directory. Traditional C
 
 Real MCP validation in `_pikpak-rss-manager-test/download-20261004T112602-c18672` removed the completed public-domain Alice test task through `task_rm` with `delete-files:false`. Reading its file afterward confirmed the same ID, parent and 163,783-byte size, without Trash. This proves file-preserving task removal for that test, not cancellation of the production stalled source. No production task was canceled or resubmitted.
 
-Release decision: publish v1.1.0 for these user-visible features and the Magnet compatibility fix. Existing tags remain unchanged. Linux race, Docker and anonymous multiarch checks are pending Actions publication.
+Release decision: published v1.1.0 for these user-visible features and the Magnet compatibility fix. Existing tags remain unchanged. Linux race, Docker and anonymous multiarch checks passed as recorded above.
 
 ## Canonical Magnet submission (2026-10-04)
 
@@ -20,7 +34,7 @@ Magnet generation now puts the selected normalized infohash first with literal U
 
 Passed locally: `make verify` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`. Regression coverage includes parameter preservation, hybrid/v2 links, idempotent normalization, generated torrent links and one submission for legacy queued jobs. Real validation under `_pikpak-rss-manager-test/download-20261004T112602-c18672` downloaded the 163,783-byte public-domain Alice fixture at 100%. No production task was resubmitted, and no credentials were printed or uploaded.
 
-Release decision: include this user-visible compatibility fix in the new v1.1.0 release with task deletion. Existing tags remain unchanged. Docker/race/public-image checks will run in Actions during publication.
+Release decision: included this user-visible compatibility fix in the new v1.1.0 release with task deletion. Existing tags remain unchanged. Docker/race/public-image checks passed as recorded above.
 
 ## Makefile and Go container tests (2026-10-04)
 
