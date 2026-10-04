@@ -155,7 +155,7 @@ func (s *Server) setup(w http.ResponseWriter, r *http.Request) {
 	}
 	created, err := s.DB.InitializeAdministrator(r.Context(), hash, in.AppSettings)
 	if err != nil {
-		JSON(w, 500, map[string]string{"error": "無法安全保存初始化設定，請重試"})
+		JSON(w, 500, map[string]string{"error": "無法儲存初始化設定，請重試"})
 		return
 	}
 	if !created {

@@ -69,7 +69,6 @@ function render() {
   $('#connection-banner').classList.toggle('hidden',connected);
   $('#connection-banner').textContent=status.message||(status.connected ? t('請重新檢查 PikPak 連線。') : t('先到「系統設定」綁定 PikPak，再開始自動追蹤。'));
   $('#account-details').innerHTML=status.connected?tr`<div class="account-card"><span class="account-avatar">P</span><div><strong>${escapeHTML(status.name||t('PikPak 帳號'))}</strong><span>${formatBytes(status.storage_used)} / ${formatBytes(status.storage_total)} 雲端空間</span></div></div>`:'';
-  $('#token-source').textContent=t('PAT 只用於官方 PikPak 端點；儲存後加密，不會回傳至瀏覽器。');
 }
 function formatBytes(value) { let n=Number(value||0); if (!Number.isFinite(n)) return '—'; const units=['B','KiB','MiB','GiB','TiB']; let i=0; while(n>=1024&&i<4){n/=1024;i++;} return tr`${n.toFixed(i?1:0)} ${units[i]}`; }
 async function load(silent=false) { try { const [subscriptions,jobs,events,status]=await Promise.all(['/api/subscriptions','/api/jobs','/api/events','/api/settings/pikpak'].map(p=>api(p))); data={subscriptions,jobs,events,status}; render(); } catch(e){if(!silent)toast(e.message,true);} }
@@ -248,7 +247,7 @@ async function start(){
   });
   $('#folder-create-dialog').addEventListener('cancel',()=>{folderCreateContext=null;});
   $('#subscription-dialog').addEventListener('close',()=>{closeFolderBrowser();clearSourceSamples();});
-  $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast(t('PAT 已驗證並安全保存'));await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=false;}});
+  $('#token-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('#save-token');button.disabled=true;try{await api('/api/settings/pikpak','POST',{token:$('#token').value});$('#token').value='';toast(t('PAT 已綁定'));await load();}catch(e){$('#token').value='';toast(e.message,true);}finally{button.disabled=false;}});
   $('#password-form').addEventListener('submit',async event=>{
     event.preventDefault();const form=event.target,button=form.querySelector('button[type=submit]');button.disabled=true;$('#password-error').textContent='';
     try{

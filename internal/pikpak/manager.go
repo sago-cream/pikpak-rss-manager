@@ -86,7 +86,7 @@ func (m *Manager) bind(ctx context.Context, token string, save bool) error {
 			if c, ok := api.(interface{ Close() error }); ok {
 				_ = c.Close()
 			}
-			return errors.New("權杖無法安全保存")
+			return errors.New("無法儲存 PAT")
 		}
 	}
 	m.mu.Lock()

@@ -353,7 +353,7 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 	j.Attempts++
 	if submitted && e.Kind != "auth" && e.Kind != "quota" && e.Kind != "rate" {
 		j.State = "submission_unknown"
-		j.Error = "離線提交結果不明，請重新核對；系統不會再次自動提交"
+		j.Error = "離線提交結果不明，請至 PikPak 核對任務"
 	} else if e.Kind == "auth" || e.Kind == "quota" {
 		if submitted {
 			j.State = "queued"
@@ -392,7 +392,7 @@ func (w *Worker) reconcile(ctx context.Context, api pikpak.API, j *model.Job) er
 		j.NextAttempt = 0
 	} else {
 		j.State = "submission_unknown"
-		j.Error = "提交結果仍不明；請在 PikPak 檢查此任務的專用暫存目錄，系統不會重複提交"
+		j.Error = "提交結果仍不明，請至 PikPak 檢查暫存目錄"
 	}
 	return w.DB.SaveJob(ctx, j)
 }
@@ -417,7 +417,7 @@ func (w *Worker) Retry(ctx context.Context, id string) error {
 		return w.reconcile(ctx, api, &j)
 	}
 	if j.State == "failed" && j.TaskID != "" {
-		return errors.New("遠端離線任務已失敗；請先在 PikPak 處理來源，本系統不重複提交")
+		return errors.New("遠端離線任務已失敗，請至 PikPak 檢查來源")
 	}
 	if sub, e := w.DB.Subscription(ctx, j.SubscriptionID); e == nil {
 		j.Rule = sub.Rule()

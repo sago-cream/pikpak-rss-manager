@@ -129,7 +129,7 @@ func AddDirectory(ctx context.Context, api API, parent, name string) (Directory,
 		}
 	}
 	if file.ID == "" || !file.Folder() {
-		return out, errors.New("建立資料夾結果不明，請重新整理確認；不會自動重送")
+		return out, errors.New("建立資料夾結果不明，請重新整理確認")
 	}
 	path := name
 	if current := crumbs[len(crumbs)-1]; current.Path != "" {

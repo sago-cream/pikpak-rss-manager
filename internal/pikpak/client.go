@@ -138,7 +138,7 @@ func Classify(err error) *Error {
 	case strings.Contains(text, "status 404") || strings.Contains(text, "http 404") || strings.Contains(text, "404 not found"):
 		return &Error{"not_found", "PikPak 項目不存在，請至 PikPak 檢查"}
 	default:
-		return &Error{"transient", "PikPak 請求失敗或逾時；未記錄原始回應以保護私密資訊"}
+		return &Error{"transient", "PikPak 請求失敗或逾時"}
 	}
 }
 
@@ -342,7 +342,7 @@ func ListAll(ctx context.Context, api API, parent string) ([]File, error) {
 		seen[p.Next] = true
 		token = p.Next
 	}
-	return nil, &Error{"permanent", "目錄超過安全處理上限"}
+	return nil, &Error{"permanent", "目錄超過處理上限"}
 }
 func EnsureFolder(ctx context.Context, api API, parent, name string) (string, error) {
 	files, err := ListAll(ctx, api, parent)

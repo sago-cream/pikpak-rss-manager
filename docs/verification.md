@@ -1,5 +1,13 @@
 # Verification
 
+## Concise interface messages (2026-10-04)
+
+Removed the response-privacy explanation from PikPak failures, the PAT encryption/browser-return paragraph, and repeated automatic-retry explanations. Storage failures, PAT confirmation and limits use concise wording. Error causes, required actions and overwrite/backup confirmations remain visible.
+
+Existing task and activity messages use the shorter copy in Traditional Chinese and English without rewriting stored history. Localization regressions verify historical errors/statuses are normalized while identical user names and filenames remain unchanged.
+
+Passed locally with Go 1.27.1: `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, `node scripts/test-i18n.cjs`, JavaScript syntax checks and `git diff --check`. No live PikPak operation or browser screenshot was needed for this copy change.
+
 ## Missing remote download tasks (2026-10-04)
 
 Passed locally with Go 1.27.1: `go test ./...`, `go vet ./...`, application build with `-buildvcs=false`, localization checks and `git diff --check`.
