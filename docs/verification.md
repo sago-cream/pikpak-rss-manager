@@ -1,6 +1,6 @@
 # Verification
 
-Documentation maintenance (2026-10-05): preserved user-directed README removals and removed the release-only README update requirement from AGENTS.md. `git diff --check` and local Markdown links/anchors pass. Required documents and upgrade guidance remain. Documentation only, no new release or application tests. Commit uses `[skip ci]`.
+Documentation maintenance (2026-10-05): preserved user-directed README removals. AGENTS.md requires a README review for every release, with edits only for outdated instructions or missing information users need. README review found no further necessary edits. `git diff --check` and local Markdown links/anchors pass. Required documents remain. Documentation only, no new release or application tests. Commit uses `[skip ci]`.
 
 ## Current release: v2.0.2 (2026-10-05)
 
