@@ -35,7 +35,11 @@ function showView(name) {
   if (!views[name]) return;
   currentView = name;
   for (const element of document.querySelectorAll('.view')) element.classList.toggle('hidden', element.id !== tr`view-${name}`);
-  for (const element of document.querySelectorAll('.nav-item')) element.classList.toggle('active', element.dataset.view === name);
+  for (const element of document.querySelectorAll('.nav-item')) {
+    const active=element.dataset.view===name;
+    element.classList.toggle('active',active);
+    if(active)element.setAttribute('aria-current','page');else element.removeAttribute('aria-current');
+  }
   $('#page-title').textContent=views[name];
   $('#clear-completed-jobs').classList.toggle('hidden', name !== 'jobs');
   $('.page-heading').classList.toggle('jobs-heading', name === 'jobs');
@@ -212,7 +216,7 @@ document.addEventListener('click',async event=>{
     if(button.dataset.delete){if(!confirm(t('刪除這筆訂閱？已建立的任務與雲端檔案會保留。')))return;await api(tr`/api/subscriptions/${button.dataset.delete}`,'DELETE');toast(t('訂閱已刪除'));await load();}
     if(button.dataset.retry){await api(tr`/api/jobs/${button.dataset.retry}/retry`,'POST',{});$('#job-dialog').close();toast(t('已重新核對或排入接續處理'));await load();}
     if(button.id==='check-connection'){await api('/api/settings/pikpak/check','POST',{});toast(t('PikPak 連線已更新；暫停的任務可個別接續'));await load();}
-    if(button.id==='logout'||button.id==='logout-mobile'){await api('/api/logout','POST',{});location.reload();}
+    if(button.id==='logout'){await api('/api/logout','POST',{});location.reload();}
   }catch(e){toast(e.message,true);}
   finally{button.disabled=false;}
 });
