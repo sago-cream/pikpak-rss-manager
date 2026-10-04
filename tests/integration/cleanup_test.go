@@ -30,8 +30,13 @@ func TestLiveStagingCleanup(t *testing.T) {
 	if err != nil {
 		t.Fatal("account unavailable", err)
 	}
-	run := "_pikpak-rss-manager-test/cleanup-" + time.Now().UTC().Format("20060102T150405") + "-" + store.ID()[:6]
-	destination, err := pikpak.EnsureFolder(ctx, api, "", run)
+	base, err := pikpak.EnsureFolder(ctx, api, "", "_pikpak-rss-manager-test")
+	if err != nil {
+		t.Fatal("isolated test namespace unavailable", err)
+	}
+	name := "cleanup-" + time.Now().UTC().Format("20060102T150405") + "-" + store.ID()[:6]
+	run := "_pikpak-rss-manager-test/" + name
+	destination, err := pikpak.EnsureFolder(ctx, api, base, name)
 	if err != nil {
 		t.Fatal("isolated destination unavailable", err)
 	}
