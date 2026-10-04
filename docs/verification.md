@@ -1,5 +1,11 @@
 # Verification
 
+## Release verification recording (2026-10-04)
+
+Local verification and the release decision remain in the implementation commit. Post-release CI, multiarch publication and anonymous-pull results go in the corresponding GitHub Release notes and delivery response. Tasks without a release report post-push results in the delivery response with Actions links. No separate commit is created solely to record those results; historical records and release tags remain unchanged.
+
+Passed locally: `git diff --check` and review of the README and AGENTS instructions for consistent verification destinations. No application or workflow files changed; application/container tests were not rerun. Release decision: no new version for this documentation-only change. This commit uses `[skip ci]`; post-push workflow status is reported in the delivery response.
+
 ## Temporary artifact cleanup (2026-10-04)
 
 Removed 5,880 obsolete/verification files (681,479,286 bytes, approximately 650 MiB): diagnostic source copies, ad hoc test/diagnostic programs, fixture databases, logs, unused service/fixture binaries, verification-only build output and workspace Go caches/temp directories. `.local/` now contains only intentional `backups/`. Production `data/`, credentials and backups were preserved; no project process was running. Referenced screenshots, migrations and legacy staged-job code remain in use. Reference checks found no additional unused production functions; JSON decoding hooks and dynamically generated CSS classes are required.

@@ -67,4 +67,6 @@ make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:latest
 
 Container tests use isolated temporary volumes and fixture data without a PAT. They bypass local `.env` files and remove their test volumes afterward. Optional test settings: `SMOKE_PLATFORM` and `SMOKE_EXPECTED_VERSION`. The Windows development machine runs container validation in GitHub Actions.
 
+Implementation commits include local verification and the release decision in [Verification](docs/verification.md). Post-release CI, image publication and anonymous-pull results are added to the corresponding [GitHub Release](https://github.com/wade00754/pikpak-rss-manager/releases), without a follow-up documentation commit. Tasks without a release report post-push results with Actions links in the delivery response.
+
 Go 1.27.1; SQLite; embedded UI; MIT license. Optional process settings: `APP_LISTEN` and `APP_DATA_DIR`. The service does not load `.env`. [Architecture/API](docs/architecture.md) · [Verification](docs/verification.md) · [PAT/OAuth](docs/auth-comparison.md).
