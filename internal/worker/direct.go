@@ -114,7 +114,7 @@ func (w *Worker) renameDirect(ctx context.Context, api pikpak.API, j *model.Job)
 			// A lost response may have applied a server-generated suffix. Never
 			// repeat an uncertain rename; reconcile by ID and the original name.
 			if current.Name == a.OriginalName && current.Name != a.TargetName {
-				a.State, a.Error = "review", "改名結果無法確認，保留目前檔名；請核對後重試"
+				a.State, a.Error = "review", "改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試"
 			} else {
 				a.State, a.ActualName = "done", current.Name
 			}
@@ -136,7 +136,7 @@ func (w *Worker) renameDirect(ctx context.Context, api pikpak.API, j *model.Job)
 				}
 				a.ActualName = current.Name
 				if current.ID != a.FileID || current.Trashed || current.Folder() || current.ParentID != a.DestinationID || current.Name == a.OriginalName {
-					a.State, a.Error = "review", "改名結果無法確認，保留目前檔名；請核對後重試"
+					a.State, a.Error = "review", "改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試"
 				}
 			}
 			if a.State != "review" {

@@ -29,12 +29,12 @@ Manage files and permanent deletion are not required. [Official permission refer
 
 - **Subscriptions:** choose an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects whole torrents. Repeated explicit downloads are allowed.
 - **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. **Delete task** cancels incomplete downloads while preserving files. **Clear completed tasks** removes completed records only.
-- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Select a torrent filename to preview.
+- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Select a torrent filename to preview. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
 Tasks download directly to the destination. Optional renaming preserves torrent directories and attachments. Rejected renames and uncertain submissions require review. Authorization/quota errors pause jobs. Update the PAT or check the connection, then resume affected tasks.
 
-Current release: [v2.0.0](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v2.0.0). Image: `ghcr.io/wade00754/pikpak-rss-manager:v2.0.0` (amd64/arm64). Compose tracks `latest`.
+Current release: [v2.0.1](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v2.0.1). Image: `ghcr.io/wade00754/pikpak-rss-manager:v2.0.1` (amd64/arm64). Compose tracks `latest`.
 
 ## Update
 

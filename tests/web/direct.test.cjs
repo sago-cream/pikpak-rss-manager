@@ -22,7 +22,15 @@ vm.runInContext(source.slice(start,end),ctx);
     await vm.runInContext("showJob('fixture')",ctx);
     assert.ok(!panel.innerHTML.includes('Staging folder ID')&&!panel.innerHTML.includes('專用暫存目錄 ID'));
     assert.ok(panel.innerHTML.includes('<strong>new (1).mkv</strong>'));
-
+    // Existing persisted errors receive the new guidance in either language.
+    const oldError='改名結果無法確認，保留目前檔名；請核對後重試';
+    details.job.state='needs_review';
+    details.files=[{state:'review',original_name:oldError,target_name:'new.mkv',actual_name:oldError,error:oldError}];
+    details=vm.runInContext('localizeResponse('+JSON.stringify(details)+')',ctx);
+    await vm.runInContext("showJob('fixture')",ctx);
+    assert.ok(panel.innerHTML.includes('<strong>'+oldError+'</strong>'),'User filenames must remain unchanged');
+    assert.ok(panel.innerHTML.includes(language==='en'?'PikPak rejects renaming to a duplicate filename in the same folder.':'PikPak 不允許改成同資料夾內的重複檔名'));
+    assert.ok(!details.files[0].error.includes(language==='en'?'Current filename retained; check it before retrying.':oldError));
   }
   console.log('Direct task detail checks passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

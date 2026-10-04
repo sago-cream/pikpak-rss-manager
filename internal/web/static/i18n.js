@@ -3,6 +3,10 @@
 // never passed through the catalog (names, paths, URLs, regex and filenames).
 let language='zh-Hant';
 try { language=localStorage.getItem('language')==='en'?'en':'zh-Hant'; } catch {}
+// Refresh application messages in existing task records without changing user data.
+const messageUpdates = {
+  '改名結果無法確認，保留目前檔名；請核對後重試':'改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試',
+};
 const translations = {
   '下載所選項目':'Download selected items',
   '下載所選項目？':'Download selected items?',
@@ -14,7 +18,7 @@ const translations = {
   '下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對':'Download completed, but no reliable file ID is available for renaming. Check PikPak.',
   '下載檔案的位置已變更，請至 PikPak 核對':'Downloaded file location changed. Check PikPak.',
   '雲端檔案尚未完成，稍後改名':'Cloud file is not complete. Renaming will resume later.',
-  '改名結果無法確認，保留目前檔名；請核對後重試':'Rename result is unconfirmed. Current filename retained; check it before retrying.',
+  '改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試':'Rename result is unconfirmed. Current filename retained. PikPak rejects renaming to a duplicate filename in the same folder. Check for an existing file with the requested name and resolve the conflict before retrying.',
   '下載檔案的名稱已變更，保留目前檔名；請至 PikPak 核對':'Downloaded filename changed. Current filename retained; check PikPak.',
   '下載已完成，部分檔案改名待處理；目前檔案已保留':'Download completed. Some renames need attention; current files are retained.',
   '提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載':'Submission remains unconfirmed. Check PikPak tasks; the download will not be resubmitted automatically.',
@@ -376,6 +380,7 @@ const escapePattern=value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const literalPattern=new RegExp(Object.keys(translations).filter(key=>!/%[ds]/.test(key)).sort((a,b)=>b.length-a.length).map(escapePattern).join('|'),'g');
 const messagePatterns=Object.entries(translations).filter(([key])=>/%[ds]/.test(key)).map(([key,value])=>({pattern:new RegExp('^'+key.split(/%[ds]/).map(escapePattern).join('(.*?)')+'$'),value}));
 function t(value){
+  if(Object.hasOwn(messageUpdates,value))value=messageUpdates[value];
   if(language!=='en')return value;
   if(Object.hasOwn(translations,value))return translations[value];
   for(const entry of messagePatterns){const match=String(value).match(entry.pattern);if(match){let i=0;return entry.value.replace(/%[ds]/g,()=>match[++i]);}}
