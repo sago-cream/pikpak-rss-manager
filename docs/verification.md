@@ -6,7 +6,9 @@ Removed 5,880 obsolete/verification files (681,479,286 bytes, approximately 650 
 
 AGENTS now requires immediate scratch cleanup after use, safe path checks, removal of task-created temporary processes and preservation of persistent data, backups, active binaries and requested deliverables. README documents this workflow. `TestLivePikPak` now uses `t.TempDir()` for its local database and reports aggregate results in test output instead of leaving `.local/live/` databases or `live-test.json` behind; created cloud fixtures remain preserved.
 
-Passed locally: `make verify` (formatting, Go tests/vet/build, JavaScript syntax, localization and direct/legacy UI tests) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local caches, plus `git diff --check`. Opt-in live/cloud and Docker tests were not run locally. Push workflow evidence will be recorded after completion.
+Passed locally: `make verify` (formatting, Go tests/vet/build, JavaScript syntax, localization and direct/legacy UI tests) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local caches, plus `git diff --check`. Opt-in live/cloud and Docker tests were not run locally. The live test's cleanup change was compiled but not exercised against PikPak.
+
+Commit `157ebf0` passed [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943285), including Linux race/vet/build/UI and Docker startup/non-root/persistence, and [main/latest publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943362), including amd64/arm64 manifest checks. Final local checks found no task artifacts outside the retained backups or private/generated paths in Git. This evidence-only documentation update uses `[skip ci]`; the cleanup implementation received the checks above.
 
 Release decision: no new version. These changes affect local/test artifact cleanup and contributor documentation only; runtime behavior, compatibility and deployment remain unchanged at v1.2.0. Existing release tags remain unchanged.
 
