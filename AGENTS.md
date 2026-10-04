@@ -30,6 +30,13 @@ Folder tests cover paging, duplicate folder names by ID, creation collisions and
 Source-preview tests cover v1/v2 torrent filenames, metadata limits, private-network protection, provenance, CSRF, no download/baseline side effects, and current-account-only cached names. Test direct destination/root downloads, original directory structure, suffix names, rejected/uncertain rename recovery and existing staging ID recovery.
 Document actual results in `docs/verification.md`; never claim a mocked test proves a real PikPak operation.
 
+## Temporary files and cleanup
+- Delete task-created temporary files as soon as their purpose is complete, including diagnostic source copies, ad hoc test programs, fixture data directories, logs, unused screenshots, release-note scratch files and verification-only binaries/caches. Ignoring files in Git does not replace cleanup.
+- Prefer `t.TempDir()` and deferred cleanup for test resources; keep durable test programs under `tests/`. Record useful verification evidence in `docs/verification.md` before deleting scratch artifacts. Do not leave one-off test code or reports in `.local/` after delivery.
+- Stop only temporary processes created for the task before deleting their files. Verify resolved deletion paths stay inside the intended task directory; do not follow links into unrelated directories.
+- Preserve `.env`, credentials, production databases/settings/keys, intentional backups, active service binaries and explicitly requested deliverables. Treat only proven fixture databases as temporary. If ownership or continued use is unclear, retain the item and report it.
+- Review unused files/code through their references and current behavior; preserve migrations and legacy job/API compatibility. Check the workspace for remaining task artifacts before delivery and report cleanup results or blockers.
+
 ## Secrets and external actions
 The user-provided `.env` contains `PIKPAK_TOKEN`. Never print, commit, embed in a build, or upload it to GitHub/Actions. Do not read it into tool output. Preserve the file and unrelated user settings.
 Ignore databases, private settings, keys, local credentials and binaries before initializing Git. Check staged paths and secret leakage before every publication.

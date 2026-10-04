@@ -2,9 +2,7 @@ package integration
 
 import (
 	"context"
-	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -41,7 +39,7 @@ func TestLivePikPak(t *testing.T) {
 	}
 	run := "run-" + time.Now().UTC().Format("20060102T150405") + "-" + store.ID()[:6]
 	cloudRoot := "_pikpak-rss-manager-test/" + run
-	db, err := store.Open(filepath.Join("..", "..", ".local", "live", run))
+	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,14 +107,6 @@ func TestLivePikPak(t *testing.T) {
 		t.Fatal("unexpected test resource size; refusing further mutations")
 	}
 	t.Log("Verified cloud completion, real filename extension, rename, move and same-request idempotency using", transport)
-	// Only non-sensitive aggregate facts are recorded for the delivery report.
-	report := map[string]any{"tested_at": time.Now().UTC().Format(time.RFC3339), "cloud_root": cloudRoot, "transport": transport, "magnet_complete": magnetComplete, "rename_move_verified": true, "idempotency_verified": true, "bytes": 163783}
-	b, _ := json.MarshalIndent(report, "", "  ")
-	reportDir := filepath.Join("..", "..", ".local")
-	_ = os.MkdirAll(reportDir, 0700)
-	if err := os.WriteFile(filepath.Join(reportDir, "live-test.json"), b, 0600); err != nil {
-		t.Fatal(err)
-	}
 }
 
 type liveProvider struct {

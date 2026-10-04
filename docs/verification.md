@@ -1,5 +1,15 @@
 # Verification
 
+## Temporary artifact cleanup (2026-10-04)
+
+Removed 5,880 obsolete/verification files (681,479,286 bytes, approximately 650 MiB): diagnostic source copies, ad hoc test/diagnostic programs, fixture databases, logs, unused service/fixture binaries, verification-only build output and workspace Go caches/temp directories. `.local/` now contains only intentional `backups/`. Production `data/`, credentials and backups were preserved; no project process was running. Referenced screenshots, migrations and legacy staged-job code remain in use. Reference checks found no additional unused production functions; JSON decoding hooks and dynamically generated CSS classes are required.
+
+AGENTS now requires immediate scratch cleanup after use, safe path checks, removal of task-created temporary processes and preservation of persistent data, backups, active binaries and requested deliverables. README documents this workflow. `TestLivePikPak` now uses `t.TempDir()` for its local database and reports aggregate results in test output instead of leaving `.local/live/` databases or `live-test.json` behind; created cloud fixtures remain preserved.
+
+Passed locally: `make verify` (formatting, Go tests/vet/build, JavaScript syntax, localization and direct/legacy UI tests) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local caches, plus `git diff --check`. Opt-in live/cloud and Docker tests were not run locally. Push workflow evidence will be recorded after completion.
+
+Release decision: no new version. These changes affect local/test artifact cleanup and contributor documentation only; runtime behavior, compatibility and deployment remain unchanged at v1.2.0. Existing release tags remain unchanged.
+
 ## Direct downloads and in-place renaming (2026-10-04)
 
 New RSS, selected backfill and manual jobs persist `download_mode: direct`, submit to the destination ID and optionally rename by official file ID in place. They preserve torrent directories and attachments and do not create staging/backup/attachment folders, move, overwrite, trash or clean content. Backfill confirms downloads only; legacy `overwrite` input is accepted and ignored. Existing jobs without a mode keep their staged workflow, backups, file actions and cleanup ownership. SQLite stays at schema 4; downgrade requires a pre-upgrade backup when direct jobs exist.
