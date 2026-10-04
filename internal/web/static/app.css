@@ -1099,6 +1099,7 @@ dialog::backdrop {
 }
 
 .setup-page .login-header {
+  align-items:flex-start;
   margin-bottom:20px;
 }
 
@@ -1110,9 +1111,61 @@ dialog::backdrop {
   margin-bottom:18px;
 }
 
-.setup-page .login-footer {
-  margin-top:16px;
+.setup-page .appearance-controls { gap:8px; }
+.setup-page .theme-toggle { width:40px; height:40px; padding:8px; }
+.language-toggle {
+  height:40px;
+  min-width:88px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--surface);
+  color:var(--ink);
 }
+.language-toggle:hover { background:var(--accent-light); }
+.setup-page .login-form { display:grid; gap:20px; }
+.setup-field { display:grid; gap:8px; }
+.setup-field input { margin-top:0; }
+.setup-label-row { display:flex; align-items:center; }
+.setup-page .checkbox-label { gap:8px; }
+.setup-page .checkbox-label input { width:16px; height:16px; margin:0; flex-shrink:0; }
+.setup-help { position:relative; }
+.setup-help summary {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:32px;
+  color:var(--muted);
+  cursor:pointer;
+  list-style:none;
+  border-radius:4px;
+}
+.setup-help summary::after { content:""; position:absolute; width:40px; height:40px; }
+.setup-help summary::-webkit-details-marker { display:none; }
+.setup-help summary:focus-visible { outline:3px solid #c7b7ff; outline-offset:3px; }
+.setup-help summary:hover,.setup-help[open] summary { color:var(--accent); }
+.setup-help svg { width:16px; height:16px; }
+.setup-help-content {
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  z-index:1;
+  width:224px;
+  max-width:calc(100vw - 48px);
+  margin:0;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  color:var(--ink);
+  font-size:12px;
+}
+.setup-private-feeds .setup-help-content { left:auto; right:0; }
+.setup-page .login-form>.button { margin-top:4px; }
+.setup-page .login-form>.error { margin:0; }
+.setup-page .login-form>.error:empty { display:none; }
 
 .login-shell h1 {
   font-size:42px;

@@ -1,5 +1,13 @@
 # Verification
 
+## Setup page polish (2026-10-04)
+
+The setup header aligns the logo and padded appearance controls at the top. A single button switches between English and Traditional Chinese. Labels and inputs have explicit grouping, password labels and messages use concise wording, placeholders are shorter, checkbox spacing is tighter, and optional guidance opens from keyboard-accessible information controls. The setup page omits the version footer. Health/session APIs and the authenticated interface retain version information.
+
+Local validation: `make verify` and `make test-race` passed with Go 1.27.1 and workspace-local caches. Localization tests cover the language toggle in both directions, including persistence and its accessible name. The isolated smoke harness checks the setup form and health/session versions before initialization and the page version afterward. Browser checks covered both languages, light/dark themes, expandable guidance, keyboard collapse and a 320px viewport using an isolated data directory. The existing local administrator data was preserved. No real PikPak operations or Docker runs were performed.
+
+Release decision: prepare v2.0.2 for this user-visible UI fix. Submit as a draft PR for review before publication. No release has been published.
+
 ## Current release: v2.0.1 (2026-10-04)
 
 Unconfirmed rename messages now explain PikPak's duplicate-name restriction and ask users to resolve conflicts before retrying. Existing task messages receive the updated Traditional Chinese and English copy without changing filenames or stored records. Download and rename behavior is unchanged.
