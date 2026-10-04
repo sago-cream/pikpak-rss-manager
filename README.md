@@ -36,6 +36,8 @@ New tasks download into `<destination>/_PikPak-RSS-Staging/<jobID>`. After compl
 
 Jobs resume after restarts. Uncertain submissions require reconciliation rather than another submission. Authorization/quota errors pause downloads; update the PAT or check the connection, then resume affected tasks.
 
+Magnet links use a normalized infohash as their first parameter, with trackers and display names retained. Already submitted tasks keep their PikPak task IDs and are not automatically resubmitted when the link format changes.
+
 To update this reissued v1.0.0, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. [Upgrade and restore details](docs/deployment.md).
 
 ## Development

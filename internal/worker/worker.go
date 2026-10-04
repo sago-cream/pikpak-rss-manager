@@ -244,6 +244,13 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		return w.reconcile(ctx, api, &j)
 	}
 	if j.State == "queued" {
+		if strings.HasPrefix(j.ResourceURL, "magnet:") {
+			resource, err := feed.NormalizeMagnet(j.ResourceURL)
+			if err != nil {
+				return w.failure(ctx, &j, &pikpak.Error{Kind: "permanent", Message: err.Error()}, false)
+			}
+			j.ResourceURL = resource.URL
+		}
 		if j.DestinationID == "" {
 			j.DestinationID, err = ensurePath(ctx, api, "", j.Destination)
 			if err != nil {

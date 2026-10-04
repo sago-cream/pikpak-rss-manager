@@ -1,5 +1,15 @@
 # Verification
 
+## Canonical Magnet submission (2026-10-04)
+
+The newly reported production task existed in PikPak with status `running`, 0% progress and message `Saving`. Its infohash matched both the persisted resource key and the public RSS torrent metadata. This does not establish why that source remained stalled.
+
+Magnet generation now puts the selected normalized infohash first with literal URN separators. Display names, trackers, source parameters and hybrid v1/v2 topics retain their decoded values. Legacy queued links are normalized before their first submission; active tasks retain their IDs without another submission.
+
+Passed locally: `make verify` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`. Regression coverage includes parameter preservation, hybrid/v2 links, idempotent normalization, generated torrent links and one submission for legacy queued jobs. Real validation under `_pikpak-rss-manager-test/download-20261004T112602-c18672` downloaded the 163,783-byte public-domain Alice fixture at 100%. No production task was resubmitted, and no credentials were printed or uploaded.
+
+Release decision: include this user-visible compatibility fix in the new v1.1.0 release with task deletion. Existing tags remain unchanged. Docker/race/public-image checks will run in Actions during publication.
+
 ## Makefile and Go container tests (2026-10-04)
 
 The root Makefile now supplies the shared development/CI commands. PowerShell wrappers were removed, the Python container smoke and architecture checks were replaced with opt-in Go tests, and localization tests moved to `tests/web`. README documents the prerequisites and targets. AGENTS requires documentation updates, immediate Conventional Commits, GitHub uploads, workflow verification and an explicit release decision for each implementation task.

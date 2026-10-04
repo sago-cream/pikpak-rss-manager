@@ -194,7 +194,7 @@ func NormalizeMagnet(v string) (Resource, error) {
 	if err != nil {
 		return Resource{}, errors.New("Magnet 參數無效")
 	}
-	for _, xt := range q["xt"] {
+	for i, xt := range q["xt"] {
 		if strings.HasPrefix(strings.ToLower(xt), "urn:btih:") {
 			hash := xt[len("urn:btih:"):]
 			var b []byte
@@ -206,20 +206,43 @@ func NormalizeMagnet(v string) (Resource, error) {
 				continue
 			}
 			if err == nil && len(b) == 20 {
-				return Resource{"btih:" + hex.EncodeToString(b), u.String()}, nil
+				key := "btih:" + hex.EncodeToString(b)
+				return Resource{key, canonicalMagnet(q, "urn:"+key, i)}, nil
 			}
 		}
 	}
-	for _, xt := range q["xt"] {
+	for i, xt := range q["xt"] {
 		if strings.HasPrefix(strings.ToLower(xt), "urn:btmh:1220") {
 			hash := strings.TrimPrefix(strings.ToLower(xt), "urn:btmh:1220")
 			b, e := hex.DecodeString(hash)
 			if e == nil && len(b) == 32 {
-				return Resource{"btmh:1220" + hash, u.String()}, nil
+				key := "btmh:1220" + hash
+				return Resource{key, canonicalMagnet(q, "urn:"+key, i)}, nil
 			}
 		}
 	}
 	return Resource{}, errors.New("Magnet 缺少有效的 v1/v2 infohash")
+}
+
+// Keep the selected, normalized infohash first with literal URN separators for
+// consumers that recognize the conventional Magnet prefix. Other topics and
+// parameters retain their decoded values, including repeated trackers.
+func canonicalMagnet(q url.Values, topic string, selected int) string {
+	topics := []string{topic}
+	for i, value := range q["xt"] {
+		if i != selected {
+			topics = append(topics, value)
+		}
+	}
+	parts := make([]string, 0, len(topics)+1)
+	for _, value := range topics {
+		parts = append(parts, "xt="+strings.ReplaceAll(url.QueryEscape(value), "%3A", ":"))
+	}
+	q.Del("xt")
+	if rest := q.Encode(); rest != "" {
+		parts = append(parts, rest)
+	}
+	return "magnet:?" + strings.Join(parts, "&")
 }
 func (c *Client) Resolve(ctx context.Context, v string) (Resource, error) {
 	if strings.HasPrefix(v, "magnet:") {
@@ -275,7 +298,7 @@ func Torrent(b []byte) (Resource, error) {
 			}
 		}
 	}
-	return Resource{key, "magnet:?" + q.Encode()}, nil
+	return Resource{key, canonicalMagnet(q, "urn:"+key, 0)}, nil
 }
 
 // Bound lengths and nesting before the reusable decoder handles untrusted bytes.
