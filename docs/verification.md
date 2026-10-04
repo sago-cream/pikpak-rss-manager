@@ -1,5 +1,7 @@
 # Verification
 
+Documentation maintenance (2026-10-05): preserved user-directed README removals and removed the release-only README update requirement from AGENTS.md. `git diff --check` and local Markdown links/anchors pass. Required documents and upgrade guidance remain. Documentation only, no new release or application tests. Commit uses `[skip ci]`.
+
 ## Current release: v2.0.2 (2026-10-05)
 
 Unconfirmed rename messages now use a short conflict-check reminder, including existing stored messages in both languages. Task details show unchanged filenames once. Changed filenames retain a labeled original for comparison. Pending actions display the known filename rather than the requested rename. User filenames, stored records and cloud behavior are unchanged.
