@@ -45,6 +45,7 @@ type SubscriptionRecord struct {
 }
 
 type Job struct {
+	DownloadMode   string          `json:"download_mode,omitempty"`
 	StagingCleanup *StagingCleanup `json:"staging_cleanup,omitempty"`
 	Overwrite      bool            `json:"overwrite,omitempty"`
 	ID             string          `json:"id"`
@@ -85,6 +86,7 @@ type JobRecord struct {
 }
 
 type FileAction struct {
+	ActualName     string   `json:"actual_name,omitempty"`
 	BackupID       string   `json:"backup_id,omitempty"`
 	ReplacementIDs []string `json:"replacement_ids,omitempty"`
 	JobID          string   `json:"job_id"`

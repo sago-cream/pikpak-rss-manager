@@ -27,11 +27,11 @@ if(backfillDialog){
     event.preventDefault();if(!backfillPlan)return;
     const plan=backfillPlan,selected=Array.from(document.querySelectorAll('#backfill-list input:checked'),input=>input.value);
     if(!selected.length)return;
-    if(!confirm(t('下載所選項目並覆蓋目標資料夾的同名檔案？舊檔會移至任務備份目錄。')))return;
+    if(!confirm(t('下載所選項目？')))return;
     const button=$('#backfill-download');button.disabled=true;
     for(const input of document.querySelectorAll('#backfill-list input'))input.disabled=true;
     try{
-      const result=await api(`/api/subscriptions/${plan.id}/backfill`,'POST',{token:plan.token,selected,overwrite:true});
+      const result=await api(`/api/subscriptions/${plan.id}/backfill`,'POST',{token:plan.token,selected});
       backfillDialog.close();toast(t('已排入下載佇列：%d 筆').replace('%d',result.count));await load();
     }catch(e){$('#backfill-status').textContent=e.message;button.disabled=false;}
   });

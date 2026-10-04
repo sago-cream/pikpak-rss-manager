@@ -29,6 +29,8 @@ Save the public origin in Settings and access the UI from that origin. Preserve 
 
 ## Update
 
+v1.2.0 downloads new tasks directly to their destination and only renames in place. Existing jobs keep their staging, backups and cleanup behavior; no cloud migration is performed. The schema stays at version 4, but downgrading with direct jobs requires restoring the pre-upgrade backup.
+
 v1.1.0 adds task cancellation/deletion, completed-record clearing and canonical Magnet submission. It migrates SQLite to schema version 4 for deleted-request tombstones. Back up the complete data volume before upgrading; downgrading requires restoring its pre-upgrade backup.
 
 ```sh
@@ -39,7 +41,7 @@ docker compose logs --tail=50
 
 The reissued v1.0.0 removes resource uniqueness through schema version 3. Pull again even if you already use the v1.0.0 tag. Back up the complete data volume before upgrading; returning to the earlier v1.0.0 build requires restoring its pre-upgrade backup.
 
-The latest v1.0.0 republication also cleans empty staging folders after new tasks complete. Grant the PAT **Manage files** and **Cloud Download**; if an existing PAT cannot be edited, create a replacement and save it in Settings. Cleanup uses Trash, preserves backups/unfinished tasks and leaves legacy staging untouched. Missing cleanup permission retains staging with a warning without failing completed downloads.
+Existing staged jobs with recorded cleanup ownership clean empty staging folders after completion. Grant the PAT **Manage files** and **Cloud Download**; if an existing PAT cannot be edited, create a replacement and save it in Settings. Cleanup uses Trash, preserves backups/unfinished tasks and leaves legacy staging untouched. Missing cleanup permission retains staging with a warning without failing completed downloads.
 
 Pin an available version tag or digest to control updates. Never use `docker compose down -v` for updates. Existing subscriptions, encrypted PATs, jobs and staging IDs are retained. Upgrading versions predating web setup requires creating a new administrator password; externally configured PATs must be entered in Settings.
 

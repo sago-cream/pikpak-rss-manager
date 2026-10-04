@@ -101,9 +101,9 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 	if len(jobs) != 0 || got.Initialized || cloud.Calls["submit"] != 0 || cloud.Calls["mkdir"] != 0 {
 		t.Fatal("preview changed baseline or cloud")
 	}
-	in := map[string]any{"token": token, "selected": []string{choices[0].ID}, "overwrite": false}
+	in := map[string]any{"token": token, "selected": []string{}}
 	if r := request("backfill", in, true, true); r.Code != 400 {
-		t.Fatal("missing confirmation accepted")
+		t.Fatal("empty selection accepted")
 	}
 	in["overwrite"] = true
 	in["selected"] = []string{"forged"}
@@ -122,7 +122,7 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 		}
 	}
 	jobs, _ = db.Jobs(context.Background(), 10)
-	if len(jobs) != 1 || jobs[0].Title != choices[0].Title || !jobs[0].Overwrite || jobs[0].State != "queued" || jobs[0].DestinationID != "dest" {
+	if len(jobs) != 1 || jobs[0].Title != choices[0].Title || jobs[0].Overwrite || jobs[0].DownloadMode != "direct" || jobs[0].State != "queued" || jobs[0].DestinationID != "dest" {
 		t.Fatal("selection/replay incorrect")
 	}
 	in["selected"] = []string{choices[1].ID}
@@ -132,6 +132,7 @@ func TestBackfillSelectionAuthenticationReplayAndSnapshot(t *testing.T) {
 	// A fresh explicit selection of the same resource creates a new task.
 	token, choices = preview()
 	in["token"] = token
+	delete(in, "overwrite")
 	in["selected"] = []string{choices[0].ID}
 	if r := request("backfill", in, true, true); r.Code != 200 {
 		t.Fatal("redownload suppressed", r.Body.String())

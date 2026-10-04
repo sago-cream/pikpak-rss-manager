@@ -115,8 +115,8 @@ func (s *Server) confirmBackfill(w http.ResponseWriter, r *http.Request) {
 		failure(w, err)
 		return
 	}
-	if !in.Overwrite || len(in.Selected) == 0 || len(in.Selected) > 2000 {
-		failure(w, errors.New("請選擇下載項目並確認覆蓋"))
+	if len(in.Selected) == 0 || len(in.Selected) > 2000 {
+		failure(w, errors.New("請選擇下載項目"))
 		return
 	}
 	s.backfillMu.Lock()
@@ -185,7 +185,7 @@ func (s *Server) confirmBackfill(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		delete(selected, choice.ID)
-		jobs = append(jobs, model.Job{ID: choice.ID, SubscriptionID: sub.ID, AccountID: account, ResourceKey: choice.source.Resource.Key, ResourceURL: choice.source.Resource.URL, Title: choice.Title, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, Overwrite: true, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now})
+		jobs = append(jobs, model.Job{DownloadMode: "direct", ID: choice.ID, SubscriptionID: sub.ID, AccountID: account, ResourceKey: choice.source.Resource.Key, ResourceURL: choice.source.Resource.URL, Title: choice.Title, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now})
 		fingerprints = append(fingerprints, choice.source.Item.Fingerprint)
 	}
 	if len(selected) > 0 {
@@ -199,7 +199,7 @@ func (s *Server) confirmBackfill(w http.ResponseWriter, r *http.Request) {
 	plan.selection = selection
 	plan.jobs = jobs
 	for _, job := range jobs {
-		_ = s.DB.Event(ctx, job.ID, sub.ID, "info", "已確認下載與覆蓋，離線任務已排入佇列")
+		_ = s.DB.Event(ctx, job.ID, sub.ID, "info", "已確認下載，離線任務已排入佇列")
 	}
 	JSON(w, 200, map[string]any{"jobs": jobs, "count": len(jobs)})
 }

@@ -1,5 +1,17 @@
 # Verification
 
+## Direct downloads and in-place renaming (2026-10-04)
+
+New RSS, selected backfill and manual jobs persist `download_mode: direct`, submit to the destination ID and optionally rename by official file ID in place. They preserve torrent directories and attachments and do not create staging/backup/attachment folders, move, overwrite, trash or clean content. Backfill confirms downloads only; legacy `overwrite` input is accepted and ignored. Existing jobs without a mode keep their staged workflow, backups, file actions and cleanup ownership. SQLite stays at schema 4; downgrade requires a pre-upgrade backup when direct jobs exist.
+
+Passed locally: `make verify` using Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local Go caches. Tests cover direct destination/root submission, original names, regex/nonmatches, torrent structure and attachments, suffix readback, rejected/uncertain renames, SQLite reopening, partial actions, missing task/file IDs without destination scans, uncertain submission without another download, auth/quota/rate handling, download-completion guards, RSS job mode, and idempotent backfill requests with/without the legacy overwrite field. Existing staged recovery/backup/cleanup tests remain. `make test-ui` includes localization and mocked English/Traditional Chinese task-detail tests verifying hidden direct staging fields, retained legacy fields and actual filenames. No browser screenshot test was performed for this release.
+
+Opt-in `TestLiveDirectDownloadAndRename` passed in 23.94 seconds using official hosted MCP and the locally encrypted UI-configured PAT, scoped to `_pikpak-rss-manager-test/direct-20261004T124346-65facc`. Three 163,783-byte public-domain Alice HTTP downloads completed directly in that destination; repeat downloads produced `alice.txt` and `alice(1).txt`, and worker renaming produced `direct-renamed.txt`. An explicit same-name rename was rejected and its current name retained; the other two files were unchanged. Exactly three files and no extra folders remained. All fixtures are preserved; no moves, Trash, permanent deletion or production task changes were performed. Real nested torrent, root-destination, restart and suffix-on-rename behavior were not tested; mocks cover those applicable paths. The same-name rename error was sanitized by the adapter, so its provider-specific error text is not recorded.
+
+Repeat with `PIKPAK_LIVE_DIRECT_TEST=1 go test ./tests/integration -run '^TestLiveDirectDownloadAndRename$' -count=1 -v -timeout=7m`; set `PIKPAK_LIVE_DATA_DIR` for a custom UI-configured data directory. The test preserves its isolated fixtures and separately checks duplicate downloads and rename collisions.
+
+Release decision: publish v1.2.0 for the new download workflow and backfill API behavior, without moving existing tags. Linux race/container validation, multiarch publication and anonymous pulls are pending GitHub Actions. No local Docker or VPS deployment is required.
+
 ## Task header controls (2026-10-04)
 
 Moved **Clear completed tasks** between **Refresh** and **New task** in the offline-task header. The clearing button is hidden on other pages; all three controls remain available on narrow task screens. Refresh reloads the four read-only dashboard APIs; it does not check RSS or resume tasks. The existing 15-second automatic refresh remains unchanged.

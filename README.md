@@ -12,7 +12,7 @@ docker compose up -d
 
 Open the site, create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**. There is no default password; credentials are configured through the UI.
 
-Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.1.1` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.1.1` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md) · [Release notes](docs/releases/v1.1.1.md).
+Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.2.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.2.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md) · [Release notes](docs/releases/v1.2.0.md).
 
 ## PAT permissions
 
@@ -20,29 +20,29 @@ Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.1.1` (linux/amd64 and li
 
 | Permission | Purpose |
 |---|---|
-| **Manage files** | Includes reading/writing, browsing/creating folders, renaming/moving files and moving empty staging folders to Trash. |
+| **Manage files** | Includes reading/writing, browsing/creating folders and renaming files; also supports existing staged jobs. |
 | **Cloud Download** | Creates offline download tasks. |
 
-Read & write files alone cannot clean staging folders. For an existing PAT, grant Manage files or create a replacement and save it in Settings. Missing cleanup permission retains staging with a warning; completed downloads remain successful. Permanent deletion, Share, Invite and Account settings permissions are not needed. [Official permission reference](https://mypikpak.com/en-US/help-center/connected_apps/managing_connected_apps/connected_app_permissions).
+New tasks do not use Trash. Existing staged jobs retain their cleanup permission requirements; missing permission leaves their staging with a warning. Permanent deletion, Share, Invite and Account settings permissions are not needed. [Official permission reference](https://mypikpak.com/en-US/help-center/connected_apps/managing_connected_apps/connected_app_permissions).
 
 ## Use
 
-- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects torrents and confirms download/replacement; multi-file torrents download in full. Repeated explicit downloads are allowed.
+- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects torrents and confirms downloads; multi-file torrents download in full. Repeated explicit downloads are allowed.
 - **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained. **Delete task** cancels its PikPak download before removing the record; downloaded files are preserved. **Clear completed tasks**, between **Refresh** and **New task** in the page header, removes completed records only.
 - **Renaming:** optional for new subscriptions. Regex replacement supports `$1`, `${name}` and `$$`; nonmatches keep their names. Select a torrent filename to preview. Existing template rules remain supported.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
-New tasks download into `<destination>/_PikPak-RSS-Staging/<jobID>`. After completion, empty task/torrent folders and the empty staging container move to Trash. Backups, unfinished tasks, remaining files and legacy staging are preserved. Confirmed replacements keep originals under the task's `_Replaced` folder; ordinary name/folder collisions require review.
+New tasks download directly to the destination. Optional renaming changes filenames in place; torrent directories and attachments remain where PikPak downloads them. Duplicate downloads use PikPak's filename suffixes. No staging, backup or attachment folders are created, and new jobs do not move, overwrite, trash or clean cloud content. Existing jobs keep their original staged workflow and IDs.
 
-Jobs resume after restarts. Uncertain submissions require reconciliation rather than another submission. Authorization/quota errors pause downloads; update the PAT or check the connection, then resume affected tasks.
+Jobs resume after restarts using saved task/file IDs and rename progress. Actual names are read back after renaming. Rejected renames retain the current file for review. Uncertain submissions without an ID are not resubmitted; missing file IDs require review only when renaming is enabled. Authorization/quota errors pause downloads; update the PAT or check the connection, then resume affected tasks.
 
-Failed cancellation retains the task record. For an uncertain submission without a PikPak task ID, cancel it in PikPak first, then confirm record deletion. Task deletion preserves feed baselines; retrying the same confirmed request does not recreate a deleted task. Clearing completed records also stops their remaining empty-folder cleanup retries.
+Failed cancellation retains the task record. For an uncertain submission without a PikPak task ID, cancel it in PikPak first, then confirm record deletion. Task deletion preserves feed baselines; retrying the same confirmed request does not recreate a deleted task. Clearing completed legacy records also stops their remaining empty-folder cleanup retries.
 
 Magnet links use a normalized infohash as their first parameter, with trackers and display names retained. Already submitted tasks keep their PikPak task IDs and are not automatically resubmitted when the link format changes.
 
 **Refresh** immediately reloads server-recorded subscriptions, tasks, events and connection status. The visible dashboard also refreshes every 15 seconds when task/subscription dialogs are closed. Refresh does not trigger RSS checks or resume downloads.
 
-To update, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. v1.1.0 migrates to schema 4; downgrade requires the pre-upgrade backup. [Upgrade and restore details](docs/deployment.md).
+To update, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. v1.2.0 retains schema 4. Downgrading with direct jobs requires the pre-upgrade backup. [Upgrade and restore details](docs/deployment.md).
 
 ## Development
 

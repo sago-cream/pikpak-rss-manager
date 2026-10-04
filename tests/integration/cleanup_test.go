@@ -52,6 +52,11 @@ func TestLiveStagingCleanup(t *testing.T) {
 	if err != nil || !added {
 		t.Fatal("isolated task queue failed", err)
 	}
+	// This opt-in test explicitly exercises the retained legacy cleanup path.
+	j.DownloadMode = ""
+	if err := db.SaveJob(ctx, &j); err != nil {
+		t.Fatal(err)
+	}
 	if !finishLive(ctx, t, w, db, j.ID, 90*time.Second) {
 		t.Fatal("fixture download did not finish; preserved run", run)
 	}

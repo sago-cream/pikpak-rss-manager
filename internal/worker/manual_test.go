@@ -26,12 +26,8 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 		t.Fatal(err)
 	}
 	j, err = w.DB.Job(ctx, j.ID)
-	if err != nil || j.TaskID == "" || j.StagingID == "" {
+	if err != nil || j.TaskID == "" || j.StagingID != "" || j.DownloadMode != "direct" || j.StagingCleanup != nil {
 		t.Fatal("task intent not persisted", err)
-	}
-	stagingParent := c.Files[c.Files[j.StagingID].ParentID]
-	if stagingParent.ParentID != j.DestinationID || stagingParent.Name != "_PikPak-RSS-Staging" {
-		t.Fatal("manual staging outside destination")
 	}
 	if err := w.DB.Close(); err != nil {
 		t.Fatal(err)
@@ -42,13 +38,13 @@ func TestManualJobRestartAndOriginalFilename(t *testing.T) {
 	}
 	defer db.Close()
 	restarted := New(db, p, &feeds{})
-	c.Files["original"] = pikpak.File{ID: "original", Name: "original.mp4", ParentID: j.StagingID, Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
+	c.Files["original"] = pikpak.File{ID: "original", Name: "original.mp4", ParentID: j.DestinationID, Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
 	c.Tasks[j.TaskID] = pikpak.Task{ID: j.TaskID, Status: "complete", FileID: "original"}
 	if err := restarted.Process(ctx, j.ID); err != nil {
 		t.Fatal(err)
 	}
 	completed, err := db.Job(ctx, j.ID)
-	if err != nil || completed.State != "complete" || completed.SubscriptionID != 0 || completed.StagingID != j.StagingID || c.Calls["submit"] != 1 || c.Calls["rename"] != 0 || c.Files["original"].ParentID != j.DestinationID {
+	if err != nil || completed.State != "complete" || completed.SubscriptionID != 0 || completed.StagingID != "" || c.Calls["submit"] != 1 || c.Calls["rename"] != 0 || c.Calls["move"] != 0 || c.Calls["trash"] != 0 || c.Files["original"].ParentID != j.DestinationID {
 		t.Fatal("manual job did not resume safely", err)
 	}
 	if _, added, err := restarted.EnqueueManual(ctx, c.AccountID, resource, model.Subscription{Name: "Duplicate", RenameEnabled: &off}); err != nil || !added {

@@ -4,6 +4,20 @@
 let language='zh-Hant';
 try { language=localStorage.getItem('language')==='en'?'en':'zh-Hant'; } catch {}
 const translations = {
+  '下載所選項目':'Download selected items','下載所選項目？':'Download selected items?',
+  '勾選要下載的種子；多檔種子會下載整筆內容，保留原始目錄結構。':'Select torrents to download. Multi-file torrents download in full and keep their directory structure.',
+  '首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載。Regex 不匹配時保留原名。':'First check sets a baseline. Use Backfill to select existing releases and confirm downloading. Nonmatches keep their names.',
+  '請選擇下載項目':'Select downloads.','已確認下載，離線任務已排入佇列':'Download confirmed. Offline task queued.',
+  '下載與改名完成':'Download and renaming completed',
+  '下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對':'Download completed, but no reliable file ID is available for renaming. Check PikPak.',
+  '下載檔案的位置已變更，請至 PikPak 核對':'Downloaded file location changed. Check PikPak.',
+  '雲端檔案尚未完成，稍後改名':'Cloud file is not complete. Renaming will resume later.',
+  '改名結果無法確認，保留目前檔名；請核對後重試':'Rename result is unconfirmed. Current filename retained; check it before retrying.',
+  '下載檔案的名稱已變更，保留目前檔名；請至 PikPak 核對':'Downloaded filename changed. Current filename retained; check PikPak.',
+  '下載已完成，部分檔案改名待處理；目前檔案已保留':'Download completed. Some renames need attention; current files are retained.',
+  '提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載':'Submission remains unconfirmed. Check PikPak tasks; the download will not be resubmitted automatically.',
+  'PikPak 任務不存在，無法確認下載結果；請至 PikPak 核對':'PikPak task no longer exists. Download completion is unconfirmed; check PikPak.',
+  '改名中':'Renaming',
   '刪除任務':'Delete task','清除已完成任務':'Clear completed tasks','任務已刪除':'Task deleted','已清除已完成任務':'Completed tasks cleared',
   '刪除這筆任務並取消 PikPak 下載？已完成的雲端檔案會保留。':'Delete this task and cancel its PikPak download? Completed cloud files will be kept.',
   '尚無 PikPak 任務 ID，無法自動取消。請先至 PikPak 取消，再刪除此紀錄？':'No PikPak task ID is available to cancel it automatically. Cancel it in PikPak first, then delete this record?',

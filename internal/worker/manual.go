@@ -14,7 +14,7 @@ import (
 // with respect to account switches. Process handles all subsequent cloud actions.
 func (w *Worker) EnqueueManual(ctx context.Context, account string, resource feed.Resource, sub model.Subscription) (model.Job, bool, error) {
 	now := time.Now().Unix()
-	j := model.Job{ID: store.ID(), AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: sub.Name, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
+	j := model.Job{DownloadMode: "direct", ID: store.ID(), AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: sub.Name, Rule: sub.Rule(), Destination: sub.Destination, DestinationID: sub.DestinationID, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
 	added, err := w.DB.Enqueue(ctx, j, "")
 	if err == nil && added {
 		_ = w.DB.Event(ctx, j.ID, 0, "info", "手動任務已排入佇列")

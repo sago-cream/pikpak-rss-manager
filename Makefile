@@ -58,6 +58,7 @@ test-ui:
 	$(NODE) --check internal/web/static/backfill.js
 	$(NODE) --check internal/web/static/i18n.js
 	$(NODE) tests/web/i18n.test.cjs
+	$(NODE) tests/web/direct.test.cjs
 
 verify: check-format test vet test-ui build
 

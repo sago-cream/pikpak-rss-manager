@@ -184,7 +184,7 @@ func (w *Worker) Check(ctx context.Context, id int64, backfill bool) error {
 			continue
 		}
 		now := time.Now().Unix()
-		j := model.Job{ID: store.ID(), SubscriptionID: id, AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: item.Title, Rule: sub.Rule(), Destination: sub.Destination, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
+		j := model.Job{DownloadMode: "direct", ID: store.ID(), SubscriptionID: id, AccountID: account, ResourceKey: resource.Key, ResourceURL: resource.URL, Title: item.Title, Rule: sub.Rule(), Destination: sub.Destination, State: "queued", NextAttempt: now, CreatedAt: now, UpdatedAt: now}
 		j.DestinationID = sub.DestinationID
 		added, err := w.DB.Enqueue(ctx, j, item.Fingerprint)
 		if err != nil {
@@ -237,6 +237,9 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		j.Error = "舊帳號任務已暫停"
 		return w.DB.SaveJob(ctx, &j)
 	}
+	if j.State == "complete" && j.DownloadMode == "direct" {
+		return nil
+	}
 	if j.State == "complete" {
 		return w.cleanupCompleted(ctx, api, &j)
 	}
@@ -265,7 +268,7 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 				return w.failure(ctx, &j, &pikpak.Error{Kind: "permanent", Message: "目標資料夾已變更，請重新選取"}, false)
 			}
 		}
-		if j.StagingID == "" {
+		if j.StagingID == "" && j.DownloadMode != "direct" {
 			stagingParent := j.DestinationID
 			stagingPath := w.StagingPath
 			if stagingPath == "" {
@@ -289,11 +292,18 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		if err := w.DB.SaveJob(ctx, &j); err != nil {
 			return err
 		}
-		task, e := api.Submit(ctx, j.StagingID, j.ResourceURL)
+		parent := j.StagingID
+		if j.DownloadMode == "direct" {
+			parent = j.DestinationID
+		}
+		task, e := api.Submit(ctx, parent, j.ResourceURL)
 		if e != nil {
 			return w.failure(ctx, &j, e, true)
 		}
 		j.TaskID = task.ID
+		if j.DownloadMode == "direct" {
+			j.FileID = task.FileID
+		}
 		j.State = "downloading"
 		j.Error = ""
 		j.Attempts = 0
@@ -317,7 +327,20 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		j.Error = ""
 		switch task.State() {
 		case "complete", "completed":
-			j.FileID = task.FileID
+			if task.FileID != "" {
+				j.FileID = task.FileID
+			}
+			if j.DownloadMode == "direct" {
+				j.Progress = 100
+				if !j.Rule.Renaming() {
+					return w.completeDirect(ctx, &j)
+				}
+				if j.FileID == "" {
+					return w.reviewDirect(ctx, &j, "下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對")
+				}
+				j.State = "organizing"
+				break
+			}
 			if j.FileID == "" {
 				roots, e := pikpak.ListAll(ctx, api, j.StagingID)
 				if e != nil {
@@ -354,6 +377,12 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		}
 	}
 	if j.State == "organizing" {
+		if j.DownloadMode == "direct" {
+			if err := w.renameDirect(ctx, api, &j); err != nil {
+				return w.failure(ctx, &j, err, false)
+			}
+			return nil
+		}
 		if err := w.organize(ctx, api, &j); err != nil {
 			return w.failure(ctx, &j, err, false)
 		}
@@ -398,6 +427,15 @@ func (w *Worker) failure(ctx context.Context, j *model.Job, err error, submitted
 }
 
 func (w *Worker) reconcile(ctx context.Context, api pikpak.API, j *model.Job) error {
+	if j.DownloadMode == "direct" {
+		if j.TaskID != "" {
+			j.State, j.Error, j.NextAttempt = "downloading", "", 0
+		} else {
+			j.State = "submission_unknown"
+			j.Error = "提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載"
+		}
+		return w.DB.SaveJob(ctx, j)
+	}
 	roots, err := pikpak.ListAll(ctx, api, j.StagingID)
 	if err != nil {
 		return err
@@ -439,7 +477,9 @@ func (w *Worker) Retry(ctx context.Context, id string) error {
 	if sub, e := w.DB.Subscription(ctx, j.SubscriptionID); e == nil {
 		j.Rule = sub.Rule()
 	}
-	if j.FileID != "" {
+	if j.DownloadMode == "direct" && j.TaskID != "" && j.Progress < 100 {
+		j.State = "downloading"
+	} else if j.FileID != "" {
 		j.State = "organizing"
 	} else if j.TaskID != "" {
 		j.State = "downloading"
