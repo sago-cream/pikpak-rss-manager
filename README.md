@@ -4,15 +4,15 @@ A self-hosted Go service for PikPak RSS/Atom subscriptions and offline downloads
 
 ## Start
 
-Download [docker-compose.yml](docker-compose.yml), then run:
+Requires Docker and Docker Compose. Download [docker-compose.yml](docker-compose.yml), then run from its directory:
 
 ```sh
 docker compose up -d
 ```
 
-Open the site, create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**.
+On the same machine, open [http://127.0.0.1:8080](http://127.0.0.1:8080), create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**.
 
-See the [deployment guide](docs/deployment.md) for 1Panel setup, HTTPS reverse proxy configuration and process settings.
+Compose listens on localhost only. For remote access, configure an HTTPS reverse proxy using the [deployment guide](docs/deployment.md), which also covers 1Panel and process settings.
 
 ### PAT permissions
 

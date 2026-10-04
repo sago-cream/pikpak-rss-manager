@@ -1,6 +1,6 @@
 # Verification
 
-Documentation maintenance (2026-10-05): preserved user-directed README removals. AGENTS.md requires a README review for every release, with edits only for outdated instructions or missing information users need. README review found no further necessary edits. `git diff --check` and local Markdown links/anchors pass. Required documents remain. Documentation only, no new release or application tests. Commit uses `[skip ci]`.
+Documentation maintenance (2026-10-05): README now states Docker/Compose prerequisites, the command directory, the local startup URL and remote-access guidance matching the Compose binding. User-directed removals remain. AGENTS.md requires a README review for every release, with edits only for information users need. `git diff --check` and local Markdown links/anchors pass. Required documents remain. Documentation only, no new release or application tests. Commit uses `[skip ci]`.
 
 ## Current release: v2.0.2 (2026-10-05)
 
