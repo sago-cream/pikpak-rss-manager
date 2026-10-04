@@ -47,7 +47,7 @@ const translations = {
   '離線任務':'Offline tasks',
   '執行日誌':'Logs',
   '系統設定':'Settings',
-  '登出 ↗':'Sign out',
+  '登出':'Sign out',
   '↻ 重新整理':'↻ Refresh',
   '＋ 新增訂閱':'+ Add subscription',
   '新增訂閱':'Add subscription',
