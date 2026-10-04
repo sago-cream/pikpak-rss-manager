@@ -6,9 +6,17 @@ The root Makefile now supplies the shared development/CI commands. PowerShell wr
 
 Passed locally on Windows with GNU Make 4.4.1 and Go 1.27.1: `make help`, dry-run verification/container commands, `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization and application build), isolated smoke-harness tests and `git diff --check`. The executable reports `v1.0.0`. Go used a workspace-local build cache; the successful build emitted a nonfatal shared module-cache metadata permission warning.
 
-The smoke harness ran the actual Web handlers against an isolated temporary SQLite database with simulated Docker commands. It checked setup/CSRF, login, regex preview and persistence after reopening the database. Additional tests cover startup failure/cancellation cleanup, retention of both startup and cleanup errors, temporary setting removal, digest/platform overrides, HTTP status rejection and architecture validation. Real container tests explicitly bypass local `.env` files and clean only their randomly named Compose project's test volumes. No real PAT or PikPak operation was used; simulated Docker commands do not prove container behavior. Docker and Linux race validation run in GitHub Actions after upload.
+The smoke harness ran the actual Web handlers against an isolated temporary SQLite database with simulated Docker commands. It checked setup/CSRF, login, regex preview and persistence after reopening the database. Additional tests cover startup failure/cancellation cleanup, retention of both startup and cleanup errors, temporary setting removal, digest/platform overrides, HTTP status rejection and architecture validation. Real container tests explicitly bypass local `.env` files and clean only their randomly named Compose project's test volumes. No real PAT or PikPak operation was used; simulated Docker commands do not prove container behavior. Local formatting/UI targets also passed using a POSIX shell.
 
-Release decision: no new version or release-tag update. These changes affect development, tests and CI only; application behavior, data schema and deployment remain unchanged. Pushing main triggers the existing latest/main multiarch image publication.
+Source commit `ee95986` passed the updated Makefile workflows in GitHub Actions:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, localization, Docker startup/authentication/non-root/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37188737472) |
+| latest/main linux/amd64 and linux/arm64 publishing and manifest checks | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37188737448) |
+| Anonymous latest pulls, Compose persistence and manifests on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37188948670) |
+
+Release decision: no new version or release-tag update. These changes affect development, tests and CI only; application behavior, data schema and deployment remain unchanged. The latest/main multiarch images were refreshed through the existing publication workflow; `v1.0.0` was not retagged or republished.
 
 ## Concise interface messages (2026-10-04)
 
