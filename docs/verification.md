@@ -6,7 +6,17 @@ Moved **Clear completed tasks** between **Refresh** and **New task** in the offl
 
 Passed locally: `make verify` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`, plus `git diff --check`. Headless Edge used an isolated mocked account and checked Traditional Chinese/English, header order and visibility, navigation to all other pages, 1280/390/320-pixel widths, GET-only refresh behavior and absence of overflow/browser errors. Fixture screenshots were visually inspected: [desktop](screenshots/v111-task-header-desktop.png), [mobile](screenshots/v111-task-header-mobile.png). No real PikPak operation was performed.
 
-Release decision: publish v1.1.1 for this user-visible layout fix, without changing schema 4 or existing tags. CI, publication and anonymous multiarch checks are pending Actions.
+Release decision: published [v1.1.1](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v1.1.1) for this user-visible layout fix, without changing schema 4 or existing tags. Source commit `91841de` passed:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, UI checks, Docker startup/non-root/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37201895188) |
+| latest/main amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37201895229) |
+| v1.1.1 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37201896847) |
+| Anonymous v1.1.1 pulls, Compose persistence and manifests on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37202115749) |
+| Anonymous latest pulls, Compose persistence and manifests on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37202118197) |
+
+The local service was restarted; `/healthz` reports `v1.1.1` and `ok`. No VPS was deployed. This documentation evidence uses `[skip ci]`; the application source and published images above received the full checks.
 
 ## v1.1.0 release validation (2026-10-04)
 
