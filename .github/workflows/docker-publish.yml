@@ -32,11 +32,9 @@ jobs:
             exit 1
           fi
           echo "version=$source_version" >> "$GITHUB_OUTPUT"
-      - run: go test -race ./...
-      - run: go vet ./...
-      - run: node --check internal/web/static/app.js && node --check internal/web/static/theme.js && node --check internal/web/static/backfill.js && node --check internal/web/static/i18n.js && node scripts/test-i18n.cjs
-      - run: docker build -t pikpak-rss-manager:smoke .
-      - run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" python3 scripts/container-smoke.py pikpak-rss-manager:smoke
+      - run: make check-format test-race vet test-ui
+      - run: make docker-build IMAGE=pikpak-rss-manager:smoke
+      - run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" make test-container IMAGE=pikpak-rss-manager:smoke
   publish:
     needs: validate
     runs-on: ubuntu-latest
@@ -45,6 +43,9 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -77,6 +78,5 @@ jobs:
         env:
           IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
         run: |
-          docker buildx imagetools inspect "$IMAGE" --raw > manifest.json
-          python3 -c 'import json; m=json.load(open("manifest.json"))["manifests"]; p={(x.get("platform",{}).get("os"),x.get("platform",{}).get("architecture")) for x in m}; assert {("linux","amd64"),("linux","arm64")} <= p, p'
+          make test-manifest
           echo "Published $IMAGE" >> "$GITHUB_STEP_SUMMARY"

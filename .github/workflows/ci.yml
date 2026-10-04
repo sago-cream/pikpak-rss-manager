@@ -16,22 +16,25 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Formatting
-        run: test -z "$(gofmt -l cmd internal tests)"
+        run: make check-format
       - name: Tests with race detector
-        run: go test -race -count=1 ./...
+        run: make test-race
       - name: Vet
-        run: go vet ./...
+        run: make vet
       - name: UI syntax and localization
-        run: node --check internal/web/static/app.js && node --check internal/web/static/theme.js && node --check internal/web/static/backfill.js && node --check internal/web/static/i18n.js && node scripts/test-i18n.cjs
+        run: make test-ui
       - name: Build
         run: |
-          CGO_ENABLED=0 go build -trimpath ./cmd/pikpak-rss-manager
-          test "$(./pikpak-rss-manager version)" = "$(cat cmd/pikpak-rss-manager/VERSION)"
+          CGO_ENABLED=0 make build
+          test "$(./.local/pikpak-rss-manager version)" = "$(cat cmd/pikpak-rss-manager/VERSION)"
   container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
       - name: Build container
-        run: docker build -t pikpak-rss-manager:ci .
+        run: make docker-build IMAGE=pikpak-rss-manager:ci
       - name: Startup, authentication, non-root and persisted data
-        run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" python3 scripts/container-smoke.py pikpak-rss-manager:ci
+        run: SMOKE_EXPECTED_VERSION="$(cat cmd/pikpak-rss-manager/VERSION)" make test-container IMAGE=pikpak-rss-manager:ci

@@ -40,12 +40,23 @@ To update this reissued v1.0.0, back up the complete data volume, then run `dock
 
 ## Development
 
+Install Go 1.27.1, GNU Make and Node.js. The Makefile works with Windows `cmd.exe` and POSIX shells; Python and PowerShell scripts are not required. Run targets from the repository root:
+
 ```sh
-go run ./cmd/pikpak-rss-manager
-go test ./...
-go vet ./...
-go build ./cmd/pikpak-rss-manager
-node scripts/test-i18n.cjs
+make dev
+make verify
 ```
+
+`make verify` checks Go formatting, runs tests and vet, checks JavaScript syntax/translations, and builds `.local/pikpak-rss-manager` (`.exe` on Windows). Individual targets: `build`, `test`, `test-race`, `vet`, `test-ui` and `version`. Use `make help` for all targets. Direct Go commands remain supported.
+
+Container tests require Docker with Compose and Buildx:
+
+```sh
+make docker-build IMAGE=pikpak-rss-manager:test
+make test-container IMAGE=pikpak-rss-manager:test
+make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:latest
+```
+
+Container tests use isolated temporary volumes and fixture data without a PAT. They bypass local `.env` files and remove their test volumes afterward. Optional test settings: `SMOKE_PLATFORM` and `SMOKE_EXPECTED_VERSION`. The Windows development machine runs container validation in GitHub Actions.
 
 Go 1.27.1; SQLite; embedded UI; MIT license. Optional process settings: `APP_LISTEN` and `APP_DATA_DIR`. The service does not load `.env`. [Architecture/API](docs/architecture.md) · [Verification](docs/verification.md) · [PAT/OAuth](docs/auth-comparison.md).

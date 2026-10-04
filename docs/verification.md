@@ -1,5 +1,15 @@
 # Verification
 
+## Makefile and Go container tests (2026-10-04)
+
+The root Makefile now supplies the shared development/CI commands. PowerShell wrappers were removed, the Python container smoke and architecture checks were replaced with opt-in Go tests, and localization tests moved to `tests/web`. README documents the prerequisites and targets. AGENTS requires documentation updates, immediate Conventional Commits, GitHub uploads, workflow verification and an explicit release decision for each implementation task.
+
+Passed locally on Windows with GNU Make 4.4.1 and Go 1.27.1: `make help`, dry-run verification/container commands, `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization and application build), isolated smoke-harness tests and `git diff --check`. The executable reports `v1.0.0`. Go used a workspace-local build cache; the successful build emitted a nonfatal shared module-cache metadata permission warning.
+
+The smoke harness ran the actual Web handlers against an isolated temporary SQLite database with simulated Docker commands. It checked setup/CSRF, login, regex preview and persistence after reopening the database. Additional tests cover startup failure/cancellation cleanup, retention of both startup and cleanup errors, temporary setting removal, digest/platform overrides, HTTP status rejection and architecture validation. Real container tests explicitly bypass local `.env` files and clean only their randomly named Compose project's test volumes. No real PAT or PikPak operation was used; simulated Docker commands do not prove container behavior. Docker and Linux race validation run in GitHub Actions after upload.
+
+Release decision: no new version or release-tag update. These changes affect development, tests and CI only; application behavior, data schema and deployment remain unchanged. Pushing main triggers the existing latest/main multiarch image publication.
+
 ## Concise interface messages (2026-10-04)
 
 Removed the response-privacy explanation from PikPak failures, the PAT encryption/browser-return paragraph, and repeated automatic-retry explanations. Storage failures, PAT confirmation and limits use concise wording. Error causes, required actions and overwrite/backup confirmations remain visible.
@@ -153,13 +163,14 @@ This development machine has no Docker; container checks ran in Actions. Real Pi
 ## Reproduce
 
 ```sh
-go test ./...
-go vet ./...
-go build ./cmd/pikpak-rss-manager
-node --check internal/web/static/app.js
-node --check internal/web/static/i18n.js
-node scripts/test-i18n.cjs
+make verify
+make test-race
+make docker-build IMAGE=pikpak-rss-manager:test
+make test-container IMAGE=pikpak-rss-manager:test
+make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:latest
 ```
+
+Container and manifest targets require Docker with Compose/Buildx; race tests run in Linux CI. Historical entries below and above retain the commands used at the time.
 
 Tests cover RSS/Atom and v1/v2 torrents, network/metadata limits, preview provenance, per-account deduplication, baselines, legacy naming, independent file rules, staging, uncertain submissions, restart/partial action recovery, authorization/quota/rate failures, folder paging/collisions/account isolation, authentication and CSRF.
 

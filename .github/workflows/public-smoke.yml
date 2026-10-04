@@ -20,6 +20,9 @@ jobs:
       SMOKE_PLATFORM: linux/${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - name: Anonymous pull
         run: |
@@ -35,8 +38,6 @@ jobs:
             echo "SMOKE_EXPECTED_VERSION=$(cat cmd/pikpak-rss-manager/VERSION)" >> "$GITHUB_ENV"
           fi
       - name: Compose startup and persisted data from the published image
-        run: python3 scripts/container-smoke.py "$IMAGE"
+        run: make test-container
       - name: Both architectures available anonymously
-        run: |
-          docker buildx imagetools inspect "$IMAGE" --raw > manifest.json
-          python3 -c 'import json; m=json.load(open("manifest.json"))["manifests"]; p={(x.get("platform",{}).get("os"),x.get("platform",{}).get("architecture")) for x in m}; assert {("linux","amd64"),("linux","arm64")} <= p, p'
+        run: make test-manifest

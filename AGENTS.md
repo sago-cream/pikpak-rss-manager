@@ -22,6 +22,7 @@ Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The U
 
 ## Commands and verification
 `go test ./...`, `go vet ./...`, `go build ./cmd/pikpak-rss-manager`.
+Use the root Makefile as the shared local/CI command entry point: `make dev`, `make verify`, `make test-race`, `make docker-build`, `make test-container` and `make test-manifest`. Keep test programs under `tests/`; do not reintroduce a `scripts/` directory or Python/PowerShell wrappers for these commands.
 Linux CI additionally runs `go test -race ./...` and container startup/persistence smoke tests.
 The development machine has no Docker. Use GitHub Actions for Docker validation and multiarch publishing rather than installing Docker.
 Meaningful tests must cover RSS/Atom and torrent parsing, independent naming rules, baselines, repeat downloads and confirmation idempotency, restart recovery, partial actions, uncertain submissions, auth/quota/rate failures, HTTP authentication and CSRF.
@@ -38,6 +39,8 @@ Real PikPak tests may create offline tasks and rename/move only inside `_pikpak-
 OAuth has been researched, not implemented. Official public discovery advertises PKCE, refresh tokens and registration; these advertisements do not prove successful client registration or a tested consent flow. Keep PAT support and the documented comparison in `docs/auth-comparison.md`. Never claim OAuth automatically unlocks purge/invite through the hosted MCP.
 
 ## Delivery
+After each implementation task, update README and relevant documentation to match changed behavior, commands or deployment steps, run relevant verification, and immediately create a Conventional Commit containing only that task's changes. Push completed commits to GitHub within the existing authorization; do not wait for another commit or upload request.
+Assess release needs for every task and record the decision in `docs/verification.md` and the delivery response. Publish a new semantic version for user-visible fixes/features, compatibility or deployment changes; tooling/test/documentation-only changes do not require a new version. Do not move or overwrite existing release tags unless the user explicitly requests it. When releasing, synchronize the source VERSION, README and concise English release notes; verify CI, multiarch publishing and anonymous pulls. For any push, check the triggered workflows and document actual results or external blockers.
 Provide non-root multistage Docker images for linux/amd64 and linux/arm64, main/tag publishing to GHCR with GITHUB_TOKEN, a compose file using the published image, and 1Panel/reverse proxy/update/backup instructions. Confirm anonymous access after first GHCR publication; public repository visibility does not make a package public automatically.
 Routine implementation choices within these principles are authorized. Clearly record external blockers and incomplete validation.
 
@@ -45,4 +48,4 @@ Routine implementation choices within these principles are authorized. Clearly r
 - Write README, documentation, release notes and future public descriptions in concise English. Include only behavior changes, required usage/deployment steps, verification evidence and material limitations; omit slogans and repeated explanations.
 - UI headings use page names, with only actionable labels, status, validation and necessary field help. Do not add decorative prose.
 - Manual offline tasks use the durable worker queue without creating subscriptions or feed baselines. Share destination validation, destination-local staging and uncertain-submission recovery with RSS jobs; preserve original filenames by default.
-- Run `node scripts/test-i18n.cjs` when changing UI copy or translations.
+- Run `make test-ui` (including `node tests/web/i18n.test.cjs`) when changing UI copy or translations.
