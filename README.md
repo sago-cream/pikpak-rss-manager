@@ -1,6 +1,6 @@
 # PikPak RSS Manager
 
-Self-hosted RSS/Atom subscriptions and offline downloads through the official PikPak MCP.
+A self-hosted Go service for PikPak RSS/Atom subscriptions and offline downloads. Uses the official PikPak MCP with PAT authentication and per-subscription naming rules.
 
 ## Start
 

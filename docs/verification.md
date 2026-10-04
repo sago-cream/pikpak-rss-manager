@@ -4,7 +4,7 @@
 
 Removed superseded UI screenshots and all local release-note copies. Confirmed the latest [v1.2.0 notes](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v1.2.0) remain published on GitHub. Earlier verification records and screenshots are preserved in [Git history](https://github.com/wade00754/pikpak-rss-manager/tree/09ca537cd6e6469b1143c929acc2cca09c6b99d8/docs).
 
-Preserved the manual README edits, added a deployment-guide link beside setup and removed the redundant final paragraph. Process settings and UI credential configuration remain documented in [Deployment](deployment.md). Documentation prose uses sentences instead of semicolons. The [AGENTS documentation rules](../AGENTS.md#documentation-maintenance) retain release notes only in GitHub Releases.
+The README introduction describes the Go service, PAT authentication and per-subscription naming rules. GitHub About uses the shorter purpose summary. The README links to setup in [Deployment](deployment.md), which retains process settings and UI credential configuration. Documentation prose uses sentences instead of semicolons. The [AGENTS documentation rules](../AGENTS.md#documentation-maintenance) retain release notes only in GitHub Releases.
 
 Local validation: checked repository Markdown links and anchors, removed-file references, prose punctuation, required documentation and `git diff --check`. No application, test program or workflow changed. Application/container/live tests were not rerun. Release decision: no new version for this documentation-only task. v1.2.0 and existing tags remain unchanged. This commit uses `[skip ci]`. Post-push workflow status is reported in the delivery response.
 
