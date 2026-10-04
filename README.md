@@ -1,6 +1,6 @@
 # PikPak RSS Manager
 
-Self-hosted RSS/Atom subscriptions and offline downloads through the official PikPak MCP. Go 1.27.1, SQLite, embedded UI, MIT license. Media stays in PikPak.
+Self-hosted RSS/Atom subscriptions and offline downloads through the official PikPak MCP. Media stays in PikPak.
 
 ## Start
 
@@ -10,24 +10,33 @@ Download [docker-compose.yml](docker-compose.yml), then run:
 docker compose up -d
 ```
 
-Open the site, create an administrator password, confirm the public URL, and connect a PikPak PAT in **Settings**. There is no default password. Passwords and PATs are configured through the UI; the service does not load `.env`.
+Open the site, create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**. There is no default password; credentials are configured through the UI.
 
 Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.0.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.0.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md).
 
+## PAT permissions
+
+[Create a PAT](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token) with:
+
+| Permission | Purpose |
+|---|---|
+| **Manage files** | Includes reading/writing, browsing/creating folders, renaming/moving files and moving empty staging folders to Trash. |
+| **Cloud Download** | Creates offline download tasks. |
+
+Read & write files alone cannot clean staging folders. For an existing PAT, grant Manage files or create a replacement and save it in Settings. Missing cleanup permission retains staging with a warning; completed downloads remain successful. Permanent deletion, Share, Invite and Account settings permissions are not needed. [Official permission reference](https://mypikpak.com/en-US/help-center/connected_apps/managing_connected_apps/connected_app_permissions).
+
 ## Use
 
-- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline; **Backfill** lists torrent filenames for selection, then asks to confirm downloading and replacing matching destination files. Multi-file torrents download in full.
-- **Offline tasks → Add task:** submit a Magnet, torrent URL or direct HTTP/HTTPS download URL, choose a destination, and retain original filenames.
-- **Folders:** browse/create folders or enter a path. Saved folder IDs belong to the connected account; reselect them after switching accounts.
-- **Renaming:** disabled by default for new subscriptions. Enable regex replacement and select a torrent filename for automatic preview. Go RE2 supports `$1`, `${name}` and `$$`; nonmatches keep their names. Existing template rules remain compatible.
-- **Language:** choose Traditional Chinese or English in the top bar, setup or login page. The choice is saved in the browser; switching reloads the page.
-- **Settings → Change administrator password:** enter the current password and confirm a nonempty new password. All devices must sign in again after saving.
+- **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects torrents and confirms download/replacement; multi-file torrents download in full. Repeated explicit downloads are allowed.
+- **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained.
+- **Renaming:** optional for new subscriptions. Regex replacement supports `$1`, `${name}` and `$$`; nonmatches keep their names. Select a torrent filename to preview. Existing template rules remain supported.
+- **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
-The theme switch on setup, login and management pages remembers your light/dark preference. Before a choice is saved, it follows the system theme.
+New tasks download into `<destination>/_PikPak-RSS-Staging/<jobID>`. After completion, empty task/torrent folders and the empty staging container move to Trash. Backups, unfinished tasks, remaining files and legacy staging are preserved. Confirmed replacements keep originals under the task's `_Replaced` folder; ordinary name/folder collisions require review.
 
-Explicit downloads may repeat a previously downloaded source. Jobs resume after restarts, and retries of the same backfill confirmation do not create another job. Unconfirmed submissions require reconciliation. Confirmed backfills replace matching files only after completion, moving originals to the task’s `_Replaced` backup folder; ordinary jobs and folder/name ambiguities remain subject to review. New jobs stage under `<destination>/_PikPak-RSS-Staging/<jobID>`; existing staging IDs are preserved.
+Jobs resume after restarts. Uncertain submissions require reconciliation rather than another submission. Authorization/quota errors pause downloads; update the PAT or check the connection, then resume affected tasks.
 
-PATs are encrypted with AES-GCM; passwords use salted Argon2id verifiers. Authorization or quota failures pause jobs. Renew the PAT or check the connection, then resume affected tasks. [PAT instructions](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token). OAuth is not implemented; [comparison](docs/auth-comparison.md).
+To update this reissued v1.0.0, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. [Upgrade and restore details](docs/deployment.md).
 
 ## Development
 
@@ -39,4 +48,4 @@ go build ./cmd/pikpak-rss-manager
 node scripts/test-i18n.cjs
 ```
 
-Optional process settings: `APP_LISTEN` and `APP_DATA_DIR`. Windows helpers: `scripts/dev.ps1`, `scripts/verify.ps1`. [Architecture/API](docs/architecture.md) · [Verification](docs/verification.md).
+Go 1.27.1; SQLite; embedded UI; MIT license. Optional process settings: `APP_LISTEN` and `APP_DATA_DIR`. The service does not load `.env`. [Architecture/API](docs/architecture.md) · [Verification](docs/verification.md) · [PAT/OAuth](docs/auth-comparison.md).

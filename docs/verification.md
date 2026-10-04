@@ -20,6 +20,8 @@ Regression tests cover the official MCP's sanitized 404 classification, unique c
 
 ## Empty staging cleanup (2026-10-04)
 
+README permission instructions were checked against the official Connected App permission reference: Manage files includes read/write plus Trash, and Cloud Download permits offline tasks. The README now keeps setup, required scopes, task behavior and update steps, with detailed architecture/verification linked separately.
+
 Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build reporting `v1.0.0`, localization checks and `git diff --check`. The build emitted a nonfatal shared module-cache metadata permission warning.
 
 Regression tests cover nested empty torrent folders, downloaded-file preservation, replacement backups (including empty `_Replaced` folders), unexpected files, sibling/legacy/review jobs, account changes, folder identity revalidation, encrypted restart recovery, scheduling completed cleanup jobs, three-attempt limits, missing Manage files permission and uncertain Trash responses at nested/job/container boundaries. The mocked official MCP adapter verifies `rm` receives only an `ids` array.
