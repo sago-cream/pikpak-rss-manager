@@ -28,13 +28,15 @@ Read & write files alone cannot clean staging folders. For an existing PAT, gran
 ## Use
 
 - **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects torrents and confirms download/replacement; multi-file torrents download in full. Repeated explicit downloads are allowed.
-- **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained.
+- **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained. **Delete task** cancels its PikPak download before removing the record; downloaded files are preserved. **Clear completed tasks** removes completed records only.
 - **Renaming:** optional for new subscriptions. Regex replacement supports `$1`, `${name}` and `$$`; nonmatches keep their names. Select a torrent filename to preview. Existing template rules remain supported.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
 New tasks download into `<destination>/_PikPak-RSS-Staging/<jobID>`. After completion, empty task/torrent folders and the empty staging container move to Trash. Backups, unfinished tasks, remaining files and legacy staging are preserved. Confirmed replacements keep originals under the task's `_Replaced` folder; ordinary name/folder collisions require review.
 
 Jobs resume after restarts. Uncertain submissions require reconciliation rather than another submission. Authorization/quota errors pause downloads; update the PAT or check the connection, then resume affected tasks.
+
+Failed cancellation retains the task record. For an uncertain submission without a PikPak task ID, cancel it in PikPak first, then confirm record deletion. Task deletion preserves feed baselines; retrying the same confirmed request does not recreate a deleted task. Clearing completed records also stops their remaining empty-folder cleanup retries.
 
 Magnet links use a normalized infohash as their first parameter, with trackers and display names retained. Already submitted tasks keep their PikPak task IDs and are not automatically resubmitted when the link format changes.
 

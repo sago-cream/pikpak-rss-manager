@@ -4,6 +4,12 @@
 let language='zh-Hant';
 try { language=localStorage.getItem('language')==='en'?'en':'zh-Hant'; } catch {}
 const translations = {
+  '刪除任務':'Delete task','清除已完成任務':'Clear completed tasks','任務已刪除':'Task deleted','已清除已完成任務':'Completed tasks cleared',
+  '刪除這筆任務並取消 PikPak 下載？已完成的雲端檔案會保留。':'Delete this task and cancel its PikPak download? Completed cloud files will be kept.',
+  '尚無 PikPak 任務 ID，無法自動取消。請先至 PikPak 取消，再刪除此紀錄？':'No PikPak task ID is available to cancel it automatically. Cancel it in PikPak first, then delete this record?',
+  '尚無 PikPak 任務 ID，請先在 PikPak 取消後刪除本機紀錄':'No PikPak task ID is available. Cancel it in PikPak before deleting the local record.',
+  '清除所有已完成任務紀錄？雲端檔案會保留。':'Clear all completed task records? Cloud files will be kept.',
+  '無法刪除任務':'Could not delete the task.','無法清除已完成任務':'Could not clear completed tasks.',
   'PikPak 項目不存在，請至 PikPak 檢查':'PikPak item no longer exists. Check it in PikPak.',
   'PikPak 離線任務不存在，無法確認下載結果；請核對 PikPak 任務及暫存目錄':'PikPak task no longer exists; download completion cannot be confirmed. Check the task and staging folder in PikPak.',
   '檔案名稱不可以包含下列字元：\\ / : * ? " < > |（及控制字元），已替換成：_。':'Filenames cannot contain: \\ / : * ? " < > | (or control characters). Replaced with: _.',

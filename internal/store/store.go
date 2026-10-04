@@ -28,6 +28,9 @@ var webSetupMigration string
 //go:embed migrations/003_repeat_downloads.sql
 var repeatDownloadsMigration string
 
+//go:embed migrations/004_deleted_jobs.sql
+var deletedJobsMigration string
+
 type Store struct {
 	db   *sql.DB
 	aead cipher.AEAD
@@ -81,7 +84,7 @@ func Open(dir string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
-	if schemaVersion > 3 {
+	if schemaVersion > 4 {
 		db.Close()
 		return nil, errors.New("資料庫由較新版本建立，請使用對應版本服務")
 	}
@@ -95,6 +98,9 @@ func Open(dir string) (*Store, error) {
 	}
 	if schemaVersion < 3 {
 		statements = append(statements, "PRAGMA foreign_keys=OFF", repeatDownloadsMigration, "PRAGMA foreign_keys=ON")
+	}
+	if schemaVersion < 4 {
+		statements = append(statements, deletedJobsMigration)
 	}
 	for _, statement := range statements {
 		if _, err := db.Exec(statement); err != nil {
@@ -308,6 +314,13 @@ func (s *Store) EnqueueBatch(ctx context.Context, jobs []model.Job, fingerprints
 }
 
 func (s *Store) enqueueTx(ctx context.Context, tx *sql.Tx, j model.Job, fingerprint string) (bool, error) {
+	var deleted bool
+	if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM deleted_jobs WHERE id=?)", j.ID).Scan(&deleted); err != nil {
+		return false, err
+	}
+	if deleted {
+		return false, nil
+	}
 	p, err := s.jobPayload(j)
 	if err != nil {
 		return false, err

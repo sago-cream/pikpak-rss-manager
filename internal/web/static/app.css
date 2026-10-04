@@ -1521,3 +1521,14 @@ textarea { resize:none; }
 @media(max-width:600px) { #subscription-dialog .dialog-scroll { max-height:calc(94dvh - 2px); padding:22px; } }
 
 .topbar-actions { margin-left:auto; }
+.job-actions { display:flex; align-items:center; gap:14px; white-space:nowrap; }
+#view-jobs .toolbar { flex-wrap:wrap; gap:12px; }
+@media(max-width:600px) {
+  #overview-jobs table,#jobs-list table,#overview-jobs tbody,#jobs-list tbody { display:block; }
+  #overview-jobs thead,#jobs-list thead { display:none; }
+  #overview-jobs tr,#jobs-list tr { display:grid; grid-template-columns:1fr auto; gap:12px; padding:18px; border-bottom:1px solid var(--line); }
+  #overview-jobs tr:last-child,#jobs-list tr:last-child { border-bottom:0; }
+  #overview-jobs td,#jobs-list td { display:block; min-width:0; padding:0; border:0; }
+  #overview-jobs .job-name,#jobs-list .job-name,#overview-jobs td:last-child,#jobs-list td:last-child { grid-column:1 / -1; }
+  .job-actions { justify-content:flex-end; }
+}

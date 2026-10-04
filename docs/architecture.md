@@ -17,6 +17,8 @@ Subscriptions establish a baseline on first check; backfill is explicit. Manual 
 
 The worker saves queued → submitting before the cloud request, then stores the task ID and polls downloading → organizing → complete. Unconfirmed submissions become submission_unknown and reconcile the dedicated staging folder without submitting again. Authorization/quota failures pause jobs; transient failures back off from 30 seconds to two hours, with review after six attempts.
 
+Deletion shares the worker/account lock with submission and file actions. Incomplete jobs with a task ID are checked against their owning account and canceled once through optional official `task_rm`, explicitly setting `delete-files:false`. Failure preserves the local job; an absent remote task permits deletion. Unknown submissions without an ID require manual cancellation and explicit `local_only:true`. This flag cannot bypass cancellation of a known task. Completed deletion makes no cloud call. Local deletion atomically removes jobs/file actions and stores ID tombstones, retaining feed baselines and event history. Tombstones prevent repeated confirmation requests from recreating deleted jobs; a new explicit download still receives a new ID. Clearing completed jobs includes records outside the latest-200 list and stops their pending cleanup retries.
+
 New staging folders live under the destination; persisted staging IDs always retain their location. File actions persist before rename/move and resume by file ID. Ordinary name collisions retain originals for review. Backfill preview reads one RSS snapshot and each distinct torrent URL once, with bounded concurrency and metadata/output budgets. Session/account-bound plans expire after 15 minutes. Confirmations validate the subscription and destination again, then atomically queue selected torrents using stable job IDs. Confirmed backfills persist their overwrite flag and backup action plan before moving matching old files into `<staging>/_Replaced/<new-file-ID>`; restarts reconcile moves by file ID. Same-name folders and ambiguous action plans still require review. Regex replacement works on actual filenames; legacy episode fallback is permitted only for one primary file. Auxiliary files retain their names/subdirectories under `_附件/<jobID>`.
 
 ## Limits and security
@@ -52,6 +54,8 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | GET /api/jobs, /api/jobs/{id} | Latest 200 jobs / file actions |
 | POST /api/jobs | url, destination, optional name/source_type/destination_id/destination_account_ref; 201 queued; repeated sources allowed |
 | POST /api/jobs/{id}/retry | Resume/reconcile safely |
+| DELETE /api/jobs/{id} | Cancel incomplete PikPak task, preserve files, remove local record; optional local_only for unknown submissions without a task ID |
+| DELETE /api/jobs/completed | Remove all completed records/file actions, preserve cloud files; returns deleted count |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |
 | POST /api/settings/password | current_password, new_password, confirm_password; revoke all sessions on success |

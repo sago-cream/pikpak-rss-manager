@@ -29,6 +29,8 @@ Save the public origin in Settings and access the UI from that origin. Preserve 
 
 ## Update
 
+v1.1.0 adds task cancellation/deletion, completed-record clearing and canonical Magnet submission. It migrates SQLite to schema version 4 for deleted-request tombstones. Back up the complete data volume before upgrading; downgrading requires restoring its pre-upgrade backup.
+
 ```sh
 docker compose pull
 docker compose up -d

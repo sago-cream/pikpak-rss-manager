@@ -1,5 +1,17 @@
 # Verification
 
+## Task deletion and completed-record clearing (2026-10-04)
+
+Delete buttons on task rows and details cancel incomplete PikPak downloads before deleting local records. Completed clearing removes all completed records, including those outside the latest-200 view. Cloud files, feed baselines and event history are retained. SQLite schema 4 keeps deleted-request IDs so a repeated backfill confirmation cannot recreate a removed task. Cancellation/account errors preserve records; unknown submissions without IDs require manual cancellation before explicit record deletion. Deletion is serialized with worker submissions/file actions and account switches.
+
+Passed locally: `make verify` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`. Tests cover official MCP `task_rm` arguments with `delete-files:false`, single cancellation attempts, rollback, 205-record clearing, request tombstones after restart, auth/CSRF, account changes, missing remote tasks, unknown submissions and concurrent submission/deletion.
+
+Headless Edge used only an isolated mocked account/data directory. Traditional Chinese/English controls, dismissed confirmation, active cancellation, completed-only clearing, explicit unknown-submission removal and task-detail deletion passed at 1280×900 and 390×844 without browser errors or horizontal overflow. Fixture screenshots were visually inspected: [desktop](screenshots/v110-task-actions-desktop.png), [mobile](screenshots/v110-task-actions-mobile.png).
+
+Real MCP validation in `_pikpak-rss-manager-test/download-20261004T112602-c18672` removed the completed public-domain Alice test task through `task_rm` with `delete-files:false`. Reading its file afterward confirmed the same ID, parent and 163,783-byte size, without Trash. This proves file-preserving task removal for that test, not cancellation of the production stalled source. No production task was canceled or resubmitted.
+
+Release decision: publish v1.1.0 for these user-visible features and the Magnet compatibility fix. Existing tags remain unchanged. Linux race, Docker and anonymous multiarch checks are pending Actions publication.
+
 ## Canonical Magnet submission (2026-10-04)
 
 The newly reported production task existed in PikPak with status `running`, 0% progress and message `Saving`. Its infohash matched both the persisted resource key and the public RSS torrent metadata. This does not establish why that source remained stalled.

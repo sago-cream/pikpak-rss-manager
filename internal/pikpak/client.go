@@ -163,6 +163,7 @@ type Client struct {
 	session         *mcp.ClientSession
 	token, endpoint string
 	lastCall        time.Time
+	canCancel       bool
 	canTrash        bool
 }
 
@@ -190,6 +191,9 @@ func newEndpoint(ctx context.Context, token, endpoint string) (*Client, error) {
 		}
 		if _, ok := required[tool.Name]; ok {
 			required[tool.Name] = true
+		}
+		if tool.Name == "task_rm" {
+			c.canCancel = true
 		}
 		if tool.Name == "rm" {
 			c.canTrash = true

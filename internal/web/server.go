@@ -284,6 +284,31 @@ func (s *Server) Handler() http.Handler {
 		JSON(w, 200, jobs)
 	}))
 	mux.HandleFunc("POST /api/jobs", s.protected(s.createJob))
+	mux.HandleFunc("DELETE /api/jobs/completed", s.protected(func(w http.ResponseWriter, r *http.Request) {
+		count, err := s.Worker.ClearCompletedJobs(r.Context())
+		if err != nil {
+			JSON(w, 500, map[string]string{"error": "無法清除已完成任務"})
+			return
+		}
+		JSON(w, 200, map[string]int64{"deleted": count})
+	}))
+	mux.HandleFunc("DELETE /api/jobs/{id}", s.protected(func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			LocalOnly bool `json:"local_only"`
+		}
+		if r.ContentLength != 0 {
+			if err := decode(w, r, &in); err != nil {
+				failure(w, err)
+				return
+			}
+		}
+		count, err := s.Worker.DeleteJob(r.Context(), r.PathValue("id"), in.LocalOnly)
+		if err != nil {
+			failure(w, err)
+			return
+		}
+		JSON(w, 200, map[string]int64{"deleted": count})
+	}))
 	mux.HandleFunc("GET /api/jobs/{id}", s.protected(func(w http.ResponseWriter, r *http.Request) {
 		job, err := s.DB.Job(r.Context(), r.PathValue("id"))
 		if err != nil {
