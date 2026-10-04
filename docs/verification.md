@@ -2,15 +2,15 @@
 
 ## Documentation maintenance (2026-10-04)
 
-Removed superseded UI screenshots and the local v1.1.0/v1.1.1 release-note copies. Those releases remain available on [GitHub Releases](https://github.com/wade00754/pikpak-rss-manager/releases). Consolidated this document around current validation and reproducible checks; deployment, API, authentication research and v1.2.0 source notes remain available. Earlier verification records and screenshots are preserved in [Git history](https://github.com/wade00754/pikpak-rss-manager/tree/09ca537cd6e6469b1143c929acc2cca09c6b99d8/docs).
+Removed superseded UI screenshots and all local release-note copies. Confirmed the latest [v1.2.0 notes](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v1.2.0) remain published on GitHub. Earlier verification records and screenshots are preserved in [Git history](https://github.com/wade00754/pikpak-rss-manager/tree/09ca537cd6e6469b1143c929acc2cca09c6b99d8/docs).
 
-The [AGENTS documentation rules](../AGENTS.md#documentation-maintenance) define required documents, current verification scope, screenshot/release-note retention, historical evidence, reference checks and delivery. README is limited to setup, required permissions, essential usage/update steps and minimal development commands; cleanup and agent procedures remain in AGENTS. Future edits consolidate obsolete records rather than adding development diaries or archive directories.
+Preserved the manual README edits, added a deployment-guide link beside setup and removed the redundant final paragraph. Process settings and UI credential configuration remain documented in [Deployment](deployment.md). Documentation prose uses sentences instead of semicolons. The [AGENTS documentation rules](../AGENTS.md#documentation-maintenance) retain release notes only in GitHub Releases.
 
-Local validation: checked repository Markdown links and anchors, removed-file references, required documentation and `git diff --check`. No application, test program or workflow changed; application/container/live tests were not rerun. Release decision: no new version for this documentation-only task; v1.2.0 and existing tags remain unchanged. This commit uses `[skip ci]`; post-push workflow status is reported in the delivery response.
+Local validation: checked repository Markdown links and anchors, removed-file references, prose punctuation, required documentation and `git diff --check`. No application, test program or workflow changed. Application/container/live tests were not rerun. Release decision: no new version for this documentation-only task. v1.2.0 and existing tags remain unchanged. This commit uses `[skip ci]`. Post-push workflow status is reported in the delivery response.
 
 ## Current release: v1.2.0
 
-Source commit `7f2ef54` passed local `make verify` with Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local caches. Tests cover direct destination/root submission, torrent directories and attachments, filename suffix readback, regex/nonmatches, rejected/uncertain renames, restart and partial-action recovery, missing task/file IDs, uncertain submission without another download, auth/quota/rate errors, automatic baselines, repeated downloads and idempotent backfill confirmations. Existing staged recovery, backup and cleanup tests remain. UI tests cover localization and mocked English/Traditional Chinese task details; no browser screenshot test was performed for v1.2.0.
+Source commit `7f2ef54` passed local `make verify` with Go 1.27.1, `GOFLAGS=-buildvcs=false` and workspace-local caches. Tests cover direct destination/root submission, torrent directories and attachments, filename suffix readback, regex/nonmatches, rejected/uncertain renames, restart and partial-action recovery, missing task/file IDs, uncertain submission without another download, auth/quota/rate errors, automatic baselines, repeated downloads and idempotent backfill confirmations. Existing staged recovery, backup and cleanup tests remain. UI tests cover localization and mocked English/Traditional Chinese task details. No browser screenshot test was performed for v1.2.0.
 
 | Validation | Evidence |
 |---|---|
@@ -20,13 +20,13 @@ Source commit `7f2ef54` passed local `make verify` with Go 1.27.1, `GOFLAGS=-bui
 | Anonymous v1.2.0 pulls, Compose persistence and manifests on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203652687) |
 | Anonymous latest pulls, Compose persistence and manifests on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203623470) |
 
-Subsequent test/local-artifact cleanup commit `157ebf0` passed [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943285) and [main/latest publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943362). `TestLivePikPak` now uses `t.TempDir()` and test output instead of persistent local databases/reports; this cleanup change was compiled but not rerun against PikPak.
+Subsequent test/local-artifact cleanup commit `157ebf0` passed [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943285) and [main/latest publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37207943362). `TestLivePikPak` now uses `t.TempDir()` and test output instead of persistent local databases/reports. This cleanup change was compiled but not rerun against PikPak.
 
 ## Real PikPak validation and limits
 
-On 2026-10-04, `TestLiveDirectDownloadAndRename` passed in 23.94 seconds against the official hosted MCP, using a locally encrypted UI-configured PAT inside `_pikpak-rss-manager-test/direct-20261004T124346-65facc`. Three public-domain Alice HTTP downloads (163,783 bytes each) completed directly in the destination. Repeat downloads produced `alice.txt` and `alice(1).txt`; worker renaming produced `direct-renamed.txt`. A same-name rename was rejected and retained its current filename without changing the other files. Three files and no extra folders remained. Fixtures were preserved; no moves, Trash, permanent deletion or production-task changes occurred.
+On 2026-10-04, `TestLiveDirectDownloadAndRename` passed in 23.94 seconds against the official hosted MCP, using a locally encrypted UI-configured PAT inside `_pikpak-rss-manager-test/direct-20261004T124346-65facc`. Three public-domain Alice HTTP downloads (163,783 bytes each) completed directly in the destination. Repeat downloads produced `alice.txt` and `alice(1).txt`. Worker renaming produced `direct-renamed.txt`. A same-name rename was rejected and retained its current filename without changing the other files. Three files and no extra folders remained. Fixtures were preserved. No moves, Trash, permanent deletion or production-task changes occurred.
 
-Real nested torrents, root-destination downloads, restart recovery and suffix-on-rename behavior were not tested; applicable paths use mocks. Magnet availability/instant download has not been proven. Folder browsing/creation, staged HTTP rename/move/empty-folder cleanup and file-preserving task removal were validated in earlier isolated runs recorded in Git history. Mocked checks do not prove real cloud operations. OAuth registration, consent and refresh flows remain unimplemented and untested. No VPS was deployed; Docker validation runs in Actions because the development machine has no Docker.
+Real nested torrents, root-destination downloads, restart recovery and suffix-on-rename behavior were not tested. Applicable paths use mocks. Magnet availability/instant download has not been proven. Folder browsing/creation, staged HTTP rename/move/empty-folder cleanup and file-preserving task removal were validated in earlier isolated runs recorded in Git history. Mocked checks do not prove real cloud operations. OAuth registration, consent and refresh flows remain unimplemented and untested. No VPS was deployed. Docker validation runs in Actions because the development machine has no Docker.
 
 ## Reproduce
 
@@ -40,7 +40,7 @@ make test-container IMAGE=pikpak-rss-manager:test
 make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:v1.2.0
 ```
 
-Docker commands require Compose and Buildx. Cloud integration tests are opt-in and require a PAT already configured through the Web UI; no PAT is sent to CI. Set `PIKPAK_LIVE_DATA_DIR` for a custom local credential data directory.
+Docker commands require Compose and Buildx. Cloud integration tests are opt-in and require a PAT already configured through the Web UI. No PAT is sent to CI. Set `PIKPAK_LIVE_DATA_DIR` for a custom local credential data directory.
 
 | Scope | Opt-in variable | Test |
 |---|---|---|
@@ -55,6 +55,6 @@ For example, on a POSIX shell:
 PIKPAK_LIVE_DIRECT_TEST=1 go test ./tests/integration -run '^TestLiveDirectDownloadAndRename$' -count=1 -v -timeout=7m
 ```
 
-Live tests create isolated cloud fixtures and preserve them. Local test databases use automatically cleaned temporary directories. Remove verification-only binaries, caches and other scratch artifacts after recording useful results; preserve production data, credentials, intentional backups and requested deliverables.
+Live tests create isolated cloud fixtures and preserve them. Local test databases use automatically cleaned temporary directories. Remove verification-only binaries, caches and other scratch artifacts after recording useful results. Preserve production data, credentials, intentional backups and requested deliverables.
 
-Record local checks and release decisions here within the implementation commit. Record subsequent CI/publication/anonymous-pull results in the corresponding GitHub Release and delivery response; tasks without a release use the delivery response and Actions links. Do not add separate evidence-only commits after pushing.
+Record local checks and release decisions here within the implementation commit. Record subsequent CI/publication/anonymous-pull results in the corresponding GitHub Release and delivery response. Tasks without a release use the delivery response and Actions links. Do not add separate evidence-only commits after pushing.

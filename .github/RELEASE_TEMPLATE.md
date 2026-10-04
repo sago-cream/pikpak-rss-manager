@@ -4,6 +4,6 @@
 
 ## Validation
 
-- Link completed CI/publishing checks; state any unverified operations.
+- Link completed CI/publishing checks. State any unverified operations.
 
 Image: `ghcr.io/wade00754/pikpak-rss-manager:<version>`
