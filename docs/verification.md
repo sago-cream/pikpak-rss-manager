@@ -18,6 +18,16 @@ Real Magnet comparison used only the 163,783-byte public-domain Alice fixture un
 
 Regression tests cover the official MCP's sanitized 404 classification, unique completed staging-file/folder recovery after a missing task, persisted organization after reopening SQLite, empty/ambiguous/partial/trashed staging content, invalid folder identity, absent staging IDs without root scans, authorization/quota pauses and transient/rate backoff. A missing task without confirmed completed content requires review immediately. The persisted task ID is retained, and recovery never submits another download. Docker and Linux race checks were not run locally.
 
+## Empty staging cleanup (2026-10-04)
+
+Passed locally: Go 1.27.1 `go test ./...`, `go vet ./...`, application build reporting `v1.0.0`, localization checks and `git diff --check`. The build emitted a nonfatal shared module-cache metadata permission warning.
+
+Regression tests cover nested empty torrent folders, downloaded-file preservation, replacement backups (including empty `_Replaced` folders), unexpected files, sibling/legacy/review jobs, account changes, folder identity revalidation, encrypted restart recovery, scheduling completed cleanup jobs, three-attempt limits, missing Manage files permission and uncertain Trash responses at nested/job/container boundaries. The mocked official MCP adapter verifies `rm` receives only an `ids` array.
+
+Read-only discovery against the official hosted MCP confirmed that `rm` moves files/folders to Trash and accepts `ids`. The opt-in `TestLiveStagingCleanup` could read the account but failed while resolving the isolated destination with a sanitized provider error, before submitting a download. Real staging cleanup and download behavior were not verified by that run. No credentials were printed or sent to CI, and no permanent deletion or VPS deployment was performed.
+
+To repeat locally with an administrator/PAT configured through the UI, set `PIKPAK_LIVE_CLEANUP_TEST=1` and run `go test ./tests/integration -run TestLiveStagingCleanup -count=1 -v`. The test retains a small public-domain HTTP fixture beneath a new `_pikpak-rss-manager-test/cleanup-<run-id>` and only moves its empty staging folders to Trash. Container/race/publishing checks run in Actions after publication.
+
 ## v1.0.0 republication (2026-10-04)
 
 The existing v1.0.0 tag was updated to functional commit `2a66034` after selected backfill/replacement, repeat downloads, dark mode and new naming defaults passed local verification. The published v1.0.0 and latest images both passed anonymous checks on linux/amd64 and linux/arm64.

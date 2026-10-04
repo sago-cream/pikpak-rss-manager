@@ -20,10 +20,19 @@ func TestOfficialSDKStreamableAdapter(t *testing.T) {
 	defer cancel()
 	server := mcp.NewServer(&mcp.Implementation{Name: "test", Version: "1"}, nil)
 	var mutations atomic.Int32
-	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv"} {
+	var trashed atomic.Int32
+	for _, name := range []string{"account_info", "ls", "get", "mkdir", "add_link", "task_get", "rename", "mv", "rm"} {
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object"}}, func(_ context.Context, r *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			text := "{}"
 			switch r.Params.Name {
+			case "rm":
+				var args struct {
+					IDs []string `json:"ids"`
+				}
+				if err := json.Unmarshal(r.Params.Arguments, &args); err != nil || len(args.IDs) != 1 || args.IDs[0] != "empty-folder" {
+					t.Error("incorrect official trash arguments")
+				}
+				trashed.Add(1)
 			case "account_info":
 				text = `{"user_id":"test","name":"Test","storage":{"total":"100","used":"1"}}`
 			case "ls":
@@ -65,6 +74,9 @@ func TestOfficialSDKStreamableAdapter(t *testing.T) {
 	}
 	if err.Error() == "429 too many requests; private-url-must-never-escape" {
 		t.Fatal("raw provider error escaped")
+	}
+	if err := c.Trash(ctx, "empty-folder"); err != nil || trashed.Load() != 1 {
+		t.Fatal("official recoverable rm failed", err)
 	}
 }
 func TestProgressAndErrorClassification(t *testing.T) {

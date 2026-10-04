@@ -21,6 +21,8 @@ New staging folders live under the destination; persisted staging IDs always ret
 
 ## Limits and security
 
+After a newly staged task completes, the worker moves only verified empty folders in its staging subtree to Trash, then removes the empty `_PikPak-RSS-Staging` container. `_Replaced`, nonempty folders, other jobs and legacy records without cleanup metadata remain intact. Cleanup ownership and up to three attempts persist in the job payload; completed cleanup jobs are scheduled separately from downloads. Cleanup errors generate a warning without resubmitting, repeating file actions or pausing download credentials. The official `rm` tool requires Manage files permission and is optional at connection time. Permanent deletion is never called.
+
 - Feed/torrent metadata: 2 MiB per resource. Full sample reads: one feed snapshot, each distinct torrent once, at most five concurrent requests, 32 MiB total metadata, 10,000 filenames/8 MiB output, 90-second overall and 15-second torrent timeouts. Partial successes are retained. The cursor API remains available.
 - Preview reads metadata only; it does not submit tasks or change baselines. The shared renderer returns raw_name, normalized name and warnings.
 - Selected folder IDs carry opaque account references. The server revalidates IDs/account ownership. Folder creation is sent once; uncertain results require review.

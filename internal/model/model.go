@@ -45,28 +45,36 @@ type SubscriptionRecord struct {
 }
 
 type Job struct {
-	Overwrite      bool    `json:"overwrite,omitempty"`
-	ID             string  `json:"id"`
-	SubscriptionID int64   `json:"subscription_id"`
-	AccountID      string  `json:"-"`
-	ResourceKey    string  `json:"resource_key"`
-	ResourceURL    string  `json:"-"`
-	Title          string  `json:"title"`
-	Rule           Rule    `json:"rule"`
-	Destination    string  `json:"destination"`
-	DestinationID  string  `json:"destination_id"`
-	StagingID      string  `json:"staging_id"`
-	TaskID         string  `json:"task_id"`
-	FileID         string  `json:"file_id"`
-	State          string  `json:"state"`
-	Progress       float64 `json:"progress"`
-	PrimaryCount   int     `json:"primary_count"`
-	FileCount      int     `json:"file_count"`
-	Attempts       int     `json:"attempts"`
-	NextAttempt    int64   `json:"next_attempt"`
-	CreatedAt      int64   `json:"created_at"`
-	UpdatedAt      int64   `json:"updated_at"`
-	Error          string  `json:"error"`
+	StagingCleanup *StagingCleanup `json:"staging_cleanup,omitempty"`
+	Overwrite      bool            `json:"overwrite,omitempty"`
+	ID             string          `json:"id"`
+	SubscriptionID int64           `json:"subscription_id"`
+	AccountID      string          `json:"-"`
+	ResourceKey    string          `json:"resource_key"`
+	ResourceURL    string          `json:"-"`
+	Title          string          `json:"title"`
+	Rule           Rule            `json:"rule"`
+	Destination    string          `json:"destination"`
+	DestinationID  string          `json:"destination_id"`
+	StagingID      string          `json:"staging_id"`
+	TaskID         string          `json:"task_id"`
+	FileID         string          `json:"file_id"`
+	State          string          `json:"state"`
+	Progress       float64         `json:"progress"`
+	PrimaryCount   int             `json:"primary_count"`
+	FileCount      int             `json:"file_count"`
+	Attempts       int             `json:"attempts"`
+	NextAttempt    int64           `json:"next_attempt"`
+	CreatedAt      int64           `json:"created_at"`
+	UpdatedAt      int64           `json:"updated_at"`
+	Error          string          `json:"error"`
+}
+
+// Only newly allocated staging IDs opt into cleanup; legacy jobs remain intact.
+type StagingCleanup struct {
+	ParentID string `json:"parent_id"`
+	Pending  bool   `json:"pending"`
+	Attempts int    `json:"attempts"`
 }
 
 // JobRecord is internal persistence; private fields are never exposed by the API.

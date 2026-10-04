@@ -120,3 +120,18 @@ func (c *Cloud) Move(_ context.Context, id, parent string) error {
 	c.Files[id] = f
 	return nil
 }
+
+func (c *Cloud) Trash(_ context.Context, id string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := c.boundary("trash"); err != nil {
+		return err
+	}
+	for _, f := range c.Files {
+		if f.ParentID == id {
+			return errors.New("refusing to trash a nonempty folder")
+		}
+	}
+	delete(c.Files, id)
+	return nil
+}

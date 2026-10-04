@@ -230,9 +230,15 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 		return nil
 	}
 	if account != j.AccountID {
+		if j.State == "complete" {
+			return nil
+		}
 		j.State = "paused_account"
 		j.Error = "舊帳號任務已暫停"
 		return w.DB.SaveJob(ctx, &j)
+	}
+	if j.State == "complete" {
+		return w.cleanupCompleted(ctx, api, &j)
 	}
 	if j.State == "submitting" {
 		return w.reconcile(ctx, api, &j)
@@ -269,6 +275,7 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 			if err != nil {
 				return w.failure(ctx, &j, err, false)
 			}
+			j.StagingCleanup = &model.StagingCleanup{ParentID: root, Pending: true}
 		}
 		// Persist intent BEFORE calling the non-idempotent cloud operation.
 		j.State = "submitting"
@@ -342,6 +349,9 @@ func (w *Worker) Process(ctx context.Context, id string) error {
 	if j.State == "organizing" {
 		if err := w.organize(ctx, api, &j); err != nil {
 			return w.failure(ctx, &j, err, false)
+		}
+		if j.State == "complete" {
+			return w.cleanupCompleted(ctx, api, &j)
 		}
 	}
 	return nil

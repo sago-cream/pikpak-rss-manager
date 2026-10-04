@@ -365,7 +365,7 @@ func (s *Store) Jobs(ctx context.Context, limit int) ([]model.Job, error) {
 	return out, rows.Err()
 }
 func (s *Store) DueJobs(ctx context.Context, account string, now int64) ([]model.Job, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT payload FROM jobs WHERE account_id=? AND state IN ('queued','submitting','downloading','organizing') AND next_attempt<=? ORDER BY created_at LIMIT 10", account, now)
+	rows, err := s.db.QueryContext(ctx, "SELECT payload FROM jobs WHERE account_id=? AND (state IN ('queued','submitting','downloading','organizing') OR (state='complete' AND json_extract(payload, '$.staging_cleanup.pending')=1)) AND next_attempt<=? ORDER BY created_at LIMIT 10", account, now)
 	if err != nil {
 		return nil, err
 	}

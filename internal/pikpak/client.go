@@ -163,6 +163,7 @@ type Client struct {
 	session         *mcp.ClientSession
 	token, endpoint string
 	lastCall        time.Time
+	canTrash        bool
 }
 
 func New(ctx context.Context, token string) (*Client, error) {
@@ -189,6 +190,9 @@ func newEndpoint(ctx context.Context, token, endpoint string) (*Client, error) {
 		}
 		if _, ok := required[tool.Name]; ok {
 			required[tool.Name] = true
+		}
+		if tool.Name == "rm" {
+			c.canTrash = true
 		}
 	}
 	for name, found := range required {
@@ -322,6 +326,14 @@ func (c *Client) Rename(ctx context.Context, id, name string) error {
 }
 func (c *Client) Move(ctx context.Context, id, parent string) error {
 	return c.call(ctx, "mv", map[string]any{"id": id, "target": parent}, nil)
+}
+
+// Trash is recoverable and never calls purge or permanent deletion.
+func (c *Client) Trash(ctx context.Context, id string) error {
+	if !c.canTrash {
+		return &Error{"permanent", "官方 MCP 缺少必要工具 rm"}
+	}
+	return c.call(ctx, "rm", map[string]any{"ids": []string{id}}, nil)
 }
 func ListAll(ctx context.Context, api API, parent string) ([]File, error) {
 	out := []File{}
