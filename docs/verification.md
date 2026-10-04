@@ -1,12 +1,12 @@
 # Verification
 
-## Current release: v2.0.1 (2026-10-04)
+## Current release: v2.0.2 (2026-10-05)
 
-Unconfirmed rename messages now explain PikPak's duplicate-name restriction and ask users to resolve conflicts before retrying. Existing task messages receive the updated Traditional Chinese and English copy without changing filenames or stored records. Download and rename behavior is unchanged.
+Unconfirmed rename messages now use a short conflict-check reminder, including existing stored messages in both languages. Task details show unchanged filenames once. Changed filenames retain a labeled original for comparison. Pending actions display the known filename rather than the requested rename. User filenames, stored records and cloud behavior are unchanged.
 
-Release decision: v2.0.1 for a user-visible message fix. No existing tags are changed. Source VERSION and README are synchronized. Post-push CI, multiarch publication and anonymous pulls will be recorded in the GitHub Release.
+Release decision: v2.0.2 for user-visible task-detail and message fixes. No existing tags are changed. Source VERSION and README are synchronized. Post-push CI, multiarch publication and anonymous pulls will be recorded in the GitHub Release.
 
-Passed locally: `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization, task-details checks and application build) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and task-owned workspace caches. The executable reports `v2.0.1`. `git diff --check` and local Markdown links pass. Mocked regression coverage includes destination/root submission, torrent directories and attachments, suffix readback, Regex/nonmatches, rejected/uncertain renames, partial-action/restart recovery, missing task/file IDs, auth/quota/rate failures, baseline/repeated-download/idempotent confirmation behavior, task cancellation and CSRF. Pending submission intent survives account pause and restart, blocks unconfirmed record deletion and prevents resubmission. UI checks cover updated guidance on existing review records in both languages and preserve filenames even when they match an application message. No real PikPak operations were performed for this copy fix. The earlier direct-download validation does not prove the minimal PAT scope combination. Task-created build caches, temporary build directories and the verification executable were removed. Development data, keys and intentional backups were preserved.
+Passed locally: `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization, task-details checks and application build) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and task-owned workspace caches. The executable reports `v2.0.2`. `git diff --check` and local Markdown file links pass. Mocked regression coverage includes destination/root submission, torrent directories and attachments, suffix readback, Regex/nonmatches, rejected/uncertain renames, partial-action/restart recovery, missing task/file IDs, auth/quota/rate failures, baseline/repeated-download/idempotent confirmation behavior, task cancellation and CSRF. Pending submission intent survives account pause and restart, blocks unconfirmed record deletion and prevents resubmission. Fixture-based UI checks cover one-line unchanged filenames across completed/review/pending/renaming states, labeled original/current comparisons, both legacy message versions, and preservation of filenames matching application messages in both languages. No real PikPak operations were performed for this UI fix. The earlier direct-download validation does not prove the minimal PAT scope combination. Task-created build caches, temporary build directories and the verification executable were removed. Development data, keys and intentional backups were preserved.
 
 ## Real PikPak validation and limits
 
@@ -23,7 +23,7 @@ make verify
 make test-race
 make docker-build IMAGE=pikpak-rss-manager:test
 make test-container IMAGE=pikpak-rss-manager:test
-make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:v2.0.1
+make test-manifest IMAGE=ghcr.io/wade00754/pikpak-rss-manager:v2.0.2
 ```
 
 Docker commands require Compose and Buildx. Cloud integration tests are opt-in and require a PAT already configured through the Web UI. No PAT is sent to CI. Set `PIKPAK_LIVE_DATA_DIR` for a custom local credential data directory.

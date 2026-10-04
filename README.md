@@ -34,7 +34,7 @@ Manage files and permanent deletion are not required. [Official permission refer
 
 Tasks download directly to the destination. Optional renaming preserves torrent directories and attachments. Rejected renames and uncertain submissions require review. Authorization/quota errors pause jobs. Update the PAT or check the connection, then resume affected tasks.
 
-Current release: [v2.0.1](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v2.0.1). Image: `ghcr.io/wade00754/pikpak-rss-manager:v2.0.1` (amd64/arm64). Compose tracks `latest`.
+Current release: [v2.0.2](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v2.0.2). Image: `ghcr.io/wade00754/pikpak-rss-manager:v2.0.2` (amd64/arm64). Compose tracks `latest`.
 
 ## Update
 
