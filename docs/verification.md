@@ -1,5 +1,13 @@
 # Verification
 
+## Task header controls (2026-10-04)
+
+Moved **Clear completed tasks** between **Refresh** and **New task** in the offline-task header. The clearing button is hidden on other pages; all three controls remain available on narrow task screens. Refresh reloads the four read-only dashboard APIs; it does not check RSS or resume tasks. The existing 15-second automatic refresh remains unchanged.
+
+Passed locally: `make verify` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`, plus `git diff --check`. Headless Edge used an isolated mocked account and checked Traditional Chinese/English, header order and visibility, navigation to all other pages, 1280/390/320-pixel widths, GET-only refresh behavior and absence of overflow/browser errors. Fixture screenshots were visually inspected: [desktop](screenshots/v111-task-header-desktop.png), [mobile](screenshots/v111-task-header-mobile.png). No real PikPak operation was performed.
+
+Release decision: publish v1.1.1 for this user-visible layout fix, without changing schema 4 or existing tags. CI, publication and anonymous multiarch checks are pending Actions.
+
 ## v1.1.0 release validation (2026-10-04)
 
 Source/release commit `0945359` passed GitHub Actions:

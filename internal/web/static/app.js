@@ -37,6 +37,8 @@ function showView(name) {
   for (const element of document.querySelectorAll('.view')) element.classList.toggle('hidden', element.id !== tr`view-${name}`);
   for (const element of document.querySelectorAll('.nav-item')) element.classList.toggle('active', element.dataset.view === name);
   $('#page-title').textContent=views[name];
+  $('#clear-completed-jobs').classList.toggle('hidden', name !== 'jobs');
+  $('.page-heading').classList.toggle('jobs-heading', name === 'jobs');
   for (const button of document.querySelectorAll('.heading-actions .new-subscription')) {button.classList.toggle('hidden', name === 'settings' || name === 'events');button.textContent=name==='jobs'?t('＋ 新增任務'):t('＋ 新增訂閱');}
   history.replaceState(null,'',tr`#${name}`);
 }

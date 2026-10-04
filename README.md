@@ -12,7 +12,7 @@ docker compose up -d
 
 Open the site, create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**. There is no default password; credentials are configured through the UI.
 
-Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.1.0` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.1.0` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md) · [Release notes](docs/releases/v1.1.0.md).
+Release image: `ghcr.io/wade00754/pikpak-rss-manager:v1.1.1` (linux/amd64 and linux/arm64). The Compose file tracks `latest`; set its image tag to `v1.1.1` to pin this release. Compose binds to `127.0.0.1:8080`; use a reverse proxy for remote access. [Deployment, 1Panel, updates and backups](docs/deployment.md) · [Release notes](docs/releases/v1.1.1.md).
 
 ## PAT permissions
 
@@ -28,7 +28,7 @@ Read & write files alone cannot clean staging folders. For an existing PAT, gran
 ## Use
 
 - **Subscriptions:** add an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects torrents and confirms download/replacement; multi-file torrents download in full. Repeated explicit downloads are allowed.
-- **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained. **Delete task** cancels its PikPak download before removing the record; downloaded files are preserved. **Clear completed tasks** removes completed records only.
+- **Offline tasks:** submit a Magnet, torrent URL or direct HTTP/HTTPS URL and choose a destination. Original filenames are retained. **Delete task** cancels its PikPak download before removing the record; downloaded files are preserved. **Clear completed tasks**, between **Refresh** and **New task** in the page header, removes completed records only.
 - **Renaming:** optional for new subscriptions. Regex replacement supports `$1`, `${name}` and `$$`; nonmatches keep their names. Select a torrent filename to preview. Existing template rules remain supported.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
@@ -39,6 +39,8 @@ Jobs resume after restarts. Uncertain submissions require reconciliation rather 
 Failed cancellation retains the task record. For an uncertain submission without a PikPak task ID, cancel it in PikPak first, then confirm record deletion. Task deletion preserves feed baselines; retrying the same confirmed request does not recreate a deleted task. Clearing completed records also stops their remaining empty-folder cleanup retries.
 
 Magnet links use a normalized infohash as their first parameter, with trackers and display names retained. Already submitted tasks keep their PikPak task IDs and are not automatically resubmitted when the link format changes.
+
+**Refresh** immediately reloads server-recorded subscriptions, tasks, events and connection status. The visible dashboard also refreshes every 15 seconds when task/subscription dialogs are closed. Refresh does not trigger RSS checks or resume downloads.
 
 To update, back up the complete data volume, then run `docker compose pull` and `docker compose up -d`. Preserve `secret.key` with the database. v1.1.0 migrates to schema 4; downgrade requires the pre-upgrade backup. [Upgrade and restore details](docs/deployment.md).
 

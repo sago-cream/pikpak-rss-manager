@@ -1261,8 +1261,12 @@ dialog::backdrop {
   align-items:flex-start
 }
 
-.heading-actions .subtle {
+.heading-actions #refresh {
   display:none
+}
+
+.jobs-heading #refresh {
+  display:inline-flex
 }
 
 .page-heading h1 {
@@ -1353,6 +1357,14 @@ dialog::backdrop {
 .heading-actions>.button {
   font-size:11px;
   padding:9px 11px
+}
+
+.page-heading.jobs-heading {
+  flex-wrap:wrap
+}
+
+.jobs-heading .heading-actions {
+  width:100%
 }
 
 .stats-grid {
