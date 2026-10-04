@@ -36,6 +36,7 @@ Record local verification and the release decision in `docs/verification.md` wit
 - Stop only temporary processes created for the task before deleting their files. Verify resolved deletion paths stay inside the intended task directory; do not follow links into unrelated directories.
 - Preserve `.env`, credentials, production databases/settings/keys, intentional backups, active service binaries and explicitly requested deliverables. Treat only proven fixture databases as temporary. If ownership or continued use is unclear, retain the item and report it.
 - Review unused files/code through their references and current behavior; preserve migrations and legacy job/API compatibility. Check the workspace for remaining task artifacts before delivery and report cleanup results or blockers.
+- Keep `docs/` focused on current usage, compatibility, verification and the latest source release notes. Remove superseded screenshots, redundant release-note copies and repeated development logs; link Git history or GitHub Releases when earlier evidence is still useful.
 
 ## Secrets and external actions
 The user-provided `.env` contains `PIKPAK_TOKEN`. Never print, commit, embed in a build, or upload it to GitHub/Actions. Do not read it into tool output. Preserve the file and unrelated user settings.
