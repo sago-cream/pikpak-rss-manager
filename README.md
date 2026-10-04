@@ -55,7 +55,7 @@ make verify
 
 `make verify` checks Go formatting, runs tests and vet, checks JavaScript syntax/translations, and builds `.local/pikpak-rss-manager` (`.exe` on Windows). Individual targets: `build`, `test`, `test-race`, `vet`, `test-ui` and `version`. Use `make help` for all targets. Direct Go commands remain supported.
 
-Remove task-created scratch programs, fixture data, logs, verification binaries and caches after use. Keep reusable tests under `tests/`; Go tests use automatically cleaned temporary directories and report evidence in test output. Preserve production data, credentials, active binaries, backups and requested deliverables. See [cleanup rules](AGENTS.md#temporary-files-and-cleanup).
+Remove task-created scratch programs, fixture data, logs, verification binaries and caches after use. Keep reusable tests under `tests/`; Go tests use automatically cleaned temporary directories and report evidence in test output. Preserve production data, credentials, active binaries, backups and requested deliverables. See [cleanup rules](AGENTS.md#temporary-files-and-cleanup) and [documentation maintenance](AGENTS.md#documentation-maintenance).
 
 Container tests require Docker with Compose and Buildx:
 

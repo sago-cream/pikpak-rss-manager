@@ -1,8 +1,10 @@
 # Verification
 
-## Documentation cleanup (2026-10-04)
+## Documentation maintenance (2026-10-04)
 
 Removed superseded UI screenshots and the local v1.1.0/v1.1.1 release-note copies. Those releases remain available on [GitHub Releases](https://github.com/wade00754/pikpak-rss-manager/releases). Consolidated this document around current validation and reproducible checks; deployment, API, authentication research and v1.2.0 source notes remain available. Earlier verification records and screenshots are preserved in [Git history](https://github.com/wade00754/pikpak-rss-manager/tree/09ca537cd6e6469b1143c929acc2cca09c6b99d8/docs).
+
+The [AGENTS documentation rules](../AGENTS.md#documentation-maintenance) define required documents, current verification scope, screenshot/release-note retention, historical evidence, reference checks and delivery. Future edits consolidate obsolete records rather than adding development diaries or archive directories.
 
 Local validation: checked repository Markdown links and anchors, removed-file references, required documentation and `git diff --check`. No application, test program or workflow changed; application/container/live tests were not rerun. Release decision: no new version for this documentation-only task; v1.2.0 and existing tags remain unchanged. This commit uses `[skip ci]`; post-push workflow status is reported in the delivery response.
 
