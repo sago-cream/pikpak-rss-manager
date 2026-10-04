@@ -59,6 +59,9 @@ func TestMissingTaskRecovery(t *testing.T) {
 				t.Fatal(err)
 			}
 			c.Fail["task"] = errors.New("get task failed with status 404")
+			if scenario == "empty" {
+				c.Fail["get"] = errors.New("get file detail failed with status 400")
+			}
 			if err := w.Process(ctx, j.ID); err != nil {
 				t.Fatal(err)
 			}
@@ -76,6 +79,9 @@ func TestMissingTaskRecovery(t *testing.T) {
 			}
 			if scenario == "no staging id" && (c.Calls["get"] != 0 || c.Calls["list"] != 0) {
 				t.Fatal("missing staging ID scanned cloud root")
+			}
+			if scenario == "empty" && c.Calls["get"] != 0 {
+				t.Fatal("empty staging listing queried deleted folder metadata")
 			}
 			if !complete {
 				return
@@ -115,6 +121,7 @@ func TestMissingTaskStagingReadFailure(t *testing.T) {
 				t.Fatal(err)
 			}
 			c.Fail["task"] = &pikpak.Error{Kind: "not_found", Message: "missing"}
+			c.Files["root"] = pikpak.File{ID: "root", ParentID: "stage", Kind: "drive#file", Phase: "PHASE_TYPE_COMPLETE"}
 			c.Fail["get"] = &pikpak.Error{Kind: kind, Message: "staging unavailable"}
 			if err := w.Process(ctx, j.ID); err == nil {
 				t.Fatal("staging read failure lost")
