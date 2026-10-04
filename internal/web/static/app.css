@@ -248,14 +248,15 @@ h3 {
   border-right:1px solid var(--line);
   display:flex;
   flex-direction:column;
-  padding:28px 22px;
-  z-index:20
+  padding:28px 20px;
+  z-index:20;
+  overflow-y:auto
 }
 
 .brand {
   display:flex;
   align-items:center;
-  gap:11px;
+  gap:12px;
   text-decoration:none;
   font-size:17px;
   letter-spacing:-.3px
@@ -268,28 +269,30 @@ h3 {
 
 .sidebar nav {
   display:grid;
-  gap:8px
+  gap:8px;
+  margin-top:32px;
+  flex-shrink:0
 }
 
 .nav-item {
   border:0;
   background:none;
   text-align:left;
-  padding:12px 15px;
+  min-height:44px;
+  padding:12px;
   border-radius:10px;
-  color:#898494;
+  color:var(--muted);
   display:flex;
-  gap:13px;
+  gap:12px;
   align-items:center;
   font-size:13px;
   font-weight:550
 }
 
-.nav-item span {
-  font-size:19px;
-  width:21px;
-  text-align:center;
-  line-height:1
+.nav-icon {
+  width:20px;
+  height:20px;
+  flex-shrink:0
 }
 
 .nav-item:hover {
@@ -305,18 +308,45 @@ h3 {
 .sidebar-bottom {
   margin-top:auto;
   border-top:1px solid var(--line);
-  padding:22px 10px 0
+  padding:20px 0 0;
+  display:flex;
+  flex-direction:column;
+  gap:16px
 }
 
-.sidebar-bottom p {
-  font-size:10px;
-  margin:10px 0;
-  color:#aaa5b5
+.sidebar-bottom .appearance-controls {
+  gap:8px
 }
 
-.sidebar-bottom .text-button {
-  display:block;
-  margin-top:16px
+.sidebar-bottom .theme-toggle {
+  width:40px;
+  height:40px
+}
+
+.sidebar-bottom .language-select {
+  flex:1;
+  min-width:0;
+  height:40px
+}
+
+.sidebar-session {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+
+.sidebar-session .text-button {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:40px
+}
+
+.session-icon {
+  width:16px;
+  height:16px;
+  flex-shrink:0
 }
 
 .connection-pill {
@@ -332,16 +362,6 @@ h3 {
   min-height:100vh;
   display:flex;
   flex-direction:column
-}
-
-.topbar {
-  height:75px;
-  border-bottom:1px solid var(--line);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 40px;
-  background:#ffffffb5
 }
 
 .content {
@@ -1186,10 +1206,6 @@ dialog::backdrop {
   padding:30px 28px
 }
 
-.topbar {
-  padding:0 28px
-}
-
 .subscriptions-grid {
   grid-template-columns:repeat(2,minmax(0,1fr))
 }
@@ -1220,7 +1236,7 @@ dialog::backdrop {
 @media(max-width:900px) {
   .sidebar {
   width:185px;
-  padding:23px 15px
+  padding:24px 16px
 }
 
 .main {
@@ -1229,11 +1245,7 @@ dialog::backdrop {
 
 .brand {
   font-size:15px;
-  gap:8px
-}
-
-.nav-item {
-  padding:11px
+  gap:12px
 }
 
 .stats-grid {
@@ -1278,7 +1290,7 @@ dialog::backdrop {
   .sidebar {
   position:static;
   width:100%;
-  padding:17px 20px 10px;
+  padding:16px 20px 12px;
   border-right:0;
   border-bottom:1px solid var(--line)
 }
@@ -1293,35 +1305,57 @@ dialog::backdrop {
 }
 
 .sidebar-bottom {
-  display:none
+  margin-top:16px;
+  padding-top:16px;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px 16px
+}
+
+.sidebar-bottom .appearance-controls {
+  order:1
+}
+
+.sidebar-bottom .theme-toggle {
+  width:44px;
+  height:44px
+}
+
+.sidebar-bottom .language-select {
+  height:44px
+}
+
+.sidebar-session .text-button {
+  min-height:44px
+}
+
+.sidebar-bottom .connection-pill {
+  order:0
+}
+
+.sidebar-session {
+  order:2;
+  width:100%
 }
 
 .sidebar nav {
   display:flex;
-  gap:3px;
-  margin-top:17px;
+  gap:4px;
+  margin-top:16px;
   overflow-x:auto
 }
 
 .nav-item {
   flex-shrink:0;
-  padding:8px 10px;
-  font-size:10px;
-  gap:6px
-}
-
-.nav-item span {
-  font-size:15px;
-  width:16px
+  padding:8px 12px;
+  font-size:12px;
+  gap:8px
 }
 
 .main {
   margin-left:0
-}
-
-.topbar {
-  height:50px;
-  padding:0 20px
 }
 
 .content {
@@ -1490,36 +1524,17 @@ dialog {
 
 }
 
-.topbar-actions {
-  display:flex;
-  align-items:center;
-  gap:18px
-}
-
-.mobile-only {
-  display:none
-}
-
-@media(max-width:900px) {
-  .mobile-only {
-  display:inline-flex
-}
-
-}
-
 /* Dialog scroll stays inside the rounded shell at every viewport size. */
 #subscription-dialog { padding:0; overflow:hidden; }
 #subscription-dialog .dialog-scroll { max-height:calc(90dvh - 2px); overflow-y:auto; padding:27px; scrollbar-gutter:stable; }
 textarea { resize:none; }
 .folder-icon { width:20px; height:20px; flex-shrink:0; vertical-align:middle; }
-.sidebar nav { margin-top:32px; }
 .language-select { font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px; }
 .language-select:focus-visible,select:focus-visible { outline:3px solid #c7b7ff; outline-offset:3px; }
 .login-page { display:flex; justify-content:center; }
 .login-shell { width:min(378px,100%); padding:40px 24px; }
 @media(max-width:600px) { #subscription-dialog .dialog-scroll { max-height:calc(94dvh - 2px); padding:22px; } }
 
-.topbar-actions { margin-left:auto; }
 .job-actions { display:flex; align-items:center; gap:14px; white-space:nowrap; }
 #view-jobs .toolbar { flex-wrap:wrap; gap:12px; }
 @media(max-width:600px) {

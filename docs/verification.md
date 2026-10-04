@@ -1,12 +1,14 @@
 # Verification
 
-## Current release: v2.0.1 (2026-10-04)
+## Current validation (2026-10-05)
 
-Unconfirmed rename messages now explain PikPak's duplicate-name restriction and ask users to resolve conflicts before retrying. Existing task messages receive the updated Traditional Chinese and English copy without changing filenames or stored records. Download and rename behavior is unchanged.
+Management pages place theme and language controls in the sidebar footer with connection status, version and sign-out. Navigation uses 20 px SVG icons, a 12 px desktop label gap and 44 px minimum row height. The footer stays available on mobile. Active navigation exposes `aria-current`.
 
-Release decision: v2.0.1 for a user-visible message fix. No existing tags are changed. Source VERSION and README are synchronized. Post-push CI, multiarch publication and anonymous pulls will be recorded in the GitHub Release.
+Release decision: publish v2.0.2 after this draft PR is merged, because the sidebar changes are user-visible. VERSION and README retain the current published v2.0.1 until release preparation. No tag or image is published from this draft branch.
 
-Passed locally: `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization, task-details checks and application build) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and task-owned workspace caches. The executable reports `v2.0.1`. `git diff --check` and local Markdown links pass. Mocked regression coverage includes destination/root submission, torrent directories and attachments, suffix readback, Regex/nonmatches, rejected/uncertain renames, partial-action/restart recovery, missing task/file IDs, auth/quota/rate failures, baseline/repeated-download/idempotent confirmation behavior, task cancellation and CSRF. Pending submission intent survives account pause and restart, blocks unconfirmed record deletion and prevents resubmission. UI checks cover updated guidance on existing review records in both languages and preserve filenames even when they match an application message. No real PikPak operations were performed for this copy fix. The earlier direct-download validation does not prove the minimal PAT scope combination. Task-created build caches, temporary build directories and the verification executable were removed. Development data, keys and intentional backups were preserved.
+Passed locally: `make verify` and `make test-race` with Go 1.27.1 and `GOFLAGS=-buildvcs=false`. Formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization, task-details checks and the application build pass. The executable reports `v2.0.1`. `git diff --check` and local Markdown links pass. Mocked regression coverage includes destination/root submission, torrent directories and attachments, rejected/uncertain renames, restart recovery, authentication/quota/rate failures, baselines, repeated downloads, confirmation idempotency, task cancellation and CSRF.
+
+Browser checks use an isolated mocked account with no production data or PAT. Desktop before/after captures use the exact PR base and changed templates/assets at the same 1280 × 800 viewport. Checks cover 20 px navigation icons, a 12 px desktop gap, no top bar, footer fit at 320 px, Traditional Chinese/English language persistence, light/dark theme persistence, active navigation and footer access at 900 × 400. Login controls also render correctly. Screenshots are PR attachments. No real PikPak operations were performed for this sidebar change. Docker checks run in Actions because the development machine has no Docker. Post-push workflow results belong in the PR and delivery response. Release publication and anonymous pulls wait until merge.
 
 ## Real PikPak validation and limits
 
