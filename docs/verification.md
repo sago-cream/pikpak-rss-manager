@@ -10,7 +10,17 @@ Opt-in `TestLiveDirectDownloadAndRename` passed in 23.94 seconds using official 
 
 Repeat with `PIKPAK_LIVE_DIRECT_TEST=1 go test ./tests/integration -run '^TestLiveDirectDownloadAndRename$' -count=1 -v -timeout=7m`; set `PIKPAK_LIVE_DATA_DIR` for a custom UI-configured data directory. The test preserves its isolated fixtures and separately checks duplicate downloads and rename collisions.
 
-Release decision: publish v1.2.0 for the new download workflow and backfill API behavior, without moving existing tags. Linux race/container validation, multiarch publication and anonymous pulls are pending GitHub Actions. No local Docker or VPS deployment is required.
+Release decision: published [v1.2.0](https://github.com/wade00754/pikpak-rss-manager/releases/tag/v1.2.0) for the new download workflow and backfill API behavior, without moving existing tags. Source commit `7f2ef54` passed:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, UI checks, Docker startup/authentication/non-root/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203412869) |
+| latest/main amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203412860) |
+| v1.2.0 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203437221) |
+| Anonymous v1.2.0 pulls, Compose persistence and manifests on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203652687) |
+| Anonymous latest pulls, Compose persistence and manifests on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37203623470) |
+
+This evidence-only documentation update uses `[skip ci]`; the application source and published images received the full checks above. No local Docker installation, local production-service restart or VPS deployment was performed.
 
 ## Task header controls (2026-10-04)
 
