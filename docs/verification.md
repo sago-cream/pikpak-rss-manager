@@ -28,7 +28,17 @@ Regression tests cover nested empty torrent folders, downloaded-file preservatio
 
 Read-only discovery against the official hosted MCP confirmed that `rm` moves files/folders to Trash and accepts `ids`. After correcting the test to create each path segment separately, opt-in `TestLiveStagingCleanup` passed in 38.89 seconds using `_pikpak-rss-manager-test/cleanup-20261004T080039-889d29`. A small public-domain Alice HTTP download completed, its original filename was preserved in the destination, and both its empty job folder and `_PikPak-RSS-Staging` container were moved to Trash. The run directory and downloaded fixture remain. This proves the single-file HTTP cleanup path with the current local PAT; nested torrent cleanup, replacement backups and failure recovery were checked with mocks. No credentials were printed or sent to CI, and no permanent deletion or VPS deployment was performed.
 
-To repeat locally with an administrator/PAT configured through the UI, set `PIKPAK_LIVE_CLEANUP_TEST=1` and run `go test ./tests/integration -run TestLiveStagingCleanup -count=1 -v`. The test retains a small public-domain HTTP fixture beneath a new `_pikpak-rss-manager-test/cleanup-<run-id>` and only moves its empty staging folders to Trash. Container/race/publishing checks run in Actions after publication.
+To repeat locally with an administrator/PAT configured through the UI, set `PIKPAK_LIVE_CLEANUP_TEST=1` and run `go test ./tests/integration -run TestLiveStagingCleanup -count=1 -v`. The test retains a small public-domain HTTP fixture beneath a new `_pikpak-rss-manager-test/cleanup-<run-id>` and only moves its empty staging folders to Trash.
+
+The existing v1.0.0 tag was reissued at verified source commit `320dbf9`. Both v1.0.0 and latest published images passed anonymous OCI revision checks against that exact commit on linux/amd64 and linux/arm64. Publication and public container checks passed:
+
+| Validation | Evidence |
+|---|---|
+| Linux race/vet/build, localization, non-root startup/persistence | [CI](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37187637247) |
+| main/latest amd64/arm64 publishing and manifest | [Main publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37187637189) |
+| Reissued v1.0.0 amd64/arm64 publishing and manifest | [Tag publishing](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37187668713) |
+| Anonymous latest pulls and persistence on both architectures | [Latest smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37187840374) |
+| Anonymous v1.0.0 pulls and persistence on both architectures | [Release smoke](https://github.com/wade00754/pikpak-rss-manager/actions/runs/37187857185) |
 
 ## v1.0.0 republication (2026-10-04)
 
