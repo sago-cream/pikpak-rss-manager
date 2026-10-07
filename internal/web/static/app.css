@@ -1083,6 +1083,10 @@ dialog::backdrop {
   overflow-wrap:anywhere
 }
 
+.file-detail .badge + strong {
+  margin-top:10px
+}
+
 .file-detail small {
   display:block;
   margin-top:8px

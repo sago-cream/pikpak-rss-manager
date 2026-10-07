@@ -5,7 +5,8 @@ let language='zh-Hant';
 try { language=localStorage.getItem('language')==='en'?'en':'zh-Hant'; } catch {}
 // Refresh application messages in existing task records without changing user data.
 const messageUpdates = {
-  '改名結果無法確認，保留目前檔名；請核對後重試':'改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試',
+  '改名結果無法確認，保留目前檔名；請核對後重試':'改名未確認，請檢查同名衝突後重試',
+  '改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試':'改名未確認，請檢查同名衝突後重試',
 };
 const translations = {
   '切換為英文':'Switch to English','切換為繁體中文':'Switch to Traditional Chinese',
@@ -22,7 +23,8 @@ const translations = {
   '下載已完成，但沒有可靠的檔案 ID，無法改名；請至 PikPak 核對':'Download completed, but no reliable file ID is available for renaming. Check PikPak.',
   '下載檔案的位置已變更，請至 PikPak 核對':'Downloaded file location changed. Check PikPak.',
   '雲端檔案尚未完成，稍後改名':'Cloud file is not complete. Renaming will resume later.',
-  '改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試':'Rename result is unconfirmed. Current filename retained. PikPak rejects renaming to a duplicate filename in the same folder. Check for an existing file with the requested name and resolve the conflict before retrying.',
+  '改名未確認，請檢查同名衝突後重試':'Rename unconfirmed. Check for a filename conflict before retrying.',
+  '原名：':'Original: ',
   '下載檔案的名稱已變更，保留目前檔名；請至 PikPak 核對':'Downloaded filename changed. Current filename retained; check PikPak.',
   '下載已完成，部分檔案改名待處理；目前檔案已保留':'Download completed. Some renames need attention; current files are retained.',
   '提交結果仍不明，請至 PikPak 核對任務；不會自動重新下載':'Submission remains unconfirmed. Check PikPak tasks; the download will not be resubmitted automatically.',
