@@ -1603,3 +1603,28 @@ textarea { resize:none; }
   #overview-jobs .job-name,#jobs-list .job-name,#overview-jobs td:last-child,#jobs-list td:last-child { grid-column:1 / -1; }
   .job-actions { justify-content:flex-end; }
 }
+
+/* First-run setup shares the login layout and existing theme tokens. */
+.onboarding-progress {
+  display:flex;
+  gap:24px;
+  width:100%;
+  margin:0 0 24px;
+  padding:0;
+  list-style:none;
+  color:var(--muted);
+  font-size:12px;
+}
+.onboarding-progress li { display:flex; align-items:center; gap:8px; }
+.onboarding-progress [aria-current=step] { color:var(--accent); font-weight:650; }
+.step-number { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--line); border-radius:50%; flex-shrink:0; }
+[aria-current=step] .step-number { background:var(--accent-light); border-color:var(--accent); }
+.token-help .field-help { margin:0 0 8px; }
+.token-notes { margin-top:16px; }
+.token-notes summary { cursor:pointer; color:var(--muted); font-size:12px; padding:8px 0; }
+.token-notes summary:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+.token-notes p:last-child { margin-bottom:0; }
+.onboarding-logout { margin-top:24px; align-self:flex-end; }
+button.connection-pill { width:100%; padding:0; border:0; background:transparent; color:var(--muted); text-align:left; }
+button.connection-pill:hover { color:var(--accent); }
+#settings-connection-status:empty,#token-error:empty { display:none; }

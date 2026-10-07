@@ -309,7 +309,7 @@ func (c *smokeClient) initialize(ctx context.Context, password, version string) 
 	if err := c.request(ctx, "POST", "/api/setup", setup, 409, nil); err != nil {
 		return 0, err
 	}
-	if err := c.checkPageContent(ctx, `<span class="version">`+version+`</span>`); err != nil {
+	if err := c.checkPageContent(ctx, `data-onboarding="true"`); err != nil {
 		return 0, err
 	}
 	var subscription smokeSubscription

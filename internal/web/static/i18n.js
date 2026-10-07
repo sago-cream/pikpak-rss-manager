@@ -9,6 +9,10 @@ const messageUpdates = {
   '改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試':'改名未確認，請檢查同名衝突後重試',
 };
 const translations = {
+  '設定進度':'Setup progress','連接 PikPak':'Connect PikPak','下一步':'Next',
+  'PAT 需具備「讀寫檔案」及「雲端下載」權限。':'PAT requires Read & write files and Cloud Download permissions.',
+  '建立 PAT ↗':'Create PAT ↗','有效期與配額':'Expiry and quota','驗證並完成設定':'Connect and finish setup','PikPak RSS · 連接 PikPak':'PikPak RSS · Connect PikPak',
+
   '切換為英文':'Switch to English','切換為繁體中文':'Switch to Traditional Chinese',
   '網站網址說明':'Site URL help','內網 RSS 說明':'Private network feed help',
   '預填目前網址。使用反向代理時填入對外網址。':'The current URL is prefilled. Use the public origin when behind a reverse proxy.',
@@ -79,7 +83,6 @@ const translations = {
   '貼上 PAT':'Paste PAT',
   '驗證並綁定':'Connect',
   '重新檢查連線':'Check connection',
-  '關於授權與配額':'Token and quota',
   'PAT 有效期為 30 天至一年，請在到期前更新。':'Renew your PAT before it expires (30 days to one year).',
   '已連接的應用共用各流量維度月配額的 25%，包含雲端離線下載。':'Connected apps share 25% of each monthly traffic quota, including offline downloads.',
   '開啟官方 PAT 說明 ↗':'PAT documentation ↗',
@@ -185,7 +188,6 @@ const translations = {
   '連線正常':'Connected',
   '已暫停':'Paused',
   '請重新檢查 PikPak 連線。':'Check the PikPak connection.',
-  '先到「系統設定」綁定 PikPak，再開始自動追蹤。':'Connect PikPak in Settings.',
   'PikPak 帳號':'PikPak account',
   ' 雲端空間':' storage',
   '綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。':'Connect PikPak to browse folders, or enter a path.',
