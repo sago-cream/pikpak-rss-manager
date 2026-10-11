@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
 
-import folderIcon from '../assets/folder.svg';
 import { api } from '../lib/api.js';
 import { errorMessage } from '../lib/i18n.js';
 import { useLifetime } from '../lib/lifetime.js';
@@ -10,6 +9,7 @@ import { Dialog } from './Dialog.js';
 import { FolderPicker } from './FolderPicker.js';
 import type { Destination } from './FolderPicker.js';
 import { CheckboxField, Feedback, FormField } from './FormField.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 import { RenamePreview } from './RenamePreview.js';
 
@@ -187,11 +187,7 @@ export function SubscriptionDialog({
                                 }}
                                 type='button'
                             >
-                                <img
-                                    alt=''
-                                    className='folder-icon'
-                                    src={folderIcon}
-                                />
+                                <Icon className='folder-icon' name='folder' />
                                 {t('選擇資料夾')}
                             </button>
                         </div>

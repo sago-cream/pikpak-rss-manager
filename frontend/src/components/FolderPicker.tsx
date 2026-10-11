@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
-import folderIcon from '../assets/folder.svg';
 import { api } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import type { FolderListing } from '../lib/types.js';
 import { Dialog } from './Dialog.js';
 import { Feedback, FormField } from './FormField.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export interface Destination {
@@ -157,11 +157,7 @@ export function FolderPicker({
                             }}
                             type='button'
                         >
-                            <img
-                                alt=''
-                                className='folder-icon'
-                                src={folderIcon}
-                            />
+                            <Icon className='folder-icon' name='folder' />
                             <span>{folder.name}</span>
                             <span className='folder-arrow'>›</span>
                         </button>
