@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import { filterJobs } from '../lib/jobs.js';
 import type { JobFilter } from '../lib/jobs.js';
 import type { Job } from '../lib/types.js';
+import { AddButton } from './AddButton.js';
 import { Badge } from './Badge.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
@@ -13,12 +14,14 @@ export function Tasks({
     jobs,
     date,
     onOpen,
+    onAdd,
     onClear,
     busy,
 }: {
     jobs: Job[];
     date: (value: number) => string;
     onOpen: (id: string) => void;
+    onAdd: () => void;
     onClear: () => void;
     busy: boolean;
 }): JSX.Element {
@@ -34,17 +37,20 @@ export function Tasks({
         >
             <div className='workspace-section-heading'>
                 <h2 id='jobs-title'>{t('離線任務')}</h2>
-                {filter === 'complete' && items.length > 0 && (
-                    <button
-                        className='text-button'
-                        disabled={busy}
-                        id='clear-completed-jobs'
-                        onClick={onClear}
-                        type='button'
-                    >
-                        {t('清除已完成任務')}
-                    </button>
-                )}
+                <div className='section-actions'>
+                    {filter === 'complete' && items.length > 0 && (
+                        <button
+                            className='text-button'
+                            disabled={busy}
+                            id='clear-completed-jobs'
+                            onClick={onClear}
+                            type='button'
+                        >
+                            {t('清除已完成任務')}
+                        </button>
+                    )}
+                    <AddButton kind='task' onClick={onAdd} />
+                </div>
             </div>
             <div id='jobs-list'>
                 <div className='table-scroll'>

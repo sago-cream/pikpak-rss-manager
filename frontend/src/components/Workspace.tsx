@@ -172,34 +172,7 @@ export function Workspace({
         setModal({ type });
         globalThis.history.replaceState(null, '', `#${type}`);
     };
-    const empty =
-        data && data.subscriptions.length === 0 && data.jobs.length === 0;
     const connected = data?.status.connected && !data.status.paused;
-    const newButtons = (
-        <>
-            <button
-                className='button subtle'
-                data-manual-task
-                onClick={() => {
-                    setModal({ type: 'subscription', manual: true });
-                }}
-                type='button'
-            >
-                <Icon name='plus' />
-                {t('新增任務')}
-            </button>
-            <button
-                className='button primary new-subscription'
-                onClick={() => {
-                    setModal({ type: 'subscription' });
-                }}
-                type='button'
-            >
-                <Icon name='plus' />
-                {t('新增訂閱')}
-            </button>
-        </>
-    );
     return (
         <>
             <div className='app-shell'>
@@ -213,22 +186,19 @@ export function Workspace({
                             PikPak <b>RSS</b>
                         </span>
                     </a>
-                    <div className='workspace-actions'>
-                        <button
-                            aria-label={t('重新整理')}
-                            className='icon-button workspace-refresh'
-                            disabled={Boolean(busy)}
-                            id='refresh'
-                            onClick={() => {
-                                void action('refresh', refresh, '已更新');
-                            }}
-                            title={t('重新整理')}
-                            type='button'
-                        >
-                            <Icon name='refresh' />
-                        </button>
-                        {data && !empty && newButtons}
-                    </div>
+                    <button
+                        aria-label={t('重新整理')}
+                        className='icon-button workspace-refresh'
+                        disabled={Boolean(busy)}
+                        id='refresh'
+                        onClick={() => {
+                            void action('refresh', refresh, '已更新');
+                        }}
+                        title={t('重新整理')}
+                        type='button'
+                    >
+                        <Icon name='refresh' />
+                    </button>
                     <button
                         aria-label={t('帳號選單')}
                         className='profile-toggle'
@@ -338,26 +308,19 @@ export function Workspace({
                                     </button>
                                 </div>
                             )}
-                            {empty && (
-                                <div className='overview-empty'>
-                                    <h2>{t('新增第一筆下載')}</h2>
-                                    <p>
-                                        {t(
-                                            '訂閱 RSS 自動追蹤，或貼上連結下載。'
-                                        )}
-                                    </p>
-                                    <div className='form-actions overview-actions'>
-                                        {newButtons}
-                                    </div>
-                                </div>
-                            )}
                         </div>
-                        {data && !empty && (
+                        {data && (
                             <div className='workspace-body'>
                                 <Tasks
                                     busy={Boolean(busy)}
                                     date={date}
                                     jobs={data.jobs}
+                                    onAdd={() => {
+                                        setModal({
+                                            type: 'subscription',
+                                            manual: true,
+                                        });
+                                    }}
                                     onClear={() => {
                                         if (
                                             globalThis.confirm(
@@ -386,6 +349,9 @@ export function Workspace({
                                 <Subscriptions
                                     busy={Boolean(busy)}
                                     date={date}
+                                    onAdd={() => {
+                                        setModal({ type: 'subscription' });
+                                    }}
                                     onBackfill={(id) => {
                                         setModal({ type: 'backfill', id });
                                     }}

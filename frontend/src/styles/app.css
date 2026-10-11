@@ -1431,21 +1431,6 @@ button.connection-pill:hover {
 #recovery-help .field-help {
     margin: 12px 0;
 }
-.overview-empty {
-    padding: 48px 0;
-}
-.overview-empty h2 {
-    margin: 0 0 12px;
-}
-.overview-empty p {
-    color: var(--muted);
-    margin: 0 0 24px;
-}
-.overview-actions {
-    margin: 0 0 24px;
-    flex-wrap: wrap;
-}
-
 .overview-connection {
     display: flex;
     align-items: center;
@@ -1453,15 +1438,6 @@ button.connection-pill:hover {
     gap: 16px;
     color: var(--orange);
     margin: 0 0 24px;
-}
-
-@media (max-width: 600px) {
-    .overview-empty {
-        padding: 24px 0;
-    }
-    .overview-actions .button {
-        flex: 1;
-    }
 }
 
 .workspace-header {
@@ -1472,11 +1448,6 @@ button.connection-pill:hover {
     padding: 16px 40px;
     max-width: 1200px;
     margin: auto;
-}
-.workspace-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 #view-overview.content {
     padding-top: 16px;
@@ -1587,6 +1558,15 @@ button.connection-pill:hover {
     align-items: center;
     gap: 16px;
     margin-bottom: 16px;
+}
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+.section-add {
+    flex-shrink: 0;
 }
 .workspace-section-heading .text-button {
     min-height: 40px;
@@ -1814,29 +1794,10 @@ button.connection-pill:hover {
 }
 @media (max-width: 650px) {
     .workspace-header {
-        grid-template-columns: minmax(0, 1fr) auto;
         padding: 16px 20px;
-    }
-    .workspace-header .profile-toggle {
-        grid-column: 2;
-        grid-row: 1;
     }
     .content {
         padding: 24px 20px 32px;
-    }
-    .workspace-actions {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        width: 100%;
-        gap: 8px;
-    }
-    .workspace-actions .button {
-        flex: 1;
-        min-height: 44px;
-        font-size: 12px;
-    }
-    .workspace-actions .workspace-refresh {
-        flex-shrink: 0;
     }
     #profile-name {
         display: none;

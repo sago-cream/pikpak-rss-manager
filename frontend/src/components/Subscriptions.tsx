@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { JSX } from 'react';
 
 import type { Subscription } from '../lib/types.js';
+import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
@@ -10,6 +11,7 @@ export function Subscriptions({
     date,
     busy,
     onEdit,
+    onAdd,
     onBackfill,
     onCheck,
     onDelete,
@@ -18,6 +20,7 @@ export function Subscriptions({
     date: (value: number) => string;
     busy: boolean;
     onEdit: (sub: Subscription) => void;
+    onAdd: () => void;
     onBackfill: (id: number) => void;
     onCheck: (id: number) => void;
     onDelete: (id: number) => void;
@@ -35,6 +38,7 @@ export function Subscriptions({
         >
             <div className='workspace-section-heading'>
                 <h2 id='subscriptions-title'>{t('訂閱管理')}</h2>
+                <AddButton kind='subscription' onClick={onAdd} />
             </div>
             <div className='toolbar'>
                 <input

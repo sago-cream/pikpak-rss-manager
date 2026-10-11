@@ -32,9 +32,6 @@ export const translations: Record<string, string> = {
     '密碼已重設': 'Password reset',
     '請使用新密碼登入。': 'Sign in with your new password.',
     '返回登入': 'Back to sign-in',
-    '新增第一筆下載': 'Add your first download',
-    '訂閱 RSS 自動追蹤，或貼上連結下載。':
-        'Subscribe to RSS or paste a download link.',
     '修復連線': 'Fix connection',
     '進行中': 'In progress',
     '目前沒有進行中的任務。': 'No downloads in progress.',

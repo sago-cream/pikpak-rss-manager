@@ -398,6 +398,7 @@ describe('React flows', () => {
                         job('running', 'queued'),
                         job('review', 'needs_review'),
                     ]}
+                    onAdd={vi.fn<() => void>()}
                     onClear={vi.fn<() => void>()}
                     onOpen={vi.fn<() => void>()}
                 />
