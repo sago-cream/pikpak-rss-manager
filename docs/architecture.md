@@ -36,6 +36,7 @@ PAT requires Read & write files and Cloud Download. The MCP adapter has no move,
 - Sessions: 12 hours, memory only. Mutations require matching CSRF cookie/header and same-origin checks. HTTP-only/SameSite cookies, login throttling and CSP are enabled.
 - Overview combines RSS subscriptions and offline tasks in one workspace. Tasks show attention states first, with filters and incremental history. The account menu opens Settings and Logs in dialogs and contains theme, language and sign-out controls. Setup and login retain their header controls.
 - UI language is a browser preference. Only application literals and message fields are translated. Names, paths, URLs, regex and filenames remain intact.
+- Light and dark themes share CSS color tokens. Purple marks actions, green marks connected/completed states, amber marks attention and red marks errors. Filename previews use neutral colors.
 
 ## Authentication
 
