@@ -437,6 +437,40 @@ tr:last-child td {
     margin-top: 3px;
 }
 
+.job-row {
+    position: relative;
+    cursor: pointer;
+}
+
+.job-row:hover,
+.job-row:has(.job-open:focus-visible) {
+    background: var(--accent-light);
+}
+
+.job-row:has(.job-open:focus-visible) {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+}
+
+.job-open {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+}
+
+.job-open::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+
+.job-open:focus-visible {
+    outline: none;
+}
+
 .progress-caption {
     font-size: 9px;
     color: var(--muted);
@@ -1235,12 +1269,6 @@ select:focus-visible {
     }
 }
 
-.job-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    white-space: nowrap;
-}
 #view-jobs .toolbar {
     flex-wrap: wrap;
     gap: 12px;
@@ -1281,12 +1309,11 @@ select:focus-visible {
         padding: 0;
         border: 0;
     }
-    #jobs-list .job-name,
-    #jobs-list td:last-child {
+    #jobs-list .job-name {
         grid-column: 1 / -1;
     }
-    .job-actions {
-        justify-content: flex-end;
+    #jobs-list td.nowrap {
+        text-align: right;
     }
 }
 

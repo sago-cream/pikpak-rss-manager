@@ -6,7 +6,6 @@ import type { JobFilter } from '../lib/jobs.js';
 import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Badge } from './Badge.js';
-import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 import { Select } from './Select.js';
 
@@ -84,16 +83,25 @@ export function Tasks({
                                     </Select>
                                 </th>
                                 <th scope='col'>{t('時間')}</th>
-                                <th scope='col'>
-                                    <span className='sr-only'>{t('查看')}</span>
-                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.slice(0, limit).map((job) => (
-                                <tr key={job.id}>
+                                <tr className='job-row' key={job.id}>
                                     <td className='job-name'>
-                                        <strong>{job.rule.title}</strong>
+                                        <strong>
+                                            <button
+                                                aria-label={`${job.rule.title} · ${job.title}`}
+                                                className='job-open'
+                                                data-job={job.id}
+                                                onClick={() => {
+                                                    onOpen(job.id);
+                                                }}
+                                                type='button'
+                                            >
+                                                {job.rule.title}
+                                            </button>
+                                        </strong>
                                         <span title={job.title}>
                                             {job.title}
                                         </span>
@@ -109,26 +117,11 @@ export function Tasks({
                                     <td className='muted nowrap'>
                                         {date(job.created_at)}
                                     </td>
-                                    <td>
-                                        <div className='job-actions'>
-                                            <button
-                                                className='text-button'
-                                                data-job={job.id}
-                                                onClick={() => {
-                                                    onOpen(job.id);
-                                                }}
-                                                type='button'
-                                            >
-                                                {t('查看')}
-                                                <Icon name='arrow-right' />
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                             ))}
                             {items.length === 0 && (
                                 <tr className='jobs-empty'>
-                                    <td colSpan={4}>
+                                    <td colSpan={3}>
                                         <p className='workspace-idle'>
                                             {t(
                                                 jobs.length > 0

@@ -387,7 +387,8 @@ describe('React flows', () => {
             'https://edited.test'
         );
     });
-    it('prioritizes review tasks and keeps the filter focused even with zero matches', async () => {
+    it('prioritizes review tasks, opens details with pointer and keyboard, and retains filter focus', async () => {
+        const onOpen = vi.fn<(id: string) => void>();
         render(
             <Preferences>
                 <Tasks
@@ -400,7 +401,7 @@ describe('React flows', () => {
                     ]}
                     onAdd={vi.fn<() => void>()}
                     onClear={vi.fn<() => void>()}
-                    onOpen={vi.fn<() => void>()}
+                    onOpen={onOpen}
                 />
             </Preferences>
         );
@@ -409,6 +410,15 @@ describe('React flows', () => {
                 (element) => element.dataset.job
             )
         ).toEqual(['review', 'running', 'done']);
+        const firstTask = screen.getAllByRole('button', {
+            name: '使用者 · 使用者.mkv',
+        })[0];
+        await userEvent.click(firstTask);
+        firstTask.focus();
+        await userEvent.keyboard('{Enter}');
+        await userEvent.keyboard(' ');
+        expect(onOpen.mock.calls).toEqual([['review'], ['review'], ['review']]);
+        expect(screen.queryByText('查看')).toBeNull();
         const select = screen.getByLabelText('任務狀態');
         await userEvent.selectOptions(select, 'complete');
         expect(
