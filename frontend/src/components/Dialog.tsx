@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import type { JSX, ReactNode } from 'react';
 
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export function Dialog({
@@ -37,7 +38,7 @@ export function Dialog({
                     onClick={onClose}
                     type='button'
                 >
-                    ×
+                    <Icon name='close' />
                 </button>
             </div>
             {children}

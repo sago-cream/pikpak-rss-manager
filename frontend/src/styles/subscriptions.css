@@ -75,9 +75,10 @@
     overflow-wrap: anywhere;
 }
 .folder-arrow {
+    width: 20px;
+    height: 20px;
     margin-left: auto;
     color: var(--accent);
-    font-size: 20px;
 }
 .folder-actions {
     display: flex;

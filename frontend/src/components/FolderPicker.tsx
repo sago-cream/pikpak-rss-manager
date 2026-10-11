@@ -119,7 +119,7 @@ export function FolderPicker({
                     onClick={onClose}
                     type='button'
                 >
-                    ×
+                    <Icon name='close' />
                 </button>
             </div>
             {listing && (listing.folders.length > 8 || listing.next_token) && (
@@ -159,7 +159,10 @@ export function FolderPicker({
                         >
                             <Icon className='folder-icon' name='folder' />
                             <span>{folder.name}</span>
-                            <span className='folder-arrow'>›</span>
+                            <Icon
+                                className='folder-arrow'
+                                name='chevron-right'
+                            />
                         </button>
                     ))}
                 {listing &&
@@ -198,7 +201,8 @@ export function FolderPicker({
                     }}
                     type='button'
                 >
-                    {t('＋ 新增資料夾')}
+                    <Icon name='plus' />
+                    {t('新增資料夾')}
                 </button>
                 <button
                     className='button primary'

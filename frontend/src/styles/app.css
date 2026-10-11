@@ -154,6 +154,9 @@ h3 {
 }
 
 .text-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     border: 0;
     background: none;
     color: var(--accent);
@@ -162,12 +165,23 @@ h3 {
     font-weight: 650;
 }
 
+.ui-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.text-button > .ui-icon {
+    width: 16px;
+    height: 16px;
+}
 .icon-button {
+    display: inline-grid;
+    place-items: center;
     border: 0;
     background: none;
     color: var(--muted);
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     font-size: 22px;
     line-height: 1;
     padding: 0;
@@ -181,6 +195,12 @@ h3 {
 .icon-button.danger:hover {
     background: var(--danger-bg);
     color: var(--danger);
+}
+@media (max-width: 700px) {
+    .icon-button {
+        width: 44px;
+        height: 44px;
+    }
 }
 
 .badge {

@@ -1,6 +1,8 @@
 import type { JSX } from 'react';
 import {
+    ArrowRight,
     ChevronDown,
+    ChevronRight,
     CircleCheck,
     Clock,
     Download,
@@ -8,10 +10,12 @@ import {
     Info,
     Moon,
     Pencil,
+    Plus,
     RefreshCw,
     Rss,
     Sun,
     Trash2,
+    X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -27,21 +31,29 @@ export type IconName =
     | 'refresh'
     | 'chevron'
     | 'sun'
-    | 'moon';
+    | 'moon'
+    | 'close'
+    | 'plus'
+    | 'arrow-right'
+    | 'chevron-right';
 
 const icons: Record<IconName, LucideIcon> = {
-    info: Info,
-    rss: Rss,
-    folder: Folder,
-    clock: Clock,
-    edit: Pencil,
-    check: CircleCheck,
-    backfill: Download,
-    trash: Trash2,
-    refresh: RefreshCw,
-    chevron: ChevronDown,
-    sun: Sun,
-    moon: Moon,
+    'info': Info,
+    'rss': Rss,
+    'folder': Folder,
+    'clock': Clock,
+    'edit': Pencil,
+    'check': CircleCheck,
+    'backfill': Download,
+    'trash': Trash2,
+    'refresh': RefreshCw,
+    'chevron': ChevronDown,
+    'sun': Sun,
+    'moon': Moon,
+    'close': X,
+    'plus': Plus,
+    'arrow-right': ArrowRight,
+    'chevron-right': ChevronRight,
 };
 
 export function Icon({
@@ -55,7 +67,7 @@ export function Icon({
     return (
         <Glyph
             aria-hidden='true'
-            className={className}
+            className={`ui-icon${className ? ` ${className}` : ''}`}
             focusable='false'
             size={24}
             strokeWidth={2}

@@ -5,6 +5,7 @@ import { filterJobs } from '../lib/jobs.js';
 import type { JobFilter } from '../lib/jobs.js';
 import type { Job } from '../lib/types.js';
 import { Badge } from './Badge.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export function Tasks({
@@ -116,7 +117,8 @@ export function Tasks({
                                                 }}
                                                 type='button'
                                             >
-                                                {t('查看 →')}
+                                                {t('查看')}
+                                                <Icon name='arrow-right' />
                                             </button>
                                         </div>
                                     </td>

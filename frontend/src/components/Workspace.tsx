@@ -185,7 +185,8 @@ export function Workspace({
                 }}
                 type='button'
             >
-                {t('＋ 新增任務')}
+                <Icon name='plus' />
+                {t('新增任務')}
             </button>
             <button
                 className='button primary new-subscription'
@@ -194,7 +195,8 @@ export function Workspace({
                 }}
                 type='button'
             >
-                {t('＋ 新增訂閱')}
+                <Icon name='plus' />
+                {t('新增訂閱')}
             </button>
         </>
     );
@@ -338,7 +340,8 @@ export function Workspace({
                                         }}
                                         type='button'
                                     >
-                                        {t('修復連線 →')}
+                                        {t('修復連線')}
+                                        <Icon name='arrow-right' />
                                     </button>
                                 </div>
                             )}
