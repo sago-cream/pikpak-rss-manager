@@ -38,7 +38,7 @@ func TestOnboardingPageSelection(t *testing.T) {
 			handler := s.Handler()
 			page := httptest.NewRecorder()
 			handler.ServeHTTP(page, httptest.NewRequest("GET", "/", nil))
-			if !strings.Contains(page.Body.String(), `id="login-form"`) || strings.Contains(page.Body.String(), `id="token-form"`) {
+			if !strings.Contains(page.Body.String(), `data-page="login"`) || strings.Contains(page.Body.String(), `data-page="onboarding"`) {
 				t.Fatal("connection setup exposed before login")
 			}
 			s.sessions["fixture-session"] = session{time.Now().Add(time.Hour)}
@@ -47,17 +47,14 @@ func TestOnboardingPageSelection(t *testing.T) {
 			page = httptest.NewRecorder()
 			handler.ServeHTTP(page, req)
 			body := page.Body.String()
-			if page.Code != 200 || strings.Contains(body, `data-onboarding="true"`) != tc.onboarding {
+			if page.Code != 200 || strings.Contains(body, `data-page="onboarding"`) != tc.onboarding {
 				t.Fatal("incorrect onboarding state")
 			}
-			if strings.Contains(body, `id="view-overview"`) == tc.onboarding {
+			if strings.Contains(body, `data-page="app"`) == tc.onboarding {
 				t.Fatal("dashboard shown in incorrect state")
 			}
 			if strings.Contains(body, "connection-banner") || strings.Contains(body, "先到「系統設定」") || strings.Contains(body, "關於授權與配額") {
 				t.Fatal("repeated setup guidance remains")
-			}
-			if tc.onboarding && (!strings.Contains(body, `aria-current="step"`) || !strings.Contains(body, `id="token-error"`)) {
-				t.Fatal("connection step missing progress or inline error")
 			}
 		})
 	}

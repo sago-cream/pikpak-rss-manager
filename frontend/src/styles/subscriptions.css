@@ -1,0 +1,213 @@
+.destination-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.destination-input > input {
+    flex: 1;
+    min-width: 0;
+}
+.destination-input > .button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.folder-browser {
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    min-width: 0;
+}
+.folder-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.folder-heading .icon-button {
+    flex-shrink: 0;
+}
+#folder-status:empty {
+    display: none;
+}
+.folder-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    font-size: 11px;
+}
+.folder-breadcrumbs button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+.folder-breadcrumbs > span {
+    color: var(--muted);
+}
+.folder-list {
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px solid var(--line);
+    margin: 10px 0;
+}
+.folder-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+}
+.folder-row:hover,
+.folder-row:focus-visible {
+    background: var(--accent-light);
+}
+.folder-row > span:nth-child(2) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.folder-arrow {
+    margin-left: auto;
+    color: var(--accent);
+    font-size: 20px;
+}
+.folder-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+.folder-actions .text-button {
+    min-height: 44px;
+}
+.compact-dialog {
+    width: min(420px, calc(100vw - 30px));
+}
+.compact-dialog .dialog-heading {
+    align-items: center;
+    margin-bottom: 12px;
+}
+.compact-dialog .dialog-heading h2 {
+    font-size: 18px;
+}
+.compact-dialog .dialog-footer {
+    margin-top: 12px;
+}
+.preview-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.preview-heading h3 {
+    margin: 0;
+}
+.preview-warning {
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--orange);
+    line-height: 1.8;
+    margin: 10px 0 0;
+}
+.rename-toggle {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 14px;
+}
+.rename-toggle .checkbox-label {
+    margin-bottom: 0;
+}
+.rename-toggle {
+    margin-bottom: 24px;
+}
+#enabled-field {
+    margin-bottom: 24px;
+}
+.rule-block select {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--ink);
+    font: inherit;
+    margin-top: 0;
+}
+.rename-preview-row {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 0;
+}
+.rename-preview-row > span {
+    color: var(--muted);
+    font-size: 11px;
+}
+.rename-preview-row > code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    font-size: 12px;
+}
+@media (max-width: 600px) {
+    .destination-input {
+        flex-wrap: wrap;
+    }
+    .destination-input > input {
+        flex-basis: 100%;
+    }
+    .destination-input > .button {
+        width: 100%;
+        justify-content: center;
+    }
+    .folder-actions {
+        flex-wrap: wrap;
+    }
+    .folder-actions > .button {
+        margin-left: auto;
+    }
+    .rename-preview-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
+#backfill-list {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+.backfill-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+}
+.backfill-choice input {
+    margin-top: 2px;
+}
+.backfill-choice span {
+    min-width: 0;
+}
+.backfill-choice strong,
+.backfill-choice code,
+.backfill-choice small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.backfill-choice code {
+    font-size: 12px;
+    margin-top: 5px;
+}

@@ -43,11 +43,16 @@ docker compose up -d
 
 ## Development
 
-Requires Go 1.27.1, GNU Make and Node.js. Run from the repository root:
+Requires Go 1.27.1, GNU Make and Node.js 24 with npm. Run from the repository root:
 
 ```sh
-make dev
+make frontend-install
+make dev             # Go service on http://127.0.0.1:8080
+# In a second terminal:
+make dev-frontend    # Vite + React on http://127.0.0.1:5173/ui/
 make verify
 ```
+
+Vite proxies the Go API for hot reload. Set `VITE_BACKEND_URL` when using a different backend URL. Keep the development site URL set to the backend origin. `make build` embeds the frontend in the Go binary, which needs no Node runtime.
 
 Use `make help` for individual targets. [Architecture/API](docs/architecture.md) · [Authentication](docs/architecture.md#authentication) · [Testing](docs/architecture.md#testing).

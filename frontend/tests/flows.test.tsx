@@ -1,0 +1,533 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+
+import { App } from '../src/components/App.js';
+import { Auth } from '../src/components/Auth.js';
+import { BackfillDialog } from '../src/components/BackfillDialog.js';
+import { FolderPicker } from '../src/components/FolderPicker.js';
+import { Preferences } from '../src/components/Preferences.js';
+import { RenamePreview } from '../src/components/RenamePreview.js';
+import { Settings } from '../src/components/Settings.js';
+import { SubscriptionDialog } from '../src/components/SubscriptionDialog.js';
+import { Tasks } from '../src/components/Tasks.js';
+import { TokenForm } from '../src/components/TokenForm.js';
+import { Workspace } from '../src/components/Workspace.js';
+import { api, setCSRF } from '../src/lib/api.js';
+import { translate } from '../src/lib/i18n.js';
+import { currentFilename } from '../src/lib/jobs.js';
+import type { Job, Rule } from '../src/lib/types.js';
+
+function response(value: unknown, status = 200): Response {
+    return Response.json(value, {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    });
+}
+const success = async () => undefined;
+const job = (id: string, state: string): Job => ({
+    id,
+    state,
+    subscription_id: 1,
+    title: '使用者.mkv',
+    rule: {
+        title: '使用者',
+        regex: '',
+        replacement: '',
+        rename_enabled: false,
+    },
+    destination: '',
+    task_id: `cloud-${id}`,
+    progress: 0,
+    created_at: 1,
+    error: '',
+});
+describe('React flows', () => {
+    it('opens existing settings links after loading the workspace', async () => {
+        globalThis.history.replaceState(null, '', '#settings');
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            const path =
+                typeof input === 'string'
+                    ? input
+                    : input instanceof URL
+                      ? input.href
+                      : input.url;
+            return response(
+                path === '/api/settings/pikpak'
+                    ? { connected: true }
+                    : path === '/api/settings/app'
+                      ? {
+                            public_url: 'http://localhost:8080',
+                            allow_private_rss: false,
+                        }
+                      : []
+            );
+        });
+        try {
+            render(
+                <Preferences>
+                    <Workspace onAuthenticated={success} version='fixture' />
+                </Preferences>
+            );
+            expect(
+                await screen.findByRole('dialog', { name: '系統設定' })
+            ).toBeTruthy();
+            expect(
+                screen.getByRole('navigation', { name: '設定分類' })
+            ).toBeTruthy();
+        } finally {
+            globalThis.history.replaceState(null, '', '/');
+        }
+    });
+    it('does not close a newer dialog when a dismissed form finishes saving', async () => {
+        const pending = Promise.withResolvers<Response>();
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(pending.promise);
+        const close = vi.fn<() => void>();
+        const saved = vi.fn(success);
+        const view = render(
+            <Preferences>
+                <SubscriptionDialog
+                    manual
+                    onClose={close}
+                    onSaved={saved}
+                    status={{ connected: true }}
+                />
+            </Preferences>
+        );
+        fireEvent.change(screen.getByLabelText('下載連結'), {
+            target: { value: 'https://public.test/file' },
+        });
+        fireEvent.submit(document.querySelector('#subscription-form')!);
+        view.unmount();
+        pending.resolve(response({ ok: true }));
+        await waitFor(() => {
+            expect(saved).toHaveBeenCalledOnce();
+        });
+        expect(close).not.toHaveBeenCalled();
+    });
+    it('honors the server recovery bootstrap without exposing account data', async () => {
+        const root = document.createElement('div');
+        root.id = 'root';
+        root.dataset.page = 'recovery';
+        document.body.append(root);
+        const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            response({
+                initialized: true,
+                authenticated: true,
+                csrf: 'fixture-csrf',
+                version: 'fixture',
+            })
+        );
+        const view = render(
+            <Preferences>
+                <App />
+            </Preferences>,
+            { container: root }
+        );
+        expect(
+            await screen.findByRole('heading', { name: '忘記密碼' })
+        ).toBeTruthy();
+        expect(fetch).toHaveBeenCalledTimes(1);
+        view.unmount();
+        root.remove();
+    });
+    it('aborts pending folder and source requests when their components close', async () => {
+        const signals: AbortSignal[] = [];
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async (_input, options) =>
+                await new Promise<Response>((_resolve, reject) => {
+                    const signal = options?.signal;
+                    if (signal) {
+                        signals.push(signal);
+                        signal.addEventListener('abort', () => {
+                            reject(new DOMException('Cancelled', 'AbortError'));
+                        });
+                    }
+                })
+        );
+        const folders = render(
+            <Preferences>
+                <FolderPicker
+                    initialID=''
+                    onClose={vi.fn<() => void>()}
+                    onSelect={vi.fn<() => void>()}
+                />
+            </Preferences>
+        );
+        await waitFor(() => {
+            expect(signals.length).toBe(1);
+        });
+        folders.unmount();
+        expect(signals[0].aborted).toBe(true);
+        const preview = render(
+            <Preferences>
+                <RenamePreview
+                    rule={{
+                        title: '',
+                        regex: '',
+                        replacement: '',
+                        rename_enabled: true,
+                    }}
+                    subscriptionID={0}
+                    url='https://public.test/rss'
+                />
+            </Preferences>
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: '讀取種子檔名' })
+        );
+        preview.unmount();
+        expect(signals[1].aborted).toBe(true);
+    });
+    it('rejects setup mismatch without an API mutation and clears passwords', async () => {
+        const fetch = vi.spyOn(globalThis, 'fetch');
+        render(
+            <Preferences>
+                <Auth onAuthenticated={success} page='setup' version='test' />
+            </Preferences>
+        );
+        fireEvent.change(screen.getByLabelText('密碼'), {
+            target: { value: 'one' },
+        });
+        fireEvent.change(screen.getByLabelText('再次輸入密碼'), {
+            target: { value: 'two' },
+        });
+        fireEvent.submit(document.querySelector('#setup-form')!);
+        expect(await screen.findByRole('alert')).toHaveProperty(
+            'textContent',
+            '兩次輸入的密碼不一致'
+        );
+        expect(fetch).not.toHaveBeenCalled();
+        expect(screen.getByLabelText('密碼')).toHaveProperty('value', '');
+        const label = document.querySelector('label[for="setup-public-url"]')!;
+        expect(label.nextElementSibling?.className).toBe('info-trigger');
+        expect(label.parentElement?.nextElementSibling?.tagName).toBe('INPUT');
+    });
+    it('shares PAT entry, clears failed secrets and makes only Create PAT a link', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            response({ error: '請輸入 PikPak PAT' }, 400)
+        );
+        render(
+            <Preferences>
+                <TokenForm onboarding onSaved={success} />
+            </Preferences>
+        );
+        fireEvent.change(screen.getByLabelText('個人存取權杖（PAT）'), {
+            target: { value: 'fixture-secret' },
+        });
+        fireEvent.submit(document.querySelector('#token-form')!);
+        expect(await screen.findByRole('alert')).toHaveProperty(
+            'textContent',
+            '請輸入 PikPak PAT'
+        );
+        expect(screen.getByLabelText('個人存取權杖（PAT）')).toHaveProperty(
+            'value',
+            ''
+        );
+        expect(screen.getByRole('link').textContent).toBe('建立 PAT');
+    });
+    it('recovers with the existing server API and clears all secrets', async () => {
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(response({ ok: true }));
+        render(
+            <Preferences>
+                <Auth
+                    onAuthenticated={success}
+                    page='recovery'
+                    version='test'
+                />
+            </Preferences>
+        );
+        for (const [label, value] of [
+            ['復原碼', ' fixture-code '],
+            ['新密碼', 'x'],
+            ['再次輸入新密碼', 'x'],
+        ]) {
+            fireEvent.change(screen.getByLabelText(label), {
+                target: { value },
+            });
+        }
+        fireEvent.submit(document.querySelector('#recovery-form')!);
+        expect(await screen.findByText('密碼已重設')).toBeTruthy();
+        expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+            code: 'fixture-code',
+            new_password: 'x',
+            confirm_password: 'x',
+        });
+        expect(screen.queryByLabelText('復原碼')).toBeNull();
+    });
+    it('retains unsaved site fields when switching settings categories', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            response({
+                public_url: 'http://localhost:8080',
+                allow_private_feeds: false,
+            })
+        );
+        render(
+            <Preferences>
+                <Settings
+                    onAuthenticated={success}
+                    onRefresh={success}
+                    status={{ connected: true }}
+                />
+            </Preferences>
+        );
+        await waitFor(() => {
+            expect(document.querySelector('#settings-public-url')).toBeTruthy();
+        });
+        await userEvent.click(screen.getByRole('button', { name: '網站設定' }));
+        fireEvent.change(screen.getByLabelText('網站網址'), {
+            target: { value: 'https://edited.test' },
+        });
+        await userEvent.click(
+            document.querySelector<HTMLButtonElement>('#settings-nav-password')!
+        );
+        await userEvent.click(screen.getByRole('button', { name: '網站設定' }));
+        expect(screen.getByLabelText('網站網址')).toHaveProperty(
+            'value',
+            'https://edited.test'
+        );
+    });
+    it('prioritizes review tasks and keeps the filter focused even with zero matches', async () => {
+        render(
+            <Preferences>
+                <Tasks
+                    busy={false}
+                    date={() => ''}
+                    jobs={[
+                        job('done', 'complete'),
+                        job('running', 'queued'),
+                        job('review', 'needs_review'),
+                    ]}
+                    onClear={vi.fn<() => void>()}
+                    onOpen={vi.fn<() => void>()}
+                />
+            </Preferences>
+        );
+        expect(
+            [...document.querySelectorAll<HTMLElement>('[data-job]')].map(
+                (element) => element.dataset.job
+            )
+        ).toEqual(['review', 'running', 'done']);
+        const select = screen.getByLabelText('任務狀態');
+        await userEvent.selectOptions(select, 'complete');
+        expect(
+            screen.getByRole('button', { name: '清除已完成任務' })
+        ).toBeTruthy();
+        await userEvent.selectOptions(select, 'complete');
+        expect(
+            document.querySelector<HTMLElement>('[data-job]')?.dataset.job
+        ).toBe('done');
+        select.focus();
+        fireEvent.change(select, { target: { value: 'running' } });
+        expect(document.activeElement).toBe(select);
+    });
+    it('submits manual downloads to root without subscription or rename fields', async () => {
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(response({ ok: true }));
+        const saved = vi.fn(success);
+        render(
+            <Preferences>
+                <SubscriptionDialog
+                    manual
+                    onClose={vi.fn<() => void>()}
+                    onSaved={saved}
+                    status={{ connected: true }}
+                />
+            </Preferences>
+        );
+        fireEvent.change(screen.getByLabelText('下載連結'), {
+            target: { value: 'magnet:?xt=urn:btih:fixture' },
+        });
+        fireEvent.submit(document.querySelector('#subscription-form')!);
+        await waitFor(() => {
+            expect(saved).toHaveBeenCalled();
+        });
+        expect(fetch.mock.calls[0][0]).toBe('/api/jobs');
+        expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+            url: 'magnet:?xt=urn:btih:fixture',
+            destination: '',
+            destination_id: '',
+            destination_account_ref: '',
+        });
+        expect(screen.queryByLabelText('重命名檔案')).toBeNull();
+    });
+    it('selects root with its account reference and aborts stale folder reads', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            response({
+                current: { id: '', name: '根目錄', path: '' },
+                breadcrumbs: [],
+                folders: [],
+                account_ref: 'opaque-account',
+            })
+        );
+        const selected = vi.fn<() => void>();
+        const view = render(
+            <Preferences>
+                <FolderPicker
+                    initialID=''
+                    onClose={vi.fn<() => void>()}
+                    onSelect={selected}
+                />
+            </Preferences>
+        );
+        await userEvent.click(
+            await screen.findByRole('button', { name: '使用根目錄' })
+        );
+        expect(selected).toHaveBeenCalledWith({
+            path: '',
+            id: '',
+            account: 'opaque-account',
+        });
+        view.unmount();
+    });
+    it('keeps backfill selection and confirmation token for an explicit idempotent retry', async () => {
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input) =>
+                (typeof input === 'string'
+                    ? input
+                    : input instanceof URL
+                      ? input.href
+                      : input.url
+                ).endsWith('/preview')
+                    ? response({
+                          token: 'confirmation-token',
+                          items: [
+                              {
+                                  id: 'torrent-1',
+                                  title: '公開測試',
+                                  filenames: ['raw.mkv'],
+                              },
+                          ],
+                          notices: [],
+                      })
+                    : response({ error: '操作未完成，請稍後再試' }, 400)
+            );
+        vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+        render(
+            <Preferences>
+                <BackfillDialog
+                    onClose={vi.fn<() => void>()}
+                    onSaved={success}
+                    subscriptionID={1}
+                />
+            </Preferences>
+        );
+        await userEvent.click(await screen.findByRole('checkbox'));
+        await userEvent.click(
+            screen.getByRole('button', { name: '下載所選項目' })
+        );
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: '下載所選項目' })
+            ).toHaveProperty('disabled', false);
+        });
+        await userEvent.click(
+            screen.getByRole('button', { name: '下載所選項目' })
+        );
+        await waitFor(() => {
+            expect(fetch.mock.calls).toHaveLength(3);
+        });
+        const payloads = fetch.mock.calls
+            .slice(1)
+            .map((call) => JSON.parse(call[1]?.body as string) as unknown);
+        expect(payloads).toEqual([
+            { token: 'confirmation-token', selected: ['torrent-1'] },
+            { token: 'confirmation-token', selected: ['torrent-1'] },
+        ]);
+    });
+    it('reads only torrent filenames, previews with the Go API and cancels on close', async () => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+            (typeof input === 'string'
+                ? input
+                : input instanceof URL
+                  ? input.href
+                  : input.url
+            ).endsWith('/samples')
+                ? response({
+                      items: [
+                          {
+                              kind: 'title',
+                              title: 'ignore',
+                              filename: 'guessed.mkv',
+                          },
+                          {
+                              kind: 'torrent_file',
+                              title: 'raw',
+                              filename: 'raw[01].mkv',
+                          },
+                          {
+                              kind: 'torrent_file',
+                              title: 'raw',
+                              filename: 'raw[01].mkv',
+                          },
+                      ],
+                      notices: [],
+                  })
+                : response({ name: 'rawS01E01.mkv' })
+        );
+        const rule: Rule = {
+            title: '',
+            regex: String.raw`\[(\d+)\]`,
+            replacement: 'S01E$1',
+            rename_enabled: true,
+        };
+        const view = render(
+            <Preferences>
+                <RenamePreview
+                    rule={rule}
+                    subscriptionID={1}
+                    url='https://public.test/rss'
+                />
+            </Preferences>
+        );
+        await userEvent.click(
+            screen.getByRole('button', { name: '讀取種子檔名' })
+        );
+        const options = await screen.findAllByRole('option');
+        expect(options.map((option) => option.textContent)).toEqual([
+            'raw[01].mkv',
+        ]);
+        expect(await screen.findByText('rawS01E01.mkv')).toBeTruthy();
+        await userEvent.click(
+            screen.getByRole('button', { name: '讀取種子檔名' })
+        );
+        expect(await screen.findByText('rawS01E01.mkv')).toBeTruthy();
+        view.unmount();
+    });
+    it('preserves actual filenames and translates application copy with literal regex references', () => {
+        expect(
+            currentFilename({
+                actual_name: 'PikPak (1).mkv',
+                original_name: 'raw.mkv',
+                target_name: 'requested.mkv',
+            })
+        ).toBe('PikPak (1).mkv');
+        expect(translate('每 10 分鐘', 'en')).toBe('Every 10 min');
+        expect(translate('使用者.mkv', 'en')).toBe('使用者.mkv');
+        expect(
+            translate(
+                '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。',
+                'en'
+            )
+        ).toContain('${name}');
+    });
+    it('sends session CSRF and expires authenticated UI on an unauthorized response', async () => {
+        setCSRF('fixture-csrf');
+        const expired = vi.fn<() => void>();
+        globalThis.addEventListener('session-expired', expired);
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(response({ error: '請先登入' }, 401));
+        await expect(api('/api/subscriptions')).rejects.toThrow('請先登入');
+        expect(fetch.mock.calls[0][1]?.headers).toHaveProperty(
+            'X-CSRF-Token',
+            'fixture-csrf'
+        );
+        expect(expired).toHaveBeenCalledOnce();
+        globalThis.removeEventListener('session-expired', expired);
+    });
+});

@@ -274,7 +274,7 @@ func (c *smokeClient) checkInitial(ctx context.Context, version string) error {
 	if health.Version != version || session.Version != version || session.Initialized {
 		return errors.New("unexpected health/session version or pre-existing setup")
 	}
-	if err := c.checkPageContent(ctx, `id="setup-form"`); err != nil {
+	if err := c.checkPageContent(ctx, `data-page="setup"`); err != nil {
 		return err
 	}
 	return c.request(ctx, "GET", "/api/subscriptions", nil, 401, nil)
@@ -309,7 +309,7 @@ func (c *smokeClient) initialize(ctx context.Context, password, version string) 
 	if err := c.request(ctx, "POST", "/api/setup", setup, 409, nil); err != nil {
 		return 0, err
 	}
-	if err := c.checkPageContent(ctx, `data-onboarding="true"`); err != nil {
+	if err := c.checkPageContent(ctx, `data-page="onboarding"`); err != nil {
 		return 0, err
 	}
 	var subscription smokeSubscription

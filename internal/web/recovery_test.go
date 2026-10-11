@@ -32,7 +32,7 @@ func TestPasswordRecoveryCSRFRevocationAndRestart(t *testing.T) {
 	anonymous.session = nil
 	page := httptest.NewRecorder()
 	s.Handler().ServeHTTP(page, httptest.NewRequest("GET", "/forgot-password", nil))
-	if page.Code != 200 || !strings.Contains(page.Body.String(), `id="recovery-form"`) || !strings.Contains(page.Body.String(), "recovery-code") {
+	if page.Code != 200 || !strings.Contains(page.Body.String(), `data-page="recovery"`) {
 		t.Fatal("anonymous recovery page missing")
 	}
 	code, err := db.IssuePasswordRecovery(ctx, time.Now())

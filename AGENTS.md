@@ -1,9 +1,9 @@
 # PikPak RSS Manager
 
 ## Purpose and architecture
-Personal self-hosted Go service. Use the official hosted PikPak MCP with PAT authorization. Do not introduce rclone, a PikPak CLI runtime dependency, an LLM, MySQL, Redis, or a frontend build pipeline.
-Keep HTTP/UI in `internal/web`, RSS and torrent metadata in `internal/feed`, naming rules in `internal/rename`, the typed MCP adapter in `internal/pikpak`, durable workflow in `internal/worker`, and SQLite migrations in `internal/store/migrations`.
-Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The UI supports Traditional Chinese and English with a persistent language selector on setup, login and management pages. Translate application copy and messages only. Preserve user names, paths, URLs, regex and filenames. MIT license.
+Personal self-hosted Go service. Use the official hosted PikPak MCP with PAT authorization. Do not introduce rclone, a PikPak CLI runtime dependency, an LLM, MySQL, Redis.
+Keep HTTP and embedded assets in `internal/web`, React components/styles/catalog in `frontend`, RSS and torrent metadata in `internal/feed`, naming rules in `internal/rename`, the typed MCP adapter in `internal/pikpak`, durable workflow in `internal/worker`, and SQLite migrations in `internal/store/migrations`.
+Use Go 1.27.1, Node.js 24/npm for builds, strict TypeScript, Vite and React. Scaffold frontend tooling with `npm create rail`. Reuse shared React components for fields, popovers, dialogs and PAT entry. Keep compiled assets ignored and embed the Vite output in the Go binary. No Node runtime is required in production. The UI supports Traditional Chinese and English with a persistent language selector on setup, login and management pages. Translate application copy and messages only. Preserve user names, paths, URLs, regex and filenames. MIT license.
 
 ## Product decisions
 - One administrator and one active PikPak account. No default administrator password. The user explicitly removed password length and character restrictions. Require only a nonempty password created through first-run Web setup. Never persist plaintext or a reversible administrator password. Store only a salted Argon2id verifier. Do not load .env or external password/PAT sources. Initialize all application settings and PAT through the Web UI. Listen address and data-directory environment overrides remain optional process settings.
@@ -22,9 +22,9 @@ Use Go 1.27.1, native JavaScript/CSS and embedded templates/static assets. The U
 - Pause authentication/quota errors and use bounded backoff for transient failures.
 
 ## Commands and verification
-`go test ./...`, `go vet ./...`, `go build ./cmd/pikpak-rss-manager`.
-Use the root Makefile as the shared local/CI command entry point: `make dev`, `make verify`, `make test-race`, `make docker-build`, `make test-container` and `make test-manifest`. Keep test programs under `tests/`. Do not reintroduce a `scripts/` directory or Python/PowerShell wrappers for these commands.
-Linux CI additionally runs `go test -race ./...` and container startup/persistence smoke tests.
+Run `make frontend-build` before direct Go test/vet/build commands. `make frontend-install` installs locked frontend dependencies. `make dev` runs Go with embedded assets and `make dev-frontend` runs Vite with API proxy/hot reload.
+Use the root Makefile as the shared local/CI command entry point: `make dev`, `make verify`, `make test-race`, `make docker-build`, `make test-container` and `make test-manifest`. Keep Go/browser fixture test programs under `tests/` and React component tests under `frontend/tests/`. Do not reintroduce a `scripts/` directory or Python/PowerShell wrappers for these commands.
+Linux CI additionally runs `make test-race` and container startup/persistence smoke tests.
 The development machine has no Docker. Use GitHub Actions for Docker validation and multiarch publishing rather than installing Docker.
 Meaningful tests must cover RSS/Atom and torrent parsing, independent naming rules, baselines, repeat downloads and confirmation idempotency, restart recovery, partial actions, uncertain submissions, auth/quota/rate failures, HTTP authentication and CSRF.
 Folder tests cover paging, duplicate folder names by ID, creation collisions and account switches. Naming tests cover disabled rules, replacement groups and nonmatches. Opt-in `PIKPAK_LIVE_FOLDERS_TEST=1` verifies folder-only operations inside a dedicated test run without downloading content. UI testing uses an isolated mocked account and data directory. Screenshots contain only fixture names.
@@ -69,4 +69,4 @@ Routine implementation choices within these principles are authorized. Clearly r
 - Write README, documentation, release notes and future public descriptions in concise English. Include only behavior changes, required usage/deployment steps, verification evidence and material limitations. Omit slogans and repeated explanations.
 - UI headings use page names, with only actionable labels, status, validation and necessary field help. Do not add decorative prose.
 - Manual offline tasks use the durable worker queue without creating subscriptions or feed baselines. Share destination validation, direct downloads and uncertain-submission handling with RSS jobs. Preserve PikPak filenames by default.
-- Run `make test-ui` (including `node tests/web/i18n.test.cjs`) when changing UI copy or translations.
+- Run `make test-ui` (React types, lint, formatting, component tests and Vite build) when changing UI copy or translations.

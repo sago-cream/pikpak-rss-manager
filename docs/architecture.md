@@ -1,12 +1,15 @@
 # Architecture and API
 
-One Go process, one administrator, one active PikPak account and one SQLite data volume. HTML/CSS/JavaScript are embedded. No frontend build step or local media transfer.
+One Go process, one administrator, one active PikPak account and one SQLite data volume. Vite builds the React frontend into `internal/web/ui/dist`. Go embeds that output in a single binary. Node is a build dependency, with no Node runtime or local media transfer.
 
-The UI uses Go `html/template`, native JavaScript and shared CSS components. Form fields use one label/control/help layout. Named template fragments share the PAT field, creation link and information icon between onboarding and Settings. Information triggers preserve label height and place guidance in native popovers.
+The frontend uses React 19, strict TypeScript and Vite, scaffolded with `npm create rail`. Shared React components own form fields, checkbox fields, information popovers, dialogs, PAT entry and appearance controls. Labels remain adjacent to controls and information triggers preserve label height. Controlled settings fields retain edits when switching categories. Requests use the existing authenticated JSON API and CSRF token. Source/folder reads and debounced naming previews are cancelled when their components close or inputs change.
+
+Go `html/template` renders only the initial page and version attributes in Vite's HTML entry. React retrieves session state before exposing management flows. Development uses a loopback Vite server with an API proxy. Production serves fingerprinted assets under `/ui/`. Docker builds the frontend in a Node stage and embeds it in the Go stage.
 
 | Module | Responsibility |
 |---|---|
-| internal/web | UI, sessions, CSRF, language catalog, API |
+| frontend | React components, styles, language catalog and UI tests |
+| internal/web | Embedded frontend, sessions, CSRF and API |
 | internal/feed | RSS/Atom, bounded torrent metadata, normalized infohashes |
 | internal/rename | Shared regex replacement renderer and filename normalization |
 | internal/pikpak | Typed official MCP adapter and folder operations |
@@ -85,14 +88,14 @@ Manual tasks detect Magnet, `.torrent` and HTTP/HTTPS links automatically. Displ
 
 ## Testing
 
-Run from the repository root with Go 1.27.1, GNU Make and Node.js:
+Run from the repository root with Go 1.27.1, GNU Make and Node.js 24 with npm:
 
 ```sh
 make verify
 make test-race
 ```
 
-`make verify` checks Go formatting, tests, vet, UI syntax/localization and the application build. Race tests require a supported C toolchain. Docker checks additionally require Docker, Compose and Buildx:
+`make verify` checks Go formatting, Go tests/vet, React types/lint/formatting/component tests, and the application build. Race tests require a supported C toolchain. Docker checks additionally require Docker, Compose and Buildx:
 
 ```sh
 make docker-build IMAGE=pikpak-rss-manager:test

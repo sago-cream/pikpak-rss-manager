@@ -13,3 +13,6 @@ coverage
 *.log
 *.exe
 **/pikpak-pat.txt
+
+**/node_modules
+internal/web/ui/dist

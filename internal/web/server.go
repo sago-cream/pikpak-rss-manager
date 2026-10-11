@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-//go:embed templates/*.html static/*
+//go:embed all:ui
 var assets embed.FS
 
 type session struct{ until time.Time }
@@ -72,9 +72,9 @@ func New(db *store.Store, m CloudManager, w *worker.Worker, version string) (*Se
 			return nil, err
 		}
 	}
-	t, err := template.ParseFS(assets, "templates/*.html")
+	t, err := template.ParseFS(assets, "ui/dist/index.html")
 	if err != nil {
-		return nil, err
+		return nil, errors.New("frontend assets unavailable: run make frontend-build")
 	}
 	s := &Server{DB: db, Manager: m, Worker: w, Version: version, hash: hash, accountKey: accountKey, settings: settings, ready: make(chan struct{}), authGate: make(chan struct{}, 1), templates: t, sessions: map[string]session{}, attempts: map[string]attempt{}}
 	if w != nil {
@@ -169,8 +169,8 @@ func decode(w http.ResponseWriter, r *http.Request, v any) error {
 }
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	static, _ := fs.Sub(assets, "static")
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
+	static, _ := fs.Sub(assets, "ui/dist")
+	mux.Handle("GET /ui/", http.StripPrefix("/ui/", http.FileServer(http.FS(static))))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := s.DB.Ping(r.Context()); err != nil {
 			JSON(w, 503, map[string]string{"status": "unavailable"})
@@ -180,21 +180,22 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		s.csrf(w, r)
-		name := "login.html"
+		name := "login"
 		if !s.initialized() {
-			name = "setup.html"
+			name = "setup"
 		} else if s.authenticated(r) {
-			name = "app.html"
+			name = "app"
 			status := pikpak.Status{}
 			if s.Manager != nil {
 				status = s.Manager.Status()
 			}
 			if !status.Connected && status.Source == "" {
-				name = "onboarding.html"
+				name = "onboarding"
 			}
 		}
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = s.templates.ExecuteTemplate(w, name, map[string]string{"Version": s.Version})
+		_ = s.templates.ExecuteTemplate(w, "index.html", map[string]string{"Page": name, "Version": s.Version})
 	})
 	mux.HandleFunc("GET /forgot-password", func(w http.ResponseWriter, r *http.Request) {
 		if !s.initialized() {
@@ -202,8 +203,9 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		s.csrf(w, r)
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = s.templates.ExecuteTemplate(w, "recovery.html", nil)
+		_ = s.templates.ExecuteTemplate(w, "index.html", map[string]string{"Page": "recovery", "Version": s.Version})
 	})
 	mux.HandleFunc("POST /api/password/recovery", s.recoverPassword)
 	mux.HandleFunc("GET /api/session", func(w http.ResponseWriter, r *http.Request) {
