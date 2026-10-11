@@ -3,7 +3,9 @@ import type { JSX } from 'react';
 
 import { api } from '../lib/api.js';
 import { errorMessage } from '../lib/i18n.js';
+import { DirtyForm } from './DirtyForm.js';
 import { Feedback, FormField } from './FormField.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export function TokenForm({
@@ -17,7 +19,7 @@ export function TokenForm({
 }): JSX.Element {
     const { t } = usePreferences();
     const [error, setError] = useState('');
-    const [pending, setPending] = useState(false);
+    const [pending, setPending] = useState('');
     const [token, setToken] = useState('');
     return (
         <form
@@ -29,7 +31,7 @@ export function TokenForm({
                 if (pending) {
                     return;
                 }
-                setPending(true);
+                setPending('save');
                 setError('');
                 void api('/api/settings/pikpak', 'POST', { token })
                     .then(onSaved)
@@ -38,10 +40,11 @@ export function TokenForm({
                     })
                     .finally(() => {
                         setToken('');
-                        setPending(false);
+                        setPending('');
                     });
             }}
         >
+            <DirtyForm dirty={Boolean(token || pending)} />
             <FormField
                 id='token'
                 info={{
@@ -76,30 +79,39 @@ export function TokenForm({
             {!onboarding && <Feedback message={t(error)} />}
             <div className={onboarding ? 'token-submit' : 'form-actions'}>
                 <button
+                    aria-busy={pending === 'save'}
                     className='button primary'
-                    disabled={pending}
+                    disabled={Boolean(pending) || !token.trim()}
                     id='save-token'
                     type='submit'
                 >
+                    {pending === 'save' && (
+                        <Icon className='is-loading' name='loading' />
+                    )}
                     {t(onboarding ? '驗證並完成設定' : '驗證並綁定')}
                 </button>
                 {onCheck && (
                     <button
+                        aria-busy={pending === 'check'}
                         className='button subtle'
-                        disabled={pending}
+                        disabled={Boolean(pending)}
                         id='check-connection'
                         onClick={() => {
-                            setPending(true);
+                            setPending('check');
+                            setError('');
                             void onCheck()
                                 .catch((error_: unknown) => {
                                     setError(errorMessage(error_));
                                 })
                                 .finally(() => {
-                                    setPending(false);
+                                    setPending('');
                                 });
                         }}
                         type='button'
                     >
+                        {pending === 'check' && (
+                            <Icon className='is-loading' name='loading' />
+                        )}
                         {t('重新檢查連線')}
                     </button>
                 )}

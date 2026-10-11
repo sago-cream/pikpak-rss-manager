@@ -5,6 +5,7 @@ import { api } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import type { FolderListing } from '../lib/types.js';
 import { Dialog } from './Dialog.js';
+import { DialogCloseButton, DirtyForm } from './DirtyForm.js';
 import { Feedback, FormField } from './FormField.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
@@ -99,6 +100,7 @@ export function FolderPicker({
                         <span key={folder.id}>
                             {index > 0 && ' / '}
                             <button
+                                aria-busy={pending}
                                 className='text-button'
                                 data-folder={folder.id}
                                 disabled={pending}
@@ -148,6 +150,7 @@ export function FolderPicker({
                     )
                     .map((folder) => (
                         <button
+                            aria-busy={pending}
                             className='folder-row'
                             data-folder={folder.id}
                             disabled={pending}
@@ -299,6 +302,7 @@ function CreateFolder({
                         });
                 }}
             >
+                <DirtyForm dirty={Boolean(name || pending)} />
                 <p className='field-help' id='folder-create-location'>
                     {t('建立位置：')}
                     {listing.current.path || t('根目錄')}
@@ -317,18 +321,18 @@ function CreateFolder({
                 </FormField>
                 <Feedback message={t(error)} />
                 <div className='dialog-footer'>
-                    <button
-                        className='button subtle'
-                        onClick={onClose}
-                        type='button'
-                    >
+                    <DialogCloseButton className='button subtle'>
                         {t('取消')}
-                    </button>
+                    </DialogCloseButton>
                     <button
+                        aria-busy={pending}
                         className='button primary'
-                        disabled={pending}
+                        disabled={pending || !name.trim()}
                         type='submit'
                     >
+                        {pending && (
+                            <Icon className='is-loading' name='loading' />
+                        )}
                         {t('建立資料夾')}
                     </button>
                 </div>

@@ -455,9 +455,9 @@ describe('React flows', () => {
         expect(taskOrder()).toEqual(['review', 'running', 'done']);
         expect(
             screen.queryByRole('button', { name: '清除已完成任務' })
-        ).toBeNull();
+        ).toBeTruthy();
     });
-    it('opens a dot-only task card into full status and download progress', async () => {
+    it('opens a status-icon task card into full status and download progress', async () => {
         const downloading = {
             ...job('downloading', 'downloading'),
             progress: 43,
@@ -700,6 +700,9 @@ describe('React flows', () => {
                 />
             </Preferences>
         );
+        fireEvent.change(screen.getByLabelText('檢查間隔（分鐘）'), {
+            target: { value: '30' },
+        });
         await userEvent.click(screen.getByRole('button', { name: '檔名規則' }));
         await userEvent.click(screen.getByRole('button', { name: '儲存訂閱' }));
         await waitFor(() => {

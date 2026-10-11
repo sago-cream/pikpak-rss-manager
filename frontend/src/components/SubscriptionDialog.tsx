@@ -6,6 +6,7 @@ import { errorMessage } from '../lib/i18n.js';
 import { useLifetime } from '../lib/lifetime.js';
 import type { Rule, Status, Subscription } from '../lib/types.js';
 import { Dialog } from './Dialog.js';
+import { DialogCloseButton, DirtyForm } from './DirtyForm.js';
 import { FolderPicker } from './FolderPicker.js';
 import type { Destination } from './FolderPicker.js';
 import { CheckboxField, Feedback, FormField } from './FormField.js';
@@ -54,6 +55,17 @@ export function SubscriptionDialog({
         subscription?.replacement ?? 'S01E$1'
     );
     const [url, setURL] = useState(subscription?.rss_url || '');
+    const draft = JSON.stringify({
+        name,
+        url,
+        destination,
+        interval,
+        regex,
+        renaming,
+        replacement,
+    });
+    const [initial] = useState(draft);
+    const dirty = draft !== initial;
     const rule: Rule = {
         title: name.trim(),
         regex,
@@ -69,7 +81,7 @@ export function SubscriptionDialog({
             noValidate
             onSubmit={(event) => {
                 event.preventDefault();
-                if (pending) {
+                if (pending || !dirty) {
                     return;
                 }
                 const invalid = [...event.currentTarget.elements].find(
@@ -132,6 +144,7 @@ export function SubscriptionDialog({
                     });
             }}
         >
+            <DirtyForm dirty={dirty || pending} />
             <SettingsPanel
                 id='subscription-settings'
                 label={manual ? t('新增任務') : undefined}
@@ -339,19 +352,17 @@ export function SubscriptionDialog({
             )}
             <Feedback message={t(error)} />
             <div className='dialog-footer'>
-                <button
-                    className='button subtle'
-                    onClick={onClose}
-                    type='button'
-                >
+                <DialogCloseButton className='button subtle'>
                     {t('取消')}
-                </button>
+                </DialogCloseButton>
                 <button
+                    aria-busy={pending}
                     className='button primary'
-                    disabled={pending}
+                    disabled={pending || !dirty}
                     id='save-subscription'
                     type='submit'
                 >
+                    {pending && <Icon className='is-loading' name='loading' />}
                     {t(manual ? '新增任務' : '儲存訂閱')}
                 </button>
             </div>

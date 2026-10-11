@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
 
-import { jobColor, jobLabels, sortJobs } from '../lib/jobs.js';
+import { jobColor, jobIcon, jobLabels, sortJobs } from '../lib/jobs.js';
 import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
@@ -25,7 +25,6 @@ export function Tasks({
 }): JSX.Element {
     const { t } = usePreferences();
     const [completedFirst, setCompletedFirst] = useState(false);
-    const [limit, setLimit] = useState(8);
     const items = sortJobs(jobs, completedFirst);
     return (
         <section
@@ -43,7 +42,6 @@ export function Tasks({
                         id='job-sort'
                         onClick={() => {
                             setCompletedFirst((value) => !value);
-                            setLimit(8);
                         }}
                         title={`${t('排序')}：${t(completedFirst ? '已完成優先' : '未完成優先')}`}
                         type='button'
@@ -52,25 +50,28 @@ export function Tasks({
                     </button>
                 </div>
                 <div className='section-actions'>
-                    {completedFirst &&
-                        jobs.some((job) => job.state === 'complete') && (
-                            <button
-                                aria-label={t('清除已完成任務')}
-                                className='icon-button section-clear'
-                                disabled={busy}
-                                id='clear-completed-jobs'
-                                onClick={onClear}
-                                title={t('清除已完成任務')}
-                                type='button'
-                            >
-                                <Icon name='trash' />
-                            </button>
-                        )}
+                    {jobs.some((job) => job.state === 'complete') && (
+                        <button
+                            aria-busy={busy}
+                            aria-label={t('清除已完成任務')}
+                            className='icon-button section-clear'
+                            disabled={busy}
+                            id='clear-completed-jobs'
+                            onClick={onClear}
+                            title={t('清除已完成任務')}
+                            type='button'
+                        >
+                            <Icon
+                                className={busy ? 'is-loading' : undefined}
+                                name={busy ? 'loading' : 'cleanup'}
+                            />
+                        </button>
+                    )}
                     <AddButton kind='task' onClick={onAdd} />
                 </div>
             </div>
             <div id='jobs-list'>
-                {items.slice(0, limit).map((job) => (
+                {items.map((job) => (
                     <WorkspaceRow
                         id={job.id}
                         key={job.id}
@@ -78,13 +79,10 @@ export function Tasks({
                         label={`${job.rule.title} · ${job.title} · ${t(jobLabels[job.state] || job.state)}`}
                         leading={
                             <span
-                                className='job-indicator'
+                                className={`job-indicator ${jobColor(job.state)}`}
                                 title={t(jobLabels[job.state] || job.state)}
                             >
-                                <span
-                                    aria-hidden='true'
-                                    className={`dot ${jobColor(job.state) === 'orange' ? 'amber' : jobColor(job.state)}`}
-                                />
+                                <Icon name={jobIcon(job.state)} />
                             </span>
                         }
                         onOpen={() => {
@@ -107,18 +105,6 @@ export function Tasks({
                     <p className='workspace-idle'>{t('尚無任務')}</p>
                 )}
             </div>
-            {items.length > limit && (
-                <button
-                    className='text-button'
-                    id='jobs-more'
-                    onClick={() => {
-                        setLimit((value) => value + 8);
-                    }}
-                    type='button'
-                >
-                    {t('顯示更多')}
-                </button>
-            )}
         </section>
     );
 }

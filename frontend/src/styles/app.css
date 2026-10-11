@@ -1819,9 +1819,18 @@ button.connection-pill:hover {
     flex-shrink: 0;
     align-self: center;
 }
-.job-indicator .dot {
-    width: 8px;
-    height: 8px;
+.job-indicator svg {
+    width: 20px;
+    height: 20px;
+}
+.job-indicator.green {
+    color: var(--green);
+}
+.job-indicator.orange {
+    color: var(--orange);
+}
+.job-indicator.purple {
+    color: var(--accent);
 }
 .job-meta {
     display: flex;
@@ -1868,4 +1877,94 @@ button.connection-pill:hover {
 
 .task-progress {
     font-variant-numeric: tabular-nums;
+}
+
+.workspace-switch {
+    display: none;
+}
+@media (max-width: 1000px) {
+    .workspace-switch {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 24px;
+        padding: 4px;
+        border-radius: 8px;
+        background: var(--surface);
+    }
+    .workspace-switch button {
+        flex: 1;
+        min-height: 44px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+    }
+    .workspace-switch button[aria-pressed='true'] {
+        background: var(--accent-light);
+        color: var(--accent);
+    }
+    .workspace-body[data-mobile-view='subscriptions'] #view-jobs,
+    .workspace-body[data-mobile-view='jobs'] #view-subscriptions {
+        display: none;
+    }
+}
+.is-loading {
+    animation: action-loading 1s linear infinite;
+}
+@keyframes action-loading {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .is-loading {
+        animation: none;
+    }
+}
+.settings-content {
+    display: flex;
+    flex-direction: column;
+}
+.settings-content > .settings-panel:not(.hidden),
+#subscription-dialog .settings-content > form:not(.hidden) {
+    flex: 1;
+}
+#utility-dialog .settings-panel:not(.hidden),
+#subscription-dialog .settings-content > form:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+}
+#utility-dialog .settings-panel > .form-stack {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+#utility-dialog .settings-panel .form-actions,
+#subscription-dialog .settings-content > form > .dialog-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    justify-content: flex-end;
+}
+.task-detail-filename {
+    overflow-wrap: anywhere;
+}
+.task-recovery {
+    margin: 16px 0 24px;
+    flex-wrap: wrap;
+}
+.task-recovery:empty {
+    display: none;
+}
+.technical-details,
+.task-completed-files {
+    margin-top: 24px;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+}
+.technical-details summary,
+.task-completed-files summary {
+    cursor: pointer;
+    min-height: 40px;
+    color: var(--muted);
 }

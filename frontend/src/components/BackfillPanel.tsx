@@ -5,6 +5,8 @@ import { api } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import { useLifetime } from '../lib/lifetime.js';
 import type { BackfillPlan } from '../lib/types.js';
+import { DirtyForm } from './DirtyForm.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export function BackfillPanel({
@@ -78,6 +80,7 @@ export function BackfillPanel({
                     });
             }}
         >
+            <DirtyForm dirty={pending || selected.length > 0} />
             <p className='field-help'>
                 {t(
                     '勾選要下載的種子；多檔種子會下載整筆內容，保留原始目錄結構。'
@@ -135,17 +138,27 @@ export function BackfillPanel({
             <div className='dialog-footer'>
                 <button
                     className='button subtle'
-                    onClick={onClose}
+                    disabled={pending}
+                    onClick={() => {
+                        if (
+                            selected.length === 0 ||
+                            globalThis.confirm(t('放棄未儲存的變更？'))
+                        ) {
+                            onClose();
+                        }
+                    }}
                     type='button'
                 >
                     {t('取消')}
                 </button>
                 <button
+                    aria-busy={pending}
                     className='button primary'
                     disabled={!plan || selected.length === 0 || pending}
                     id='backfill-download'
                     type='submit'
                 >
+                    {pending && <Icon className='is-loading' name='loading' />}
                     {t('下載所選項目')}
                 </button>
             </div>

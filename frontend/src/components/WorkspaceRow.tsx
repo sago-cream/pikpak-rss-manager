@@ -10,6 +10,7 @@ export function WorkspaceRow({
     onOpen,
     leading,
     paused,
+    disabled = false,
     children,
 }: {
     kind: 'subscription' | 'job';
@@ -19,6 +20,7 @@ export function WorkspaceRow({
     onOpen: () => void;
     leading: ReactNode;
     paused?: boolean;
+    disabled?: boolean;
     children: ReactNode;
 }): JSX.Element {
     return (
@@ -31,6 +33,7 @@ export function WorkspaceRow({
                         className='workspace-row-open'
                         data-edit={kind === 'subscription' ? id : undefined}
                         data-job={kind === 'job' ? id : undefined}
+                        disabled={disabled}
                         onClick={onOpen}
                         type='button'
                     >
@@ -46,6 +49,7 @@ export function WorkspaceRow({
                     kind === 'subscription' ? id : undefined
                 }
                 data-task-details={kind === 'job' ? id : undefined}
+                disabled={disabled}
                 onClick={onOpen}
                 title={label}
                 type='button'

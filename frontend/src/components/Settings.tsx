@@ -5,7 +5,9 @@ import { api, setCSRF } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import { formatBytes } from '../lib/jobs.js';
 import type { AppSettings, Session, Status } from '../lib/types.js';
+import { DirtyForm } from './DirtyForm.js';
 import { CheckboxField, Feedback, FormField } from './FormField.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 import { SettingsLayout } from './SettingsLayout.js';
 import { TokenForm } from './TokenForm.js';
@@ -114,6 +116,7 @@ function SiteSettings(): JSX.Element {
     const [error, setError] = useState('');
     const [pending, setPending] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [baseline, setBaseline] = useState<AppSettings | null>(null);
     const [values, setValues] = useState<AppSettings | null>(null);
     useEffect(() => {
         const controller = new AbortController();
@@ -126,6 +129,7 @@ function SiteSettings(): JSX.Element {
             .then((value) => {
                 if (!controller.signal.aborted) {
                     setValues(value);
+                    setBaseline(value);
                 }
             })
             .catch((error_: unknown) => {
@@ -137,13 +141,14 @@ function SiteSettings(): JSX.Element {
             controller.abort();
         };
     }, []);
+    const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
     return (
         <form
             className='form-stack'
             id='app-settings-form'
             onSubmit={(event) => {
                 event.preventDefault();
-                if (!values || pending) {
+                if (!values || pending || !dirty) {
                     return;
                 }
                 setPending(true);
@@ -157,6 +162,7 @@ function SiteSettings(): JSX.Element {
                         const session = await api<Session>('/api/session');
                         setCSRF(session.csrf);
                         setSaved(true);
+                        setBaseline(values);
                     })
                     .catch((error_: unknown) => {
                         setError(errorMessage(error_));
@@ -166,6 +172,7 @@ function SiteSettings(): JSX.Element {
                     });
             }}
         >
+            <DirtyForm dirty={dirty || pending} />
             {values && (
                 <>
                     <FormField
@@ -203,10 +210,14 @@ function SiteSettings(): JSX.Element {
                     />
                     <div className='form-actions'>
                         <button
+                            aria-busy={pending}
                             className='button primary'
-                            disabled={pending}
+                            disabled={pending || !dirty}
                             type='submit'
                         >
+                            {pending && (
+                                <Icon className='is-loading' name='loading' />
+                            )}
                             {t('儲存網站設定')}
                         </button>
                     </div>
@@ -266,6 +277,9 @@ function PasswordSettings({
                     });
             }}
         >
+            <DirtyForm
+                dirty={Boolean(current || password || confirm || pending)}
+            />
             <FormField id='current-password' label={t('目前密碼')}>
                 <input
                     autoComplete='current-password'
@@ -302,10 +316,12 @@ function PasswordSettings({
             <p className='field-help'>{t('修改後所有裝置都需重新登入。')}</p>
             <div className='form-actions'>
                 <button
+                    aria-busy={pending}
                     className='button primary'
-                    disabled={pending}
+                    disabled={pending || !(current || password || confirm)}
                     type='submit'
                 >
+                    {pending && <Icon className='is-loading' name='loading' />}
                     {t('修改密碼')}
                 </button>
             </div>

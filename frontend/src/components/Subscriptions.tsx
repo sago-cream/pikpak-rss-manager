@@ -9,14 +9,14 @@ import { WorkspaceRow } from './WorkspaceRow.js';
 export function Subscriptions({
     subscriptions,
     date,
-    busy,
+    pending,
     onEdit,
     onAdd,
     onToggle,
 }: {
     subscriptions: Subscription[];
     date: (value: number) => string;
-    busy: boolean;
+    pending: ReadonlySet<string>;
     onEdit: (sub: Subscription) => void;
     onAdd: () => void;
     onToggle: (sub: Subscription) => void;
@@ -35,23 +35,38 @@ export function Subscriptions({
             <div id='subscriptions-list'>
                 {subscriptions.map((sub) => (
                     <WorkspaceRow
+                        disabled={pending.has(`toggle-${sub.id}`)}
                         id={sub.id}
                         key={sub.id}
                         kind='subscription'
                         label={`${t('訂閱設定')} ${sub.name}`}
                         leading={
                             <button
+                                aria-busy={pending.has(`toggle-${sub.id}`)}
                                 aria-label={`${t(sub.enabled ? '暫停追蹤' : '繼續追蹤')} ${sub.name}`}
                                 className='icon-button subscription-toggle'
                                 data-toggle={sub.id}
-                                disabled={busy}
+                                disabled={pending.has(`toggle-${sub.id}`)}
                                 onClick={() => {
                                     onToggle(sub);
                                 }}
                                 title={t(sub.enabled ? '暫停追蹤' : '繼續追蹤')}
                                 type='button'
                             >
-                                <Icon name={sub.enabled ? 'pause' : 'play'} />
+                                <Icon
+                                    className={
+                                        pending.has(`toggle-${sub.id}`)
+                                            ? 'is-loading'
+                                            : undefined
+                                    }
+                                    name={
+                                        pending.has(`toggle-${sub.id}`)
+                                            ? 'loading'
+                                            : sub.enabled
+                                              ? 'pause'
+                                              : 'play'
+                                    }
+                                />
                             </button>
                         }
                         onOpen={() => {

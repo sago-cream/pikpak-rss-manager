@@ -5,6 +5,15 @@ export const messageUpdates: Record<string, string> = {
         '改名未確認，請檢查同名衝突後重試',
 };
 export const translations: Record<string, string> = {
+    '放棄未儲存的變更？': 'Discard unsaved changes?',
+    '技術資訊': 'Technical details',
+    '任務詳細資料': 'Task details',
+    '正在讀取任務…': 'Loading task…',
+    '重試改名': 'Retry renaming',
+    '接續下載': 'Resume download',
+    '工作區': 'Workspace',
+    '訂閱': 'Subscriptions',
+    '任務': 'Tasks',
     '每 %d 分鐘': 'Every %d min',
     '已讀取 %d 個種子檔名。': 'Loaded %d torrent filenames.',
     '建立位置：': 'Create in: ',

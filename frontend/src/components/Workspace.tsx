@@ -32,7 +32,11 @@ export function Workspace({
     onAuthenticated: () => Promise<void>;
 }): JSX.Element {
     const { language, t } = usePreferences();
-    const [busy, setBusy] = useState('');
+    const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
+    const pending = useRef(new Set<string>());
+    const [mobileView, setMobileView] = useState(
+        globalThis.location.hash === '#jobs' ? 'jobs' : 'subscriptions'
+    );
     const [data, setData] = useState<WorkspaceData | null>(null);
     const [feedback, setFeedback] = useState('');
     const [feedbackError, setFeedbackError] = useState(false);
@@ -132,10 +136,11 @@ export function Workspace({
         operation: () => Promise<void>,
         message: string
     ) => {
-        if (busy) {
+        if (pending.current.has(key)) {
             return;
         }
-        setBusy(key);
+        pending.current.add(key);
+        setBusy(new Set(pending.current));
         try {
             await operation();
             setFeedback(message);
@@ -144,7 +149,8 @@ export function Workspace({
             setFeedback(errorMessage(error));
             setFeedbackError(true);
         } finally {
-            setBusy('');
+            pending.current.delete(key);
+            setBusy(new Set(pending.current));
         }
     };
     const date = (timestamp: number) =>
@@ -163,7 +169,6 @@ export function Workspace({
     const close = () => {
         setModal(null);
         globalThis.history.replaceState(null, '', '#overview');
-        profileButton.current?.focus({ preventScroll: true });
     };
     const utility = (type: 'settings' | 'events') => {
         profile.current?.hidePopover();
@@ -185,9 +190,10 @@ export function Workspace({
                         </span>
                     </a>
                     <button
+                        aria-busy={busy.has('refresh')}
                         aria-label={t('重新整理')}
                         className='icon-button workspace-refresh'
-                        disabled={Boolean(busy)}
+                        disabled={busy.has('refresh')}
                         id='refresh'
                         onClick={() => {
                             void action('refresh', refresh, '已更新');
@@ -195,7 +201,12 @@ export function Workspace({
                         title={t('重新整理')}
                         type='button'
                     >
-                        <Icon name='refresh' />
+                        <Icon
+                            className={
+                                busy.has('refresh') ? 'is-loading' : undefined
+                            }
+                            name={busy.has('refresh') ? 'loading' : 'refresh'}
+                        />
                     </button>
                     <button
                         aria-label={t('帳號選單')}
@@ -268,8 +279,9 @@ export function Workspace({
                     <div className='profile-footer'>
                         <span className='version'>{version}</span>
                         <button
+                            aria-busy={busy.has('logout')}
                             className='text-button'
-                            disabled={Boolean(busy)}
+                            disabled={busy.has('logout')}
                             id='logout'
                             onClick={() => {
                                 void action(
@@ -308,94 +320,147 @@ export function Workspace({
                             )}
                         </div>
                         {data && (
-                            <div className='workspace-body'>
-                                <Subscriptions
-                                    busy={Boolean(busy)}
-                                    date={date}
-                                    onAdd={() => {
-                                        setModal({ type: 'subscription' });
-                                    }}
-                                    onEdit={(subscription) => {
-                                        setModal({
-                                            type: 'subscription',
-                                            subscription,
-                                        });
-                                    }}
-                                    onToggle={(subscription) => {
-                                        void action(
-                                            'toggle',
-                                            async () => {
-                                                await api(
-                                                    `/api/subscriptions/${subscription.id}`,
-                                                    'PUT',
-                                                    {
-                                                        name: subscription.name,
-                                                        rss_url:
-                                                            subscription.rss_url,
-                                                        destination:
-                                                            subscription.destination,
-                                                        destination_id:
-                                                            subscription.destination_id ||
-                                                            '',
-                                                        destination_account_ref:
-                                                            subscription.destination_account_ref ||
-                                                            '',
-                                                        interval_minutes:
-                                                            subscription.interval_minutes,
-                                                        rename_enabled:
-                                                            subscription.rename_enabled,
-                                                        regex: subscription.regex,
-                                                        replacement:
-                                                            subscription.replacement,
-                                                        enabled:
-                                                            !subscription.enabled,
-                                                    }
-                                                );
-                                                await refresh();
-                                            },
-                                            subscription.enabled
-                                                ? '已暫停追蹤'
-                                                : '已繼續追蹤'
-                                        );
-                                    }}
-                                    subscriptions={data.subscriptions}
-                                />
-                                <Tasks
-                                    busy={Boolean(busy)}
-                                    date={date}
-                                    jobs={data.jobs}
-                                    onAdd={() => {
-                                        setModal({
-                                            type: 'subscription',
-                                            manual: true,
-                                        });
-                                    }}
-                                    onClear={() => {
-                                        if (
-                                            globalThis.confirm(
-                                                t(
-                                                    '清除所有已完成任務紀錄？雲端檔案會保留。'
-                                                )
-                                            )
-                                        ) {
+                            <>
+                                <nav
+                                    aria-label={t('工作區')}
+                                    className='workspace-switch'
+                                >
+                                    {(['subscriptions', 'jobs'] as const).map(
+                                        (view) => (
+                                            <button
+                                                aria-controls={`view-${view}`}
+                                                aria-pressed={
+                                                    mobileView === view
+                                                }
+                                                data-workspace-tab={view}
+                                                key={view}
+                                                onClick={() => {
+                                                    setMobileView(view);
+                                                }}
+                                                type='button'
+                                            >
+                                                {t(
+                                                    view === 'subscriptions'
+                                                        ? '訂閱'
+                                                        : '任務'
+                                                )}
+                                            </button>
+                                        )
+                                    )}
+                                </nav>
+                                <div
+                                    className='workspace-body'
+                                    data-mobile-view={mobileView}
+                                >
+                                    <Subscriptions
+                                        date={date}
+                                        onAdd={() => {
+                                            setModal({ type: 'subscription' });
+                                        }}
+                                        onEdit={(subscription) => {
+                                            setModal({
+                                                type: 'subscription',
+                                                subscription,
+                                            });
+                                        }}
+                                        onToggle={(subscription) => {
                                             void action(
-                                                'clear',
+                                                `toggle-${subscription.id}`,
                                                 async () => {
                                                     await api(
-                                                        '/api/jobs/completed',
-                                                        'DELETE'
+                                                        `/api/subscriptions/${subscription.id}`,
+                                                        'PUT',
+                                                        {
+                                                            name: subscription.name,
+                                                            rss_url:
+                                                                subscription.rss_url,
+                                                            destination:
+                                                                subscription.destination,
+                                                            destination_id:
+                                                                subscription.destination_id ||
+                                                                '',
+                                                            destination_account_ref:
+                                                                subscription.destination_account_ref ||
+                                                                '',
+                                                            interval_minutes:
+                                                                subscription.interval_minutes,
+                                                            rename_enabled:
+                                                                subscription.rename_enabled,
+                                                            regex: subscription.regex,
+                                                            replacement:
+                                                                subscription.replacement,
+                                                            enabled:
+                                                                !subscription.enabled,
+                                                        }
+                                                    );
+                                                    setData((current) =>
+                                                        current
+                                                            ? {
+                                                                  ...current,
+                                                                  subscriptions:
+                                                                      current.subscriptions.map(
+                                                                          (
+                                                                              sub
+                                                                          ) =>
+                                                                              sub.id ===
+                                                                              subscription.id
+                                                                                  ? {
+                                                                                        ...sub,
+                                                                                        enabled:
+                                                                                            !subscription.enabled,
+                                                                                    }
+                                                                                  : sub
+                                                                      ),
+                                                              }
+                                                            : current
                                                     );
                                                     await refresh();
                                                 },
-                                                '已清除已完成任務'
+                                                subscription.enabled
+                                                    ? '已暫停追蹤'
+                                                    : '已繼續追蹤'
                                             );
-                                        }
-                                    }}
-                                    onOpen={(id) => {
-                                        setModal({ type: 'job', id });
-                                    }}
-                                />
-                            </div>
+                                        }}
+                                        pending={busy}
+                                        subscriptions={data.subscriptions}
+                                    />
+                                    <Tasks
+                                        busy={busy.has('clear')}
+                                        date={date}
+                                        jobs={data.jobs}
+                                        onAdd={() => {
+                                            setModal({
+                                                type: 'subscription',
+                                                manual: true,
+                                            });
+                                        }}
+                                        onClear={() => {
+                                            if (
+                                                globalThis.confirm(
+                                                    t(
+                                                        '清除所有已完成任務紀錄？雲端檔案會保留。'
+                                                    )
+                                                )
+                                            ) {
+                                                void action(
+                                                    'clear',
+                                                    async () => {
+                                                        await api(
+                                                            '/api/jobs/completed',
+                                                            'DELETE'
+                                                        );
+                                                        await refresh();
+                                                    },
+                                                    '已清除已完成任務'
+                                                );
+                                            }
+                                        }}
+                                        onOpen={(id) => {
+                                            setModal({ type: 'job', id });
+                                        }}
+                                    />
+                                </div>
+                            </>
                         )}
                     </div>
                 </main>
@@ -415,9 +480,13 @@ export function Workspace({
             )}
             {modal?.type === 'job' && (
                 <JobDialog
+                    connected={Boolean(connected)}
                     jobID={modal.id}
                     onChanged={refresh}
                     onClose={close}
+                    onFixConnection={() => {
+                        utility('settings');
+                    }}
                 />
             )}
             {modal &&

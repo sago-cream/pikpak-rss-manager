@@ -22,7 +22,7 @@ export function SubscriptionActions({
     const { t } = usePreferences();
     const active = useLifetime();
     const [backfill, setBackfill] = useState(false);
-    const [busy, setBusy] = useState(false);
+    const [busy, setBusy] = useState('');
     const [error, setError] = useState('');
     const [checked, setChecked] = useState(false);
     const run = async (remove: boolean) => {
@@ -35,7 +35,7 @@ export function SubscriptionActions({
         ) {
             return;
         }
-        setBusy(true);
+        setBusy(remove ? 'delete' : 'check');
         setError('');
         setChecked(false);
         try {
@@ -58,7 +58,7 @@ export function SubscriptionActions({
             }
         } finally {
             if (active.current) {
-                setBusy(false);
+                setBusy('');
             }
         }
     };
@@ -81,21 +81,27 @@ export function SubscriptionActions({
                 <>
                     <div className='form-actions'>
                         <button
+                            aria-busy={busy === 'check'}
                             className='button subtle'
                             data-check={subscription.id}
-                            disabled={busy}
+                            disabled={Boolean(busy)}
                             onClick={() => {
                                 void run(false);
                             }}
                             type='button'
                         >
-                            <Icon name='check' />
+                            <Icon
+                                className={
+                                    busy === 'check' ? 'is-loading' : undefined
+                                }
+                                name={busy === 'check' ? 'loading' : 'check'}
+                            />
                             {t('檢查新的發布')}
                         </button>
                         <button
                             className='button subtle'
                             data-backfill={subscription.id}
-                            disabled={busy}
+                            disabled={Boolean(busy)}
                             onClick={() => {
                                 setBackfill(true);
                             }}
@@ -108,15 +114,21 @@ export function SubscriptionActions({
                     {checked && <p role='status'>{t('訂閱檢查完成')}</p>}
                     <div className='subscription-delete'>
                         <button
+                            aria-busy={busy === 'delete'}
                             className='button danger'
                             data-delete={subscription.id}
-                            disabled={busy}
+                            disabled={Boolean(busy)}
                             onClick={() => {
                                 void run(true);
                             }}
                             type='button'
                         >
-                            <Icon name='trash' />
+                            <Icon
+                                className={
+                                    busy === 'delete' ? 'is-loading' : undefined
+                                }
+                                name={busy === 'delete' ? 'loading' : 'trash'}
+                            />
                             {t('刪除訂閱')}
                         </button>
                     </div>

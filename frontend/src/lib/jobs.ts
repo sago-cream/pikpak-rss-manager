@@ -1,3 +1,4 @@
+import type { IconName } from '../components/Icon.js';
 import type { Job } from './types.js';
 
 export const runningStates = [
@@ -33,6 +34,33 @@ export function jobColor(state: string): 'green' | 'orange' | 'purple' {
         : reviewStates.includes(state)
           ? 'orange'
           : 'purple';
+}
+export function jobIcon(state: string): IconName {
+    if (state === 'complete') {
+        return 'check';
+    }
+    if (state === 'failed') {
+        return 'failed';
+    }
+    if (state === 'paused_auth' || state === 'paused_account') {
+        return 'auth-alert';
+    }
+    if (state === 'paused_quota') {
+        return 'pause';
+    }
+    if (reviewStates.includes(state)) {
+        return 'alert';
+    }
+    if (state === 'downloading') {
+        return 'backfill';
+    }
+    if (state === 'organizing') {
+        return 'edit';
+    }
+    if (state === 'submitting') {
+        return 'refresh';
+    }
+    return 'clock';
 }
 export function sortJobs(jobs: Job[], completedFirst = false): Job[] {
     return jobs.toSorted((a, b) => {

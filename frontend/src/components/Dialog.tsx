@@ -1,6 +1,14 @@
-import { useEffect, useId, useRef } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { JSX, ReactNode } from 'react';
 
+import { DialogFormContext } from './DirtyForm.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
@@ -20,14 +28,61 @@ export function Dialog({
     compact?: boolean;
 }): JSX.Element {
     const ref = useRef<HTMLDialogElement>(null);
+    const [opener] = useState(() =>
+        document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null
+    );
+    const dirtyForms = useRef(new Set<string>());
     const titleId = useId();
     const { t } = usePreferences();
-    useEffect(() => {
-        const dialog = ref.current;
-        if (dialog && !dialog.open) {
-            dialog.showModal();
+    const register = useCallback((key: string, dirty: boolean) => {
+        if (dirty) {
+            dirtyForms.current.add(key);
+        } else {
+            dirtyForms.current.delete(key);
         }
     }, []);
+    const requestClose = useCallback(() => {
+        if (
+            dirtyForms.current.size > 0 &&
+            !globalThis.confirm(t('放棄未儲存的變更？'))
+        ) {
+            return;
+        }
+        onClose();
+    }, [onClose, t]);
+    const scope = useMemo(
+        () => ({ register, requestClose }),
+        [register, requestClose]
+    );
+    useEffect(() => {
+        const dialog = ref.current;
+        if (dialog) {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+            return () => {
+                globalThis.requestAnimationFrame(() => {
+                    const topDialog = [
+                        ...document.querySelectorAll('dialog[open]'),
+                    ].at(-1);
+                    if (topDialog && (!opener || !topDialog.contains(opener))) {
+                        return;
+                    }
+                    const target =
+                        opener?.isConnected &&
+                        opener.getClientRects().length > 0 &&
+                        !opener.closest('[popover]')
+                            ? opener
+                            : document.querySelector<HTMLElement>(
+                                  '#profile-toggle'
+                              );
+                    target?.focus({ preventScroll: true });
+                });
+            };
+        }
+    }, [opener]);
     const content = (
         <>
             <div className='dialog-heading'>
@@ -35,7 +90,7 @@ export function Dialog({
                 <button
                     aria-label={t('關閉')}
                     className='icon-button'
-                    onClick={onClose}
+                    onClick={requestClose}
                     type='button'
                 >
                     <Icon name='close' />
@@ -51,12 +106,18 @@ export function Dialog({
             id={id}
             onCancel={(event) => {
                 event.preventDefault();
-                onClose();
+                requestClose();
             }}
-            onClose={onClose}
+            onClose={requestClose}
             ref={ref}
         >
-            {scroll ? <div className='dialog-scroll'>{content}</div> : content}
+            <DialogFormContext.Provider value={scope}>
+                {scroll ? (
+                    <div className='dialog-scroll'>{content}</div>
+                ) : (
+                    content
+                )}
+            </DialogFormContext.Provider>
         </dialog>
     );
 }
