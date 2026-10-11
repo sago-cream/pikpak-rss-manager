@@ -1,10 +1,11 @@
 .destination-input { display:flex; align-items:center; gap:10px; }
 .destination-input>input { flex:1; min-width:0; }
 .destination-input>.button { flex-shrink:0; white-space:nowrap; }
-.folder-browser { padding:18px; border:1px solid var(--line); border-radius:12px; background:#fcfbff; min-width:0; }
-.folder-browser .section-heading { margin:0 0 10px; }
-.folder-browser h3 { margin:0; font-size:13px; }
-.folder-breadcrumbs { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:12px; font-size:11px; }
+.folder-browser { padding-top:8px; border-top:1px solid var(--line); min-width:0; }
+.folder-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.folder-heading .icon-button { flex-shrink:0; }
+#folder-status:empty { display:none; }
+.folder-breadcrumbs { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0; font-size:11px; }
 .folder-breadcrumbs button { max-width:100%; overflow-wrap:anywhere; text-align:left; }
 .folder-breadcrumbs>span { color:var(--muted); }
 .folder-list { max-height:220px; overflow-y:auto; border-top:1px solid var(--line); margin:10px 0; }
@@ -12,9 +13,8 @@
 .folder-row:hover,.folder-row:focus-visible { background:#f0ebfb; }
 .folder-row>span:nth-child(2) { min-width:0; overflow-wrap:anywhere; }
 .folder-arrow { margin-left:auto; color:var(--accent); font-size:20px; }
-.folder-footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; }
-.folder-footer>span { min-width:0; overflow-wrap:anywhere; }
-.folder-actions { display:flex; gap:8px; flex-shrink:0; }
+.folder-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; }
+.folder-actions .text-button { min-height:44px; }
 .compact-dialog { width:min(420px,calc(100vw - 30px)); }
 .compact-dialog .dialog-heading { align-items:center; margin-bottom:12px; }
 .compact-dialog .dialog-heading h2 { font-size:18px; }
@@ -34,9 +34,8 @@
   .destination-input { flex-wrap:wrap; }
   .destination-input>input { flex-basis:100%; }
   .destination-input>.button { width:100%; justify-content:center; }
-  .folder-footer { flex-direction:column; align-items:stretch; }
   .folder-actions { flex-wrap:wrap; }
-  .folder-actions>.button { flex:1; min-width:120px; justify-content:center; }
+  .folder-actions>.button { margin-left:auto; }
   .rename-preview-row { grid-template-columns:1fr; gap:4px; }
 }
 

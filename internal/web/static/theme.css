@@ -29,8 +29,7 @@ html[data-theme="dark"] .account-card,
 html[data-theme="dark"] input:not([type=checkbox]),
 html[data-theme="dark"] textarea,
 html[data-theme="dark"] .preview-box,
-html[data-theme="dark"] .id-list,
-html[data-theme="dark"] .folder-browser { background:#25222f; border-color:var(--line); }
+html[data-theme="dark"] .id-list { background:#25222f; border-color:var(--line); }
 html[data-theme="dark"] td,
 html[data-theme="dark"] .event-row,
 html[data-theme="dark"] .empty-state,

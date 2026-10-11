@@ -119,7 +119,7 @@ function openSubscription(id, manual=false) {
   $('#sub-rename-enabled').checked=sub?.rename_enabled??false;
   $('#sub-regex').value=sub?.regex??'\\[(\\d+)\\]'; $('#sub-replacement').value=sub?.replacement??'S01E$1';
   closeFolderBrowser(); clearSourceSamples(); updateRenameOptions(); $('#browse-folders').disabled=!data.status.connected||!!data.status.paused;
-  $('#destination-help').textContent=data.status.connected?t('從 PikPak 選取資料夾，也可手動輸入路徑。'):t('綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。');
+  $('#destination-help').textContent=data.status.connected?'':t('綁定 PikPak PAT 後即可列出或建立資料夾；也可先手動輸入路徑。');
   $('#subscription-dialog').showModal();
 }
 function formRule(){return {title:$('#sub-name').value.trim(),regex:$('#sub-regex').value,rename_enabled:$('#sub-rename-enabled').checked,replacement:$('#sub-replacement').value};}
@@ -143,20 +143,21 @@ function openFolderCreate(){
 function renderFolders(){
   if(!folderState)return;
   $('#folder-breadcrumbs').innerHTML=folderState.breadcrumbs.map(d=>tr`<button type="button" class="text-button" data-folder="${escapeHTML(d.id)}">${escapeHTML(d.id?d.name:t(d.name))}</button>`).join('<span>/</span>');
+  $('#folder-search').classList.toggle('hidden',folderState.folders.length<=8&&!folderState.next_token);
   const term=$('#folder-search').value.toLowerCase(), folders=folderState.folders.filter(f=>f.name.toLowerCase().includes(term));
   $('#folder-list').innerHTML=folders.length?folders.map(f=>tr`<button type="button" class="folder-row" data-folder="${escapeHTML(f.id)}"><img class="folder-icon" src="/static/folder.svg" alt=""><span>${escapeHTML(f.name)}</span><span class="folder-arrow">›</span></button>`).join(''):translateLiteral('<p class="field-help">目前沒有符合的資料夾。</p>');
-  $('#folder-more').classList.toggle('hidden',!folderState.next_token); $('#folder-current').textContent=tr`目前位置：${folderState.current.path||t('根目錄')}`;
+  $('#folder-more').classList.toggle('hidden',!folderState.next_token);
   $('#folder-select').textContent=folderState.current.id?t('使用此資料夾'):t('使用根目錄'); $('#folder-select').disabled=false; $('#folder-create').disabled=false;
 }
 async function loadFolders(parent='',token='',append=false){
   const sequence=++folderRequest; $('#folder-browser').classList.remove('hidden'); $('#folder-status').className='field-help'; $('#folder-status').textContent=t('正在讀取 PikPak 資料夾…');
   $('#folder-select').disabled=true; $('#folder-create').disabled=true; $('#folder-more').disabled=true;
-  if(!append){folderState=null;$('#folder-list').innerHTML='';$('#folder-breadcrumbs').innerHTML='';$('#folder-current').textContent='';$('#folder-search').value='';}
+  if(!append){folderState=null;$('#folder-list').innerHTML='';$('#folder-breadcrumbs').innerHTML='';$('#folder-search').classList.add('hidden');$('#folder-search').value='';}
   try{
     const result=await api(tr`/api/pikpak/folders?${new URLSearchParams({parent_id:parent,token})}`);
     if(sequence!==folderRequest)return;
     if(append&&folderState){if(folderState.account_ref!==result.account_ref)throw new Error(t('PikPak 帳號已更換，請重新開啟資料夾選擇器'));const known=new Set(folderState.folders.map(f=>f.id));result.folders=[...folderState.folders,...result.folders.filter(f=>!known.has(f.id))];}
-    folderState=result; renderFolders(); $('#folder-status').textContent=result.next_token?t('還有其他項目，按「載入更多資料夾」繼續讀取。'):'';
+    folderState=result; renderFolders(); $('#folder-status').textContent='';
   }catch(e){if(sequence===folderRequest){$('#folder-status').className='field-help error';$('#folder-status').textContent=e.message;}}
   finally{if(sequence===folderRequest)$('#folder-more').disabled=false;}
 }
