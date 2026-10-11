@@ -103,6 +103,7 @@ const translations = {
   '執行紀錄':'Activity',
   '保留 30 天，顯示最近 150 筆':'Last 150 entries · 30-day retention',
   'PikPak 授權':'PikPak authorization',
+  '設定分類':'Settings categories',
   '未綁定':'Not connected',
   '尚未綁定':'Not connected',
   '個人存取權杖（PAT）':'Personal access token (PAT)',

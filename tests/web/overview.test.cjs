@@ -33,15 +33,34 @@ const element=selector=>{
 };
 const utilities=[element('#view-settings'),element('#view-events')];
 const tabs=['all','running','review','complete'].map(filter=>({dataset:{filter},classList:{toggle(name,value){this.selected=value;}},setAttribute(name,value){this[name]=value;}}));
+const settingsTabs=['pikpak','site','password'].map(name=>({dataset:{settingsSection:name},
+  getAttribute:attribute=>attribute==='aria-controls'?`settings-${name}`:null,
+  setAttribute(attribute,value){this[attribute]=value;}}));
 let renders=0;
 const navigation=vm.createContext({$:element,views:{overview:'總覽',subscriptions:'訂閱管理',jobs:'離線任務',events:'執行日誌',settings:'系統設定'},
-  document:{querySelectorAll:selector=>selector==='.utility-view'?utilities:tabs},
+  document:{querySelectorAll:selector=>selector==='.utility-view'?utilities:selector==='[data-settings-section]'?settingsTabs:tabs},
   history:{replaceState(a,b,hash){this.hash=hash;}},tr:(parts,...values)=>parts.reduce((out,part,i)=>out+part+(values[i]??''),''),
   currentView:'overview',jobFilter:'all',jobLimit:24,render:()=>{renders++;}});
 vm.runInContext(source.slice(source.indexOf('function showView('),source.indexOf('function filteredJobs()'))+source.slice(source.indexOf('function selectJobFilter('),source.indexOf('function empty(')),navigation);
 vm.runInContext("showView('settings')",navigation);
 assert.equal(element('#utility-dialog').open,true);assert.equal(element('#utility-title').textContent,'系統設定');
 assert.equal(utilities[0].classList.hidden,false);assert.equal(utilities[1].classList.hidden,true);
+assert.equal(settingsTabs[0]['aria-current'],'true');
+assert.equal(element('#settings-site').classList.hidden,true);
+element('#settings-public-url').value='https://example.org/draft';
+vm.runInContext("showSettingsSection('site')",navigation);
+assert.equal(settingsTabs[1]['aria-current'],'true');
+assert.equal(element('#settings-site').classList.hidden,false);
+assert.equal(element('#settings-pikpak').classList.hidden,true);
+vm.runInContext("showSettingsSection('password')",navigation);
+assert.equal(element('#settings-password').classList.hidden,false);
+assert.equal(element('#settings-site').classList.hidden,true);
+assert.equal(settingsTabs[1]['aria-current'],'false');
+vm.runInContext("showSettingsSection('unknown')",navigation);
+assert.equal(settingsTabs[2]['aria-current'],'true','Invalid sections leave the current panel intact');
+assert.equal(element('#settings-public-url').value,'https://example.org/draft','Switching panels retains unsaved form values');
+vm.runInContext("showView('settings')",navigation);
+assert.equal(settingsTabs[0]['aria-current'],'true','Opening settings returns to PikPak authorization for connection repair');
 vm.runInContext("showView('events')",navigation);assert.equal(element('#utility-title').textContent,'執行日誌');
 vm.runInContext("showView('subscriptions')",navigation);assert.equal(element('#utility-dialog').open,false);assert.equal(element('#view-subscriptions').scrolled,true);
 assert.equal(element('#profile-menu').dismissed,true);

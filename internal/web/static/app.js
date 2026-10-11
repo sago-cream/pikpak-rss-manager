@@ -37,6 +37,7 @@ function showView(name) {
   const dialog=$('#utility-dialog');
   $('#profile-menu').hidePopover();
   if(name==='settings'||name==='events'){
+    if(name==='settings')showSettingsSection('pikpak');
     for(const element of document.querySelectorAll('.utility-view'))element.classList.toggle('hidden',element.id!==`view-${name}`);
     $('#utility-title').textContent=views[name];
     if(!dialog.open)dialog.showModal();
@@ -46,6 +47,14 @@ function showView(name) {
     if(!target.classList.contains('hidden'))target.scrollIntoView({block:'start'});
   }
   history.replaceState(null,'',tr`#${name}`);
+}
+function showSettingsSection(name){
+  if(!['pikpak','site','password'].includes(name))return;
+  for(const button of document.querySelectorAll('[data-settings-section]')){
+    const selected=button.dataset.settingsSection===name;
+    button.setAttribute('aria-current',String(selected));
+    $('#'+button.getAttribute('aria-controls')).classList.toggle('hidden',!selected);
+  }
 }
 function filteredJobs(){
   const items=data.jobs.filter(j=>jobFilter==='all'||(jobFilter==='running'&&runningStates.includes(j.state))||(jobFilter==='review'&&reviewStates.includes(j.state))||(jobFilter==='complete'&&j.state==='complete'));
@@ -219,6 +228,7 @@ async function showJob(id) {
 }
 document.addEventListener('click',async event=>{
   const button=event.target.closest('button'); if(!button)return;
+  if(button.dataset.settingsSection){showSettingsSection(button.dataset.settingsSection);return;}
   if(button.dataset.view){showView(button.dataset.view);return;}
   if(button.hasAttribute('data-manual-task')){openSubscription(undefined,true);return;}
   if(button.classList.contains('new-subscription')){openSubscription();return;}

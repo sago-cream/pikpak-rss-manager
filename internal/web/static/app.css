@@ -522,14 +522,8 @@ tr:last-child td {
   background:var(--danger)
 }
 
-.settings-grid {
-  display:grid;
-  grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);
-  gap:25px
-}
-
 .settings-panel {
-  padding:26px
+  padding:0
 }
 
 .settings-panel .panel-heading {
@@ -1017,10 +1011,6 @@ dialog::backdrop {
   gap:12px
 }
 
-.settings-grid {
-  grid-template-columns:1fr
-}
-
 .page-heading {
   align-items:flex-start
 }
@@ -1132,10 +1122,6 @@ th,td {
 
 .event-row time {
   font-size:9px
-}
-
-.settings-panel {
-  padding:21px
 }
 
 .toast {
@@ -1291,8 +1277,14 @@ button.connection-pill:hover { color:var(--accent); }
 .subscription-actions .text-button { padding:8px; min-height:44px; }
 .subscription-actions .icon-button { width:44px; height:44px; }
 #utility-dialog { width:min(960px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); }
-#utility-dialog .settings-grid { grid-template-columns:1fr; gap:16px; }
-#utility-dialog .settings-panel { padding:24px; }
+.settings-layout { display:grid; grid-template-columns:180px minmax(0,1fr); min-height:440px; }
+.settings-nav { display:flex; flex-direction:column; gap:4px; padding:0 20px 0 0; border-right:1px solid var(--line); }
+.settings-nav-button { min-height:44px; padding:8px 12px; border:0; border-radius:8px; background:transparent; color:var(--muted); text-align:left; font:inherit; }
+.settings-nav-button:hover { background:var(--accent-light); color:var(--ink); }
+.settings-nav-button[aria-current="true"] { background:var(--accent-light); color:var(--accent); }
+.settings-content { min-width:0; padding-left:32px; }
+#utility-dialog .settings-panel .panel-heading { border:0; padding:0; margin-bottom:24px; }
+#utility-dialog .settings-panel .form-actions { flex-wrap:wrap; }
 #utility-dialog .close-utility { width:44px; height:44px; }
 @media(max-width:650px){
   .workspace-header { padding:16px 20px; }
@@ -1309,7 +1301,10 @@ button.connection-pill:hover { color:var(--accent); }
   .filter-tabs { display:flex; width:100%; }
   .filter-tabs button { flex:1; min-height:44px; padding:8px; }
   #utility-dialog { padding:16px; }
-  #utility-dialog .settings-panel { padding:16px; }
+  .settings-layout { grid-template-columns:1fr; min-height:0; }
+  .settings-nav { flex-direction:row; padding:0 0 16px; margin-bottom:24px; border-right:0; border-bottom:1px solid var(--line); }
+  .settings-nav-button { flex:1; padding:8px 4px; font-size:12px; text-align:center; }
+  .settings-content { padding-left:0; }
 }
 
 .workspace-body { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:32px; align-items:start; }
