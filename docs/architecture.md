@@ -34,7 +34,7 @@ PAT requires Read & write files and Cloud Download. The MCP adapter has no move,
 - First-run password: nonempty, salted Argon2id verifier. PATs/private URLs: AES-GCM with a persistent secret.key. Credentials are never returned or logged. No external password/PAT sources or .env loading.
 - Password recovery requires server access. The `recovery-code` command issues a random 256-bit, one-use code valid for 15 minutes. Only its digest, expiry and bound administrator verifier are stored in an encrypted setting. Recovery atomically consumes the code and replaces its bound verifier. A regular password change invalidates outstanding codes. Successful recovery revokes all sessions and preserves site settings and cloud credentials.
 - Sessions: 12 hours, memory only. Mutations require matching CSRF cookie/header and same-origin checks. HTTP-only/SameSite cookies, login throttling and CSP are enabled.
-- Management pages place theme and language controls in the sidebar footer with connection status, version and sign-out. The footer remains accessible on narrow screens. Navigation and theme icons use a consistent 20 px size. Desktop navigation uses a 12 px icon-to-label gap. Setup and login retain their header controls.
+- Overview combines RSS subscriptions and offline tasks in one workspace. Tasks show attention states first, with filters and incremental history. The account menu opens Settings and Logs in dialogs and contains theme, language and sign-out controls. Setup and login retain their header controls.
 - UI language is a browser preference. Only application literals and message fields are translated. Names, paths, URLs, regex and filenames remain intact.
 
 ## Authentication

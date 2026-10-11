@@ -30,53 +30,69 @@ const runningStates = ['queued','submitting','downloading','organizing'];
 const reviewStates = ['needs_review','submission_unknown','failed','paused_auth','paused_quota','paused_account'];
 function badge(state) { return tr`<span class="badge ${state === 'complete' ? 'green' : reviewStates.includes(state) ? 'orange' : 'purple'}">${escapeHTML(labels[state] || state)}</span>`; }
 const views = {overview:t('總覽'),subscriptions:t('訂閱管理'),jobs:t('離線任務'),events:t('執行日誌'),settings:t('系統設定')};
-let data = {subscriptions:[], jobs:[], events:[], status:{}}, currentView = 'overview', jobFilter = 'all';
+let data = {subscriptions:[], jobs:[], events:[], status:{}}, currentView = 'overview', jobFilter = 'all', jobLimit = 8;
 function showView(name) {
   if (!views[name]) return;
   currentView = name;
-  for (const element of document.querySelectorAll('.view')) element.classList.toggle('hidden', element.id !== tr`view-${name}`);
-  for (const element of document.querySelectorAll('.nav-item')) {
-    const active=element.dataset.view===name;
-    element.classList.toggle('active',active);
-    if(active)element.setAttribute('aria-current','page');else element.removeAttribute('aria-current');
+  const dialog=$('#utility-dialog');
+  $('#profile-menu').hidePopover();
+  if(name==='settings'||name==='events'){
+    for(const element of document.querySelectorAll('.utility-view'))element.classList.toggle('hidden',element.id!==`view-${name}`);
+    $('#utility-title').textContent=views[name];
+    if(!dialog.open)dialog.showModal();
+  }else{
+    if(dialog.open)dialog.close();
+    const target=name==='overview'?$('.workspace-header'):$('#view-'+name);
+    if(!target.classList.contains('hidden'))target.scrollIntoView({block:'start'});
   }
-  $('#page-title').textContent=views[name];
-  $('#clear-completed-jobs').classList.toggle('hidden', name !== 'jobs');
-  $('.page-heading').classList.toggle('jobs-heading', name === 'jobs');
-  for (const button of document.querySelectorAll('.heading-actions .new-subscription')) {button.classList.toggle('hidden', name === 'overview' || name === 'settings' || name === 'events');button.textContent=name==='jobs'?t('＋ 新增任務'):t('＋ 新增訂閱');}
   history.replaceState(null,'',tr`#${name}`);
 }
-function empty(title, description, button = '') { return tr`<div class="empty-state"><h3>${escapeHTML(title)}</h3>${description?tr`<p>${escapeHTML(description)}</p>`:''}${button}</div>`; }
-function subscriptionCards(items) {
-  if (!items.length) return empty(t('尚無訂閱'),'',translateLiteral('<button class="button primary new-subscription">＋ 新增訂閱</button>'));
-  return items.map((s,i) => tr`<article class="subscription-card"><div class="card-top"><span class="subscription-icon color-${i%4}">${escapeHTML(s.name.slice(0,1))}</span><span class="badge ${s.enabled ? 'green' : ''}">${s.enabled ? t('追蹤中') : t('已停用')}</span></div><h3>${escapeHTML(s.name)}</h3><div class="card-path"><span>↳</span>${escapeHTML(s.destination || t('根目錄'))}</div><div class="card-rule"><span>${!s.rename_enabled ? t('保留原始檔名') : t('Regex 尋找／替換')}</span><code>${!s.rename_enabled ? t('保留原始檔名') : escapeHTML(tr`${s.regex} → ${s.replacement || t('（移除匹配部分）')}`)}</code></div>${s.last_error ? tr`<p class="error compact">${escapeHTML(s.last_error)}</p>` : ''}<div class="card-meta"><span>每 ${s.interval_minutes} 分鐘</span><span>${date(s.last_checked)}</span></div><div class="card-actions"><button class="text-button" data-edit="${s.id}">編輯訂閱</button><div><button class="text-button" data-check="${s.id}" title="檢查新的發布">檢查</button><button class="text-button" data-backfill="${s.id}" title="處理 RSS 中仍可取得的現有項目">補抓</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}">×</button></div></div></article>`).join('');
+function filteredJobs(){
+  const items=data.jobs.filter(j=>jobFilter==='all'||(jobFilter==='running'&&runningStates.includes(j.state))||(jobFilter==='review'&&reviewStates.includes(j.state))||(jobFilter==='complete'&&j.state==='complete'));
+  if(jobFilter==='all'){
+    const priority=j=>reviewStates.includes(j.state)?0:runningStates.includes(j.state)?1:2;
+    items.sort((a,b)=>priority(a)-priority(b));
+  }
+  return items;
 }
-function jobsTable(items, overview=false) {
+function selectJobFilter(filter){
+  jobFilter=filter;jobLimit=8;
+  for(const button of document.querySelectorAll('[data-filter]')){
+    const selected=button.dataset.filter===filter;
+    button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));
+  }
+  render();
+}
+function empty(title, description, button = '') { return tr`<div class="empty-state"><h3>${escapeHTML(title)}</h3>${description?tr`<p>${escapeHTML(description)}</p>`:''}${button}</div>`; }
+function subscriptionRows(items) {
+  if(!items.length)return tr`<p class="workspace-idle">${data.subscriptions.length?t('找不到訂閱'):t('尚無訂閱')}</p>`;
+  return items.map(s=>tr`<article class="subscription-row"><div class="subscription-info"><div class="subscription-name"><h3>${escapeHTML(s.name)}</h3><span class="badge ${s.enabled?'green':''}">${s.enabled?t('追蹤中'):t('已停用')}</span></div><p class="muted">${escapeHTML(s.destination||t('根目錄'))} · 每 ${s.interval_minutes} 分鐘 · ${date(s.last_checked)}</p>${s.last_error?tr`<p class="error">${escapeHTML(s.last_error)}</p>`:''}</div><div class="subscription-actions"><button class="text-button" data-edit="${s.id}">編輯訂閱</button><button class="text-button" data-check="${s.id}" title="檢查新的發布">檢查</button><button class="text-button" data-backfill="${s.id}" title="處理 RSS 中仍可取得的現有項目">補抓</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}">×</button></div></article>`).join('');
+}
+function jobsTable(items) {
   if (!items.length) return empty(t('尚無任務'),'');
-  return tr`<div class="table-scroll"><table><thead><tr><th>發布與作品</th><th>狀態</th><th>時間</th><th></th></tr></thead><tbody>${items.map(j=>tr`<tr><td class="job-name"><strong>${escapeHTML(j.rule.title)}</strong><span title="${escapeHTML(j.title)}">${escapeHTML(j.title)}</span>${j.error ? tr`<small class="error">${escapeHTML(j.error)}</small>` : ''}</td><td>${badge(j.state)}${j.state==='downloading' ? tr`<div class="progress-caption">${Math.round(j.progress)}%</div>` : ''}</td><td class="muted nowrap">${date(j.created_at)}</td><td><div class="job-actions"><button class="text-button" data-job="${escapeHTML(j.id)}">查看 →</button>${overview?'':tr`<button class="text-button danger" data-delete-job="${escapeHTML(j.id)}">刪除任務</button>`}</div></td></tr>`).join('')}</tbody></table></div>`;
+  return tr`<div class="table-scroll"><table><thead><tr><th>發布與作品</th><th>狀態</th><th>時間</th><th></th></tr></thead><tbody>${items.map(j=>tr`<tr><td class="job-name"><strong>${escapeHTML(j.rule.title)}</strong><span title="${escapeHTML(j.title)}">${escapeHTML(j.title)}</span>${j.error ? tr`<small class="error">${escapeHTML(j.error)}</small>` : ''}</td><td>${badge(j.state)}${j.state==='downloading' ? tr`<div class="progress-caption">${Math.round(j.progress)}%</div>` : ''}</td><td class="muted nowrap">${date(j.created_at)}</td><td><div class="job-actions"><button class="text-button" data-job="${escapeHTML(j.id)}">查看 →</button></div></td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderOverview(){
-  const actions=translateLiteral('<div class="form-actions overview-actions"><button class="button primary new-subscription">＋ 新增訂閱</button><button class="button subtle" data-manual-task>＋ 新增任務</button></div>');
   const paused=data.status.paused?translateLiteral('<div class="overview-connection"><span>PikPak 已暫停</span><button class="text-button" data-view="settings">修復連線 →</button></div>'):'';
-  if(!data.subscriptions.length&&!data.jobs.length){
-    return paused+tr`<div class="overview-empty"><h2>新增第一筆下載</h2><p>訂閱 RSS 自動追蹤，或貼上連結下載。</p>${actions}</div>`;
-  }
-  const review=data.jobs.filter(j=>reviewStates.includes(j.state)),running=data.jobs.filter(j=>runningStates.includes(j.state));
-  const work=review.concat(running),recent=data.jobs.filter(j=>j.state==='complete').slice(0,3);
-  const summary=tr`<div class="overview-summary">${review.length?tr`<button class="text-button" data-overview-filter="review">待處理 ${review.length}</button>`:''}${running.length?tr`<button class="text-button" data-overview-filter="running">進行中 ${running.length}</button>`:''}<button class="text-button" data-view="jobs">任務紀錄 →</button><button class="text-button" data-view="subscriptions">訂閱管理 →</button></div>`;
-  const content=work.length||recent.length?tr`<div id="overview-jobs">${jobsTable((work.length?work:recent).slice(0,8),true)}</div>`:translateLiteral('<p class="overview-idle">目前沒有進行中的任務。</p>');
-  return paused+actions+summary+content;
+  if(data.subscriptions.length||data.jobs.length)return paused;
+  return paused+translateLiteral('<div class="overview-empty"><h2>新增第一筆下載</h2><p>訂閱 RSS 自動追蹤，或貼上連結下載。</p><div class="form-actions overview-actions"><button class="button primary new-subscription">＋ 新增訂閱</button><button class="button subtle" data-manual-task>＋ 新增任務</button></div></div>');
 }
 function render() {
   $('#overview-content').innerHTML=renderOverview();
+  const isEmpty=!data.subscriptions.length&&!data.jobs.length;
+  for(const element of document.querySelectorAll('.workspace-section, .heading-actions'))element.classList.toggle('hidden',isEmpty);
   const search=($('#subscription-search').value||'').toLowerCase();
-  $('#subscriptions-list').innerHTML=subscriptionCards(data.subscriptions.filter(s=>s.name.toLowerCase().includes(search)));
+  $('#subscriptions-list').innerHTML=subscriptionRows(data.subscriptions.filter(s=>s.name.toLowerCase().includes(search)));
   $('#subscription-count').textContent=tr`共 ${data.subscriptions.length} 筆訂閱`;
-  $('#jobs-list').innerHTML=jobsTable(data.jobs.filter(j=>jobFilter==='all'||(jobFilter==='running'&&runningStates.includes(j.state))||(jobFilter==='review'&&reviewStates.includes(j.state))||(jobFilter==='complete'&&j.state==='complete')));
+  const jobs=filteredJobs();
+  $('#jobs-list').innerHTML=jobs.length?jobsTable(jobs.slice(0,jobLimit)):translateLiteral('<p class="workspace-idle">尚無任務</p>');
+  $('#jobs-more').classList.toggle('hidden',jobs.length<=jobLimit);
+  $('#clear-completed-jobs').classList.toggle('hidden',jobFilter!=='complete'||!jobs.length);
   $('#events-list').innerHTML=data.events.length ? data.events.map(e=>tr`<div class="event-row"><span class="event-dot ${escapeHTML(e.level)}"></span><div><p>${escapeHTML(e.message)}</p><small class="muted">${e.job_id ? tr`任務 ${escapeHTML(e.job_id.slice(0,8))}` : e.subscription_id ? tr`訂閱 #${e.subscription_id}` : t('系統')}</small></div><time>${date(e.created_at)}</time></div>`).join('') : empty(t('尚無日誌'),'');
   const status=data.status;
   const connected=status.connected&&!status.paused;
-  $('#sidebar-connection').innerHTML=tr`<span class="dot ${connected?'green':'amber'}"></span>${connected?t('PikPak 已連線'):status.paused?t('PikPak 已暫停'):t('尚未綁定 PikPak')}`;
+  $('#profile-connection').innerHTML=tr`<span class="dot ${connected?'green':'amber'}"></span>${connected?t('PikPak 已連線'):status.paused?t('PikPak 已暫停'):t('尚未綁定 PikPak')}`;
+  $('#profile-name').textContent=status.name||t('PikPak 帳號');
   $('#settings-badge').className=tr`badge ${connected?'green':'orange'}`;
   $('#settings-badge').textContent=connected?t('連線正常'):status.paused?t('已暫停'):t('未綁定');
   $('#settings-connection-status').textContent=connected?'':status.message||t('請重新檢查 PikPak 連線。');
@@ -204,9 +220,10 @@ document.addEventListener('click',async event=>{
   const button=event.target.closest('button'); if(!button)return;
   if(button.dataset.view){showView(button.dataset.view);return;}
   if(button.hasAttribute('data-manual-task')){openSubscription(undefined,true);return;}
-  if(button.dataset.overviewFilter){jobFilter=button.dataset.overviewFilter;for(const tab of document.querySelectorAll('[data-filter]'))tab.classList.toggle('selected',tab.dataset.filter===jobFilter);showView('jobs');render();return;}
-  if(button.classList.contains('new-subscription')){openSubscription(undefined,currentView==='jobs');return;}
+  if(button.classList.contains('new-subscription')){openSubscription();return;}
   if(button.classList.contains('close-dialog')){closeFolderBrowser();$('#subscription-dialog').close();return;}
+  if(button.classList.contains('close-utility')){$('#utility-dialog').close();return;}
+  if(button.id==='jobs-more'){jobLimit+=8;render();return;}
   if(button.classList.contains('close-job')){$('#job-dialog').close();return;}
   if(button.id==='source-samples'){try{await loadSourceSamples();}catch(e){toast(e.message,true);}return;}
   if(button.dataset.edit){openSubscription(button.dataset.edit);return;}
@@ -218,10 +235,10 @@ document.addEventListener('click',async event=>{
   if(button.id==='folder-more'&&folderState){await loadFolders(folderState.current.id,folderState.next_token,true);return;}
   if(button.id==='folder-select'&&folderState){$('#sub-destination').value=folderState.current.path;$('#sub-destination-id').value=folderState.current.id;$('#sub-destination-account-ref').value=folderState.account_ref;closeFolderBrowser();return;}
   if(button.dataset.job){await showJob(button.dataset.job);return;}
-  if(button.dataset.filter){jobFilter=button.dataset.filter;for(const b of document.querySelectorAll('[data-filter]'))b.classList.toggle('selected',b===button);render();return;}
+  if(button.dataset.filter){selectJobFilter(button.dataset.filter);return;}
   button.disabled=true;
   try {
-    if(button.id==='refresh'){await load();toast(t('已更新面板'));}
+    if(button.id==='refresh'){await load();toast(t('已更新'));}
     if(button.dataset.deleteJob){const job=data.jobs.find(j=>j.id===button.dataset.deleteJob);const localOnly=job&&!job.task_id&&(job.submission_pending||['submitting','submission_unknown'].includes(job.state));if(!confirm(localOnly?t('尚無 PikPak 任務 ID，無法自動取消。請先至 PikPak 取消，再刪除此紀錄？'):t('刪除這筆任務並取消 PikPak 下載？已完成的雲端檔案會保留。')))return;await api(`/api/jobs/${encodeURIComponent(button.dataset.deleteJob)}`,'DELETE',{local_only:!!localOnly});$('#job-dialog').close();toast(t('任務已刪除'));await load();}
     if(button.id==='clear-completed-jobs'){if(!confirm(t('清除所有已完成任務紀錄？雲端檔案會保留。')))return;await api('/api/jobs/completed','DELETE');toast(t('已清除已完成任務'));await load();}
     if(button.dataset.backfill){await openBackfill(button.dataset.backfill);}
@@ -315,7 +332,9 @@ async function start(){
   });
   const settings=await api('/api/settings/app');$('#settings-public-url').value=settings.public_url;$('#settings-private-feeds').checked=settings.allow_private_feeds;
   $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast(t('網站設定已儲存'));}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
-  $('#subscription-search').addEventListener('input',render);showView(location.hash.slice(1)||'overview');await load();
+  $('#utility-dialog').addEventListener('close',()=>{if(currentView==='settings'||currentView==='events'){currentView='overview';history.replaceState(null,'','#overview');$('#profile-toggle').focus({preventScroll:true});}});
+  $('#profile-menu').addEventListener('beforetoggle',event=>{if(event.newState==='open'){const rect=$('#profile-toggle').getBoundingClientRect(),menu=$('#profile-menu');menu.style.top=(rect.bottom+8)+'px';menu.style.right=Math.max(16,innerWidth-rect.right)+'px';}});
+  $('#subscription-search').addEventListener('input',render);await load();showView(location.hash.slice(1)||'overview');
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);
   for(const id of ['sub-name','sub-regex','sub-replacement']){
     $('#'+id).addEventListener('input',scheduleRenamePreview);$('#'+id).addEventListener('compositionend',scheduleRenamePreview);

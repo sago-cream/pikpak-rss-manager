@@ -9,6 +9,11 @@ const messageUpdates = {
   '改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試':'改名未確認，請檢查同名衝突後重試',
 };
 const translations = {
+  '帳號選單':'Account menu',
+  '任務狀態':'Task status',
+  '顯示更多':'Show more',
+  '已更新':'Updated',
+  '找不到訂閱':'No subscriptions found',
   '忘記密碼？':'Forgot password?',
   '忘記密碼':'Forgot password',
   '忘記密碼 · PikPak RSS':'Forgot password · PikPak RSS',
