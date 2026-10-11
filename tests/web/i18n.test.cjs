@@ -16,8 +16,8 @@ for(const match of ['app.js','backfill.js','theme.js'].map(name=>fs.readFileSync
  const text=evaluate(match[1]);
  assert.ok(!/[\u3400-\u9fff]/.test(evaluate('t('+JSON.stringify(text)+')')),'Missing runtime translation: '+text);
 }
-for(const name of ['app','setup','login','onboarding','recovery']){
- const page=fs.readFileSync('internal/web/templates/'+name+'.html','utf8');
+for(const name of fs.readdirSync('internal/web/templates').filter(name=>name.endsWith('.html'))){
+ const page=fs.readFileSync('internal/web/templates/'+name,'utf8');
  // Check application-owned static text and accessibility attributes for coverage.
  const copy=[...page.matchAll(/>([^<>]+)</g)].map(m=>m[1]);
  copy.push(...[...page.matchAll(/(?:placeholder|aria-label|title)="([^"]+)"/g)].map(m=>m[1]));

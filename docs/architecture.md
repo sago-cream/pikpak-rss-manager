@@ -2,6 +2,8 @@
 
 One Go process, one administrator, one active PikPak account and one SQLite data volume. HTML/CSS/JavaScript are embedded. No frontend build step or local media transfer.
 
+The UI uses Go `html/template`, native JavaScript and shared CSS components. Form fields use one label/control/help layout. Named template fragments share the PAT field, creation link and information icon between onboarding and Settings. Information triggers preserve label height and place guidance in native popovers.
+
 | Module | Responsibility |
 |---|---|
 | internal/web | UI, sessions, CSRF, language catalog, API |

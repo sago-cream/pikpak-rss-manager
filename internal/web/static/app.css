@@ -569,7 +569,8 @@ label {
   font-size:12px;
   font-weight:550;
   color:var(--muted);
-  margin-bottom:15px
+  margin:0;
+  line-height:20px
 }
 
 input:not([type=checkbox]),textarea {
@@ -579,7 +580,7 @@ input:not([type=checkbox]),textarea {
   background:var(--surface-inset);
   border-radius:9px;
   padding:11px 13px;
-  margin-top:7px;
+  margin-top:0;
   font-size:12px;
   color:var(--ink);
   transition:border-color .15s;
@@ -612,28 +613,31 @@ input:disabled {
 
 .form-actions {
   display:flex;
-  gap:10px;
+  gap:8px;
   margin-top:20px
 }
 
 .checkbox-label {
   display:flex;
   align-items:center;
-  gap:9px;
+  gap:8px;
   font-size:12px;
-  margin-bottom:20px
+  margin:0
 }
 
-.checkbox-label input {
+.checkbox-label input,.backfill-choice input {
   accent-color:var(--accent);
-  width:15px;
-  height:15px
+  width:16px;
+  height:16px;
+  margin:0;
+  flex-shrink:0
 }
 
 .form-grid {
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:0 16px
+  gap:24px 16px;
+  margin-bottom:24px
 }
 
 .form-grid .full {
@@ -858,49 +862,16 @@ dialog::backdrop {
   color:var(--ink);
 }
 .language-toggle:hover { background:var(--accent-light); }
-.setup-page .login-form { display:grid; gap:20px; }
-.setup-field { display:grid; gap:8px; }
-.setup-field input { margin-top:0; }
-.setup-label-row { display:flex; align-items:center; }
-.setup-page .checkbox-label { gap:8px; }
-.setup-page .checkbox-label input { width:16px; height:16px; margin:0; flex-shrink:0; }
-.setup-help { position:relative; }
-.setup-help summary {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:40px;
-  height:32px;
-  color:var(--muted);
-  cursor:pointer;
-  list-style:none;
-  border-radius:4px;
-}
-.setup-help summary::after { content:""; position:absolute; width:40px; height:40px; }
-.setup-help summary::-webkit-details-marker { display:none; }
-.setup-help summary:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
-.setup-help summary:hover,.setup-help[open] summary { color:var(--accent); }
-.setup-help svg { width:16px; height:16px; }
-.setup-help-content {
-  position:absolute;
-  top:calc(100% + 8px);
-  left:0;
-  z-index:1;
-  width:224px;
-  max-width:calc(100vw - 48px);
-  margin:0;
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:var(--surface);
-  box-shadow:var(--shadow);
-  color:var(--ink);
-  font-size:12px;
-}
-.setup-private-feeds .setup-help-content { left:auto; right:0; }
-.setup-page .login-form>.button { margin-top:4px; }
-.setup-page .login-form>.error { margin:0; }
-.setup-page .login-form>.error:empty { display:none; }
+/* Shared form fields keep help controls outside the label's line box. */
+.form-stack { display:grid; gap:24px; }
+.form-stack>.form-actions,.form-stack>.field-help,.form-stack>.error { margin:0; }
+.form-stack>.error:empty { display:none; }
+.form-stack>.preview-box { margin-top:0; }
+.form-field { display:grid; gap:8px; min-width:0; }
+.form-field .field-help { margin:0; }
+.form-field .field-help:empty { display:none; }
+.field-label-row { position:relative; width:fit-content; max-width:100%; padding-right:44px; }
+.field-label-row .info-trigger { position:absolute; top:0; right:0; }
 
 .login-shell h1 {
   font-size:42px;
@@ -926,14 +897,14 @@ dialog::backdrop {
 
 .login-form>.button {
   width:100%;
-  margin-top:18px;
+  margin-top:0;
   justify-content:space-between;
   padding:12px 17px
 }
 
 .login-form>.error {
   min-height:20px;
-  margin-top:12px
+  margin:0
 }
 
 .login-footer {
@@ -1098,7 +1069,7 @@ th,td {
 }
 
 .form-grid {
-  gap:0 10px
+  gap:24px 12px
 }
 
 dialog {
@@ -1186,11 +1157,12 @@ textarea { resize:none; }
 .onboarding-progress [aria-current=step] { color:var(--accent); font-weight:650; }
 .step-number { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--line); border-radius:50%; flex-shrink:0; }
 [aria-current=step] .step-number { background:var(--accent-light); border-color:var(--accent); }
-.token-label-row { gap:4px; }
-.info-trigger { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:40px; height:40px; padding:0; border:0; border-radius:8px; background:transparent; color:var(--muted); }
+.info-trigger { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; width:40px; height:20px; padding:0; border:0; border-radius:8px; background:transparent; color:var(--muted); }
+.info-trigger::after { content:""; position:absolute; inset:-20px 0 0; }
 .info-trigger:hover { color:var(--accent); background:var(--accent-light); }
 .info-trigger svg { width:16px; height:16px; }
 .info-trigger:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+@media(max-width:600px) { .field-label-row { padding-right:48px; }.info-trigger { width:44px; }.info-trigger::after { top:-24px; } }
 .field-popover { position:fixed; inset:auto; margin:0; width:280px; max-width:calc(100vw - 32px); padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:var(--shadow); color:var(--ink); font-size:12px; }
 .field-popover p { margin:0; }
 .onboarding-logout { margin-top:24px; align-self:flex-end; }
@@ -1202,7 +1174,6 @@ button.connection-pill:hover { color:var(--accent); }
 .recovery-help { margin:0 0 24px; }
 .recovery-command { display:block; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 #recovery-help .field-help { margin:12px 0; }
-#recovery-form .error:empty { display:none; }
 .overview-empty { padding:48px 0; }
 .overview-empty h2 { margin:0 0 12px; }
 .overview-empty p { color:var(--muted); margin:0 0 24px; }
