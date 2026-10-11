@@ -6,7 +6,6 @@ export const messageUpdates: Record<string, string> = {
 };
 export const translations: Record<string, string> = {
     '每 %d 分鐘': 'Every %d min',
-    '共 %d 筆訂閱': 'Subscriptions: %d',
     '已讀取 %d 個種子檔名。': 'Loaded %d torrent filenames.',
     '建立位置：': 'Create in: ',
     '雲端空間': 'cloud storage',

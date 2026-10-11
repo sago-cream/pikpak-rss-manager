@@ -213,6 +213,22 @@ export function Workspace({
                             PikPak <b>RSS</b>
                         </span>
                     </a>
+                    <div className='workspace-actions'>
+                        <button
+                            aria-label={t('重新整理')}
+                            className='icon-button workspace-refresh'
+                            disabled={Boolean(busy)}
+                            id='refresh'
+                            onClick={() => {
+                                void action('refresh', refresh, '已更新');
+                            }}
+                            title={t('重新整理')}
+                            type='button'
+                        >
+                            <Icon name='refresh' />
+                        </button>
+                        {data && !empty && newButtons}
+                    </div>
                     <button
                         aria-label={t('帳號選單')}
                         className='profile-toggle'
@@ -303,31 +319,8 @@ export function Workspace({
                         </button>
                     </div>
                 </div>
-                <main className='main'>
+                <main aria-label={t('總覽')} className='main'>
                     <div className='content' id='view-overview'>
-                        <section className='page-heading'>
-                            <h1 id='page-title'>{t('總覽')}</h1>
-                            <div className='heading-actions'>
-                                <button
-                                    aria-label={t('重新整理')}
-                                    className='icon-button workspace-refresh'
-                                    disabled={Boolean(busy)}
-                                    id='refresh'
-                                    onClick={() => {
-                                        void action(
-                                            'refresh',
-                                            refresh,
-                                            '已更新'
-                                        );
-                                    }}
-                                    title={t('重新整理')}
-                                    type='button'
-                                >
-                                    <Icon name='refresh' />
-                                </button>
-                                {data && !empty && newButtons}
-                            </div>
-                        </section>
                         <div id='overview-content'>
                             {data?.status.paused && (
                                 <div className='overview-connection'>

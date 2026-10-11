@@ -1214,7 +1214,7 @@ textarea {
     flex-shrink: 0;
     vertical-align: middle;
 }
-.language-select {
+.language-select select {
     font: inherit;
     color: var(--ink);
     background: var(--surface);
@@ -1465,13 +1465,21 @@ button.connection-pill:hover {
 }
 
 .workspace-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
     padding: 16px 40px;
     max-width: 1200px;
     margin: auto;
+}
+.workspace-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#view-overview.content {
+    padding-top: 16px;
 }
 .profile-toggle {
     display: flex;
@@ -1550,9 +1558,11 @@ button.connection-pill:hover {
     height: 44px;
 }
 .profile-menu .language-select {
-    height: 44px;
     flex: 1;
     min-width: 0;
+}
+.profile-menu .language-select select {
+    height: 44px;
 }
 .profile-footer {
     display: flex;
@@ -1622,6 +1632,9 @@ button.connection-pill:hover {
 .job-status-filter {
     width: 160px;
     max-width: 100%;
+    color: var(--muted);
+}
+.job-status-filter select {
     min-height: 44px;
     padding: 8px 4px;
     border: 0;
@@ -1631,7 +1644,8 @@ button.connection-pill:hover {
     font: inherit;
     cursor: pointer;
 }
-.job-status-filter:hover {
+.job-status-filter:hover,
+.job-status-filter:hover select {
     color: var(--accent);
 }
 #jobs-list .jobs-empty td {
@@ -1800,24 +1814,28 @@ button.connection-pill:hover {
 }
 @media (max-width: 650px) {
     .workspace-header {
+        grid-template-columns: minmax(0, 1fr) auto;
         padding: 16px 20px;
+    }
+    .workspace-header .profile-toggle {
+        grid-column: 2;
+        grid-row: 1;
     }
     .content {
         padding: 24px 20px 32px;
     }
-    .page-heading {
-        flex-wrap: wrap;
-    }
-    .heading-actions {
+    .workspace-actions {
+        grid-column: 1 / -1;
+        grid-row: 2;
         width: 100%;
         gap: 8px;
     }
-    .heading-actions .button {
+    .workspace-actions .button {
         flex: 1;
         min-height: 44px;
         font-size: 12px;
     }
-    .heading-actions .workspace-refresh {
+    .workspace-actions .workspace-refresh {
         flex-shrink: 0;
     }
     #profile-name {
@@ -1825,9 +1843,6 @@ button.connection-pill:hover {
     }
     .workspace-section {
         margin-top: 24px;
-    }
-    .workspace-section-heading .muted {
-        font-size: 12px;
     }
     .subscription-actions .icon-button {
         width: 44px;
@@ -1869,11 +1884,12 @@ button.connection-pill:hover {
 }
 .workspace-body .workspace-section {
     min-width: 0;
+    margin-top: 0;
 }
 @media (max-width: 1000px) {
     .workspace-body {
         grid-template-columns: 1fr;
-        gap: 0;
+        gap: 24px;
     }
 }
 
@@ -1902,4 +1918,28 @@ button.connection-pill:hover {
 .theme-toggle svg {
     width: 20px;
     height: 20px;
+}
+
+.select-control {
+    display: block;
+    position: relative;
+    min-width: 0;
+}
+.select-control > select.select-input {
+    appearance: none;
+    width: 100%;
+    padding-inline-end: 40px;
+}
+.select-control > .select-chevron {
+    position: absolute;
+    inset-inline-end: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+}
+.select-control:has(select:disabled) > .select-chevron {
+    opacity: 0.5;
 }

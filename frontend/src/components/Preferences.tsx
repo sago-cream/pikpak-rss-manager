@@ -10,6 +10,7 @@ import type { JSX, ReactNode } from 'react';
 import { translate } from '../lib/i18n.js';
 import type { Language, Theme } from '../lib/types.js';
 import { Icon } from './Icon.js';
+import { Select } from './Select.js';
 
 function saved(key: string): string | null {
     try {
@@ -150,7 +151,7 @@ export function Appearance({
                     {language === 'en' ? '繁體中文' : 'English'}
                 </button>
             ) : (
-                <select
+                <Select
                     aria-label={t('語言')}
                     className='language-select'
                     onChange={(event) => {
@@ -162,7 +163,7 @@ export function Appearance({
                 >
                     <option value='zh-Hant'>繁體中文</option>
                     <option value='en'>English</option>
-                </select>
+                </Select>
             )}
         </div>
     );

@@ -35,9 +35,6 @@ export function Subscriptions({
         >
             <div className='workspace-section-heading'>
                 <h2 id='subscriptions-title'>{t('訂閱管理')}</h2>
-                <span className='muted' id='subscription-count'>
-                    {t(`共 ${subscriptions.length} 筆訂閱`)}
-                </span>
             </div>
             <div className='toolbar'>
                 <input

@@ -7,6 +7,7 @@ import type { Job } from '../lib/types.js';
 import { Badge } from './Badge.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { Select } from './Select.js';
 
 export function Tasks({
     jobs,
@@ -52,7 +53,7 @@ export function Tasks({
                             <tr>
                                 <th scope='col'>{t('發布與作品')}</th>
                                 <th className='job-status-column' scope='col'>
-                                    <select
+                                    <Select
                                         aria-label={t('任務狀態')}
                                         className='job-status-filter'
                                         id='job-status-filter'
@@ -74,7 +75,7 @@ export function Tasks({
                                                 {t('狀態')} · {t(label)}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </th>
                                 <th scope='col'>{t('時間')}</th>
                                 <th scope='col'>

@@ -12,6 +12,7 @@ import type {
 import { FormField } from './FormField.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { Select } from './Select.js';
 
 export function RenamePreview({
     url,
@@ -182,7 +183,7 @@ export function RenamePreview({
             </div>
             {samples.length > 0 && (
                 <FormField id='preview-source' label={t('種子檔名')}>
-                    <select
+                    <Select
                         onChange={(event) => {
                             setSelected(event.target.value);
                             selectedSample.current = samples.at(
@@ -202,7 +203,7 @@ export function RenamePreview({
                                 {sample.filename}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </FormField>
             )}
             <p className='field-help' id='preview-source-help' role='status'>
