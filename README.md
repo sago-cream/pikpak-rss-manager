@@ -14,6 +14,8 @@ On the same machine, open [http://127.0.0.1:8080](http://127.0.0.1:8080) and fol
 
 Compose listens on localhost only. For remote access, configure an HTTPS reverse proxy using the [deployment guide](docs/deployment.md), which also covers 1Panel and process settings.
 
+Forgot the password? Open **Forgot password** on the login page and follow the [recovery steps](docs/deployment.md#password-recovery). Server access is required.
+
 ### PAT permissions
 
 [Create a PAT](https://mypikpak.com/en-US/help-center/connected_apps/personal_access_tokens/create_personal_access_token) with:

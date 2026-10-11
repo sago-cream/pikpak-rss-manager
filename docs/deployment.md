@@ -53,6 +53,18 @@ docker compose start
 
 To restore, stop the service, extract the full backup into its data volume, set ownership to `65532:65532`, and restart. Protect the backup and key. Named volumes inherit the image's /data ownership. Bind mounts require matching host permissions.
 
+## Password recovery
+
+Open **Forgot password** on the login page. In the server terminal, create a one-time recovery code:
+
+```sh
+docker compose exec pikpak-rss-manager /app/pikpak-rss-manager recovery-code
+```
+
+For a local installation, run `pikpak-rss-manager recovery-code` with the same `APP_DATA_DIR` as the running service. The command requires the existing database and encryption key. It does not stop the service or reopen first-run setup.
+
+Enter the code and a new password on the recovery page. The code expires after 15 minutes. Creating another code replaces the previous one. Resetting the password ends all sessions while retaining subscriptions, tasks, site settings and the saved PikPak PAT. If you cannot access the server, contact its administrator.
+
 ## Image publishing
 
 Actions validates tests, race detection, vet, Docker startup and persistence, then publishes amd64/arm64 images on main/tag pushes using GITHUB_TOKEN. Release tags must match `cmd/pikpak-rss-manager/VERSION`.

@@ -196,6 +196,16 @@ func (s *Server) Handler() http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = s.templates.ExecuteTemplate(w, name, map[string]string{"Version": s.Version})
 	})
+	mux.HandleFunc("GET /forgot-password", func(w http.ResponseWriter, r *http.Request) {
+		if !s.initialized() {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		s.csrf(w, r)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_ = s.templates.ExecuteTemplate(w, "recovery.html", nil)
+	})
+	mux.HandleFunc("POST /api/password/recovery", s.recoverPassword)
 	mux.HandleFunc("GET /api/session", func(w http.ResponseWriter, r *http.Request) {
 		JSON(w, 200, map[string]any{"initialized": s.initialized(), "authenticated": s.authenticated(r), "csrf": s.csrf(w, r), "version": s.Version})
 	})

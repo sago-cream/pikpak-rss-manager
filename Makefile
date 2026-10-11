@@ -60,6 +60,8 @@ test-ui:
 	$(NODE) tests/web/i18n.test.cjs
 	$(NODE) tests/web/direct.test.cjs
 	$(NODE) tests/web/onboarding.test.cjs
+	$(NODE) tests/web/recovery.test.cjs
+	$(NODE) tests/web/overview.test.cjs
 
 verify: check-format test vet test-ui build
 

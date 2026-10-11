@@ -32,6 +32,7 @@ PAT requires Read & write files and Cloud Download. The MCP adapter has no move,
 - Selected folder IDs carry opaque account references. The server revalidates IDs/account ownership. Folder creation is sent once. Uncertain results require review.
 - First-run UI: administrator creation, then PAT connection. Authenticated users without a saved or connected account resume the connection step. Saved accounts retain the dashboard when authorization expires. Connection errors appear in Settings.
 - First-run password: nonempty, salted Argon2id verifier. PATs/private URLs: AES-GCM with a persistent secret.key. Credentials are never returned or logged. No external password/PAT sources or .env loading.
+- Password recovery requires server access. The `recovery-code` command issues a random 256-bit, one-use code valid for 15 minutes. Only its digest, expiry and bound administrator verifier are stored in an encrypted setting. Recovery atomically consumes the code and replaces its bound verifier. A regular password change invalidates outstanding codes. Successful recovery revokes all sessions and preserves site settings and cloud credentials.
 - Sessions: 12 hours, memory only. Mutations require matching CSRF cookie/header and same-origin checks. HTTP-only/SameSite cookies, login throttling and CSP are enabled.
 - Management pages place theme and language controls in the sidebar footer with connection status, version and sign-out. The footer remains accessible on narrow screens. Navigation and theme icons use a consistent 20 px size. Desktop navigation uses a 12 px icon-to-label gap. Setup and login retain their header controls.
 - UI language is a browser preference. Only application literals and message fields are translated. Names, paths, URLs, regex and filenames remain intact.
@@ -48,7 +49,7 @@ Sources: [MCP connection guide](https://mypikpak.com/en-US/help-center/connected
 
 ## JSON API
 
-Except health, session, setup and login, endpoints require an authenticated session. POST/PUT/DELETE require pp_csrf and X-CSRF-Token. Setup/login also require CSRF.
+Except health, session, setup, login and password recovery, endpoints require an authenticated session. POST/PUT/DELETE require pp_csrf and X-CSRF-Token. Setup, login and recovery also require CSRF. Recovery additionally requires the server-issued one-time code.
 
 | Endpoint | Purpose |
 |---|---|
@@ -72,6 +73,7 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | DELETE /api/jobs/completed | Remove all completed records/file actions, preserve cloud files. Returns deleted count |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |
+| POST /api/password/recovery | Server-issued code, new_password, confirm_password. Consume code and revoke sessions |
 | POST /api/settings/password | current_password, new_password, confirm_password. Revoke all sessions on success |
 | GET/POST /api/settings/pikpak | Status/write-only PAT |
 | POST /api/settings/pikpak/check | Reconnect |
