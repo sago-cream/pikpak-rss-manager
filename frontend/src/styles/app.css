@@ -322,7 +322,6 @@ h3 {
 
 .content {
     padding: 32px 40px 48px;
-    max-width: 1200px;
     width: 100%;
     margin: 0 auto;
 }
@@ -1466,7 +1465,6 @@ button.connection-pill:hover {
     align-items: center;
     gap: 16px;
     padding: 16px 40px;
-    max-width: 1200px;
     margin: auto;
 }
 #view-overview.content {
@@ -1651,117 +1649,129 @@ button.connection-pill:hover {
 #jobs-list .jobs-empty td {
     text-align: center;
 }
+/* The tracking control stays independent of the card's settings hit area. */
 .subscription-row {
-    padding: 20px 0;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 12px;
     border-top: 1px solid var(--line);
 }
 .subscription-row:last-child {
     border-bottom: 1px solid var(--line);
 }
-.subscription-summary {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-.subscription-symbol {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+.subscription-row:hover,
+.subscription-row:has(.subscription-open:focus-visible) {
     background: var(--accent-light);
-    color: var(--accent);
-    flex-shrink: 0;
 }
-.subscription-symbol svg {
-    width: 20px;
-    height: 20px;
+.subscription-row:has(.subscription-open:focus-visible) {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+}
+.subscription-row[data-paused='true'] {
+    opacity: 0.8;
+}
+.subscription-row[data-paused='true']:has(.subscription-toggle:hover),
+.subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible) {
+    opacity: 1;
+}
+.subscription-row[data-paused='true']:has(.subscription-toggle:hover)
+    :is(.subscription-info, .subscription-menu),
+.subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible)
+    :is(.subscription-info, .subscription-menu) {
+    opacity: 0.8;
 }
 .subscription-info {
     flex: 1;
     min-width: 0;
 }
-.subscription-name {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-.subscription-name h3 {
+.subscription-info h3 {
     margin: 0;
     overflow-wrap: anywhere;
     font-size: 14px;
 }
-.subscription-name .badge {
-    flex-shrink: 0;
+.subscription-open {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+.subscription-open::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+.subscription-open:focus-visible {
+    outline: none;
 }
 .subscription-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 16px;
+    gap: 4px 16px;
     margin-top: 8px;
     color: var(--muted);
     font-size: 12px;
-}
-.subscription-meta > span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-.subscription-meta > span:first-child {
-    flex: 1;
-}
-.subscription-meta svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
 }
 .destination-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.subscription-row > .error {
+.subscription-schedule {
+    font-variant-numeric: tabular-nums;
+}
+.subscription-info > .error {
     margin: 12px 0 0;
     font-size: 12px;
 }
-.subscription-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 12px;
-}
-.subscription-footer time {
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-}
-.subscription-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.subscription-toggle,
+.subscription-menu {
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
-}
-.subscription-actions .icon-button {
+    align-self: center;
     width: 40px;
     height: 40px;
-    border: 0;
     background: transparent;
     color: var(--muted);
 }
-.subscription-actions .icon-button:hover {
+.subscription-toggle:hover,
+.subscription-menu:hover {
     background: var(--accent-light);
     color: var(--accent);
+    opacity: 1;
 }
-.subscription-actions .icon-button.danger:hover {
-    background: var(--danger-bg);
-    color: var(--danger);
-}
-.subscription-actions svg {
+.subscription-toggle svg,
+.subscription-menu svg {
     width: 20px;
     height: 20px;
 }
+.subscription-delete {
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+}
+.subscription-management .form-actions {
+    flex-wrap: wrap;
+}
+#subscription-dialog:has(.settings-layout) {
+    width: min(960px, calc(100vw - 32px));
+}
+#subscription-dialog .settings-panel > h2 {
+    margin-bottom: 24px;
+}
+#subscription-dialog .settings-content > form {
+    margin: 0;
+}
+#subscription-dialog .rename-toggle {
+    margin-top: 0;
+}
+#subscription-dialog .settings-panel .form-grid {
+    grid-template-columns: 1fr;
+}
+
 #utility-dialog {
     width: min(960px, calc(100vw - 32px));
     max-height: calc(100dvh - 32px);
@@ -1825,7 +1835,8 @@ button.connection-pill:hover {
     .workspace-section {
         margin-top: 24px;
     }
-    .subscription-actions .icon-button {
+    .subscription-toggle,
+    .subscription-menu {
         width: 44px;
         height: 44px;
     }

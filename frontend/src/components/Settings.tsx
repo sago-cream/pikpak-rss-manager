@@ -7,6 +7,7 @@ import { formatBytes } from '../lib/jobs.js';
 import type { AppSettings, Session, Status } from '../lib/types.js';
 import { CheckboxField, Feedback, FormField } from './FormField.js';
 import { usePreferences } from './Preferences.js';
+import { SettingsLayout } from './SettingsLayout.js';
 import { TokenForm } from './TokenForm.js';
 
 export function Settings({
@@ -23,107 +24,88 @@ export function Settings({
     const connected = status.connected && !status.paused;
     return (
         <section className='utility-view' id='view-settings'>
-            <div className='settings-layout'>
-                <nav aria-label={t('設定分類')} className='settings-nav'>
-                    {[
-                        ['pikpak', 'PikPak 授權'],
-                        ['site', '網站設定'],
-                        ['password', '修改密碼'],
-                    ].map(([id, label]) => (
-                        <button
-                            aria-controls={`settings-${id}`}
-                            aria-current={section === id}
-                            className='settings-nav-button'
-                            data-settings-section={id}
-                            id={`settings-nav-${id}`}
-                            key={id}
-                            onClick={() => {
-                                setSection(id);
-                            }}
-                            type='button'
+            <SettingsLayout
+                id='settings'
+                onChange={setSection}
+                sections={[
+                    { id: 'pikpak', label: 'PikPak 授權' },
+                    { id: 'site', label: '網站設定' },
+                    { id: 'password', label: '修改密碼' },
+                ]}
+                value={section}
+            >
+                <article
+                    aria-labelledby='settings-nav-pikpak'
+                    className={`settings-panel${section === 'pikpak' ? '' : ' hidden'}`}
+                    id='settings-pikpak'
+                >
+                    <div className='panel-heading'>
+                        <h2>{t('PikPak 授權')}</h2>
+                        <span
+                            className={`badge ${connected ? 'green' : 'orange'}`}
+                            id='settings-badge'
                         >
-                            {t(label)}
-                        </button>
-                    ))}
-                </nav>
-                <div className='settings-content'>
-                    <article
-                        aria-labelledby='settings-nav-pikpak'
-                        className={`settings-panel${section === 'pikpak' ? '' : ' hidden'}`}
-                        id='settings-pikpak'
-                    >
-                        <div className='panel-heading'>
-                            <h2>{t('PikPak 授權')}</h2>
-                            <span
-                                className={`badge ${connected ? 'green' : 'orange'}`}
-                                id='settings-badge'
-                            >
-                                {t(
-                                    connected
-                                        ? '連線正常'
-                                        : status.paused
-                                          ? '已暫停'
-                                          : '未綁定'
-                                )}
-                            </span>
-                        </div>
-                        {status.connected && (
-                            <div className='account-card'>
-                                <span className='account-avatar'>P</span>
-                                <div>
-                                    <strong>
-                                        {status.name || t('PikPak 帳號')}
-                                    </strong>
-                                    <span>
-                                        {formatBytes(status.storage_used)} /{' '}
-                                        {formatBytes(status.storage_total)}{' '}
-                                        {t('雲端空間')}
-                                    </span>
-                                </div>
+                            {t(
+                                connected
+                                    ? '連線正常'
+                                    : status.paused
+                                      ? '已暫停'
+                                      : '未綁定'
+                            )}
+                        </span>
+                    </div>
+                    {status.connected && (
+                        <div className='account-card'>
+                            <span className='account-avatar'>P</span>
+                            <div>
+                                <strong>
+                                    {status.name || t('PikPak 帳號')}
+                                </strong>
+                                <span>
+                                    {formatBytes(status.storage_used)} /{' '}
+                                    {formatBytes(status.storage_total)}{' '}
+                                    {t('雲端空間')}
+                                </span>
                             </div>
-                        )}
-                        {!connected && (
-                            <Feedback
-                                message={t(
-                                    status.message || '請重新檢查 PikPak 連線。'
-                                )}
-                                status
-                            />
-                        )}
-                        <TokenForm
-                            onCheck={async () => {
-                                await api(
-                                    '/api/settings/pikpak/check',
-                                    'POST',
-                                    {}
-                                );
-                                await onRefresh();
-                            }}
-                            onSaved={onRefresh}
+                        </div>
+                    )}
+                    {!connected && (
+                        <Feedback
+                            message={t(
+                                status.message || '請重新檢查 PikPak 連線。'
+                            )}
+                            status
                         />
-                    </article>
-                    <article
-                        aria-labelledby='settings-nav-site'
-                        className={`settings-panel${section === 'site' ? '' : ' hidden'}`}
-                        id='settings-site'
-                    >
-                        <div className='panel-heading'>
-                            <h2>{t('網站設定')}</h2>
-                        </div>
-                        <SiteSettings />
-                    </article>
-                    <article
-                        aria-labelledby='settings-nav-password'
-                        className={`settings-panel${section === 'password' ? '' : ' hidden'}`}
-                        id='settings-password'
-                    >
-                        <div className='panel-heading'>
-                            <h2>{t('修改密碼')}</h2>
-                        </div>
-                        <PasswordSettings onAuthenticated={onAuthenticated} />
-                    </article>
-                </div>
-            </div>
+                    )}
+                    <TokenForm
+                        onCheck={async () => {
+                            await api('/api/settings/pikpak/check', 'POST', {});
+                            await onRefresh();
+                        }}
+                        onSaved={onRefresh}
+                    />
+                </article>
+                <article
+                    aria-labelledby='settings-nav-site'
+                    className={`settings-panel${section === 'site' ? '' : ' hidden'}`}
+                    id='settings-site'
+                >
+                    <div className='panel-heading'>
+                        <h2>{t('網站設定')}</h2>
+                    </div>
+                    <SiteSettings />
+                </article>
+                <article
+                    aria-labelledby='settings-nav-password'
+                    className={`settings-panel${section === 'password' ? '' : ' hidden'}`}
+                    id='settings-password'
+                >
+                    <div className='panel-heading'>
+                        <h2>{t('修改密碼')}</h2>
+                    </div>
+                    <PasswordSettings onAuthenticated={onAuthenticated} />
+                </article>
+            </SettingsLayout>
         </section>
     );
 }

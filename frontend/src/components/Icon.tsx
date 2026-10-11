@@ -6,10 +6,13 @@ import {
     CircleCheck,
     Clock,
     Download,
+    EllipsisVertical,
     Folder,
     Info,
     Moon,
+    Pause,
     Pencil,
+    Play,
     Plus,
     RefreshCw,
     Rss,
@@ -20,6 +23,9 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 export type IconName =
+    | 'more-vertical'
+    | 'play'
+    | 'pause'
     | 'info'
     | 'rss'
     | 'folder'
@@ -38,6 +44,9 @@ export type IconName =
     | 'chevron-right';
 
 const icons: Record<IconName, LucideIcon> = {
+    'more-vertical': EllipsisVertical,
+    'play': Play,
+    'pause': Pause,
     'info': Info,
     'rss': Rss,
     'folder': Folder,

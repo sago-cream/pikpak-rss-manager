@@ -12,6 +12,8 @@ import { CheckboxField, Feedback, FormField } from './FormField.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 import { RenamePreview } from './RenamePreview.js';
+import { SettingsLayout, SettingsPanel } from './SettingsLayout.js';
+import { SubscriptionActions } from './SubscriptionActions.js';
 
 export function SubscriptionDialog({
     subscription,
@@ -35,7 +37,7 @@ export function SubscriptionDialog({
         id: subscription?.destination_id || '',
         account: subscription?.destination_account_ref || '',
     });
-    const [enabled, setEnabled] = useState(subscription?.enabled ?? true);
+    const [section, setSection] = useState('general');
     const [error, setError] = useState('');
     const [interval, setInterval] = useState(
         String(subscription?.interval_minutes ?? 10)
@@ -58,62 +60,85 @@ export function SubscriptionDialog({
         replacement,
         rename_enabled: renaming,
     };
-    const title = manual ? '新增任務' : subscription ? '編輯訂閱' : '新增訂閱';
-    return (
-        <Dialog
-            id='subscription-dialog'
-            onClose={onClose}
-            scroll
-            title={t(title)}
+    const title = manual ? '新增任務' : '新增訂閱';
+    const form = (
+        <form
+            className={section === 'manage' ? 'hidden' : undefined}
+            hidden={section === 'manage'}
+            id='subscription-form'
+            noValidate
+            onSubmit={(event) => {
+                event.preventDefault();
+                if (pending) {
+                    return;
+                }
+                const invalid = [...event.currentTarget.elements].find(
+                    (
+                        element
+                    ): element is HTMLInputElement | HTMLTextAreaElement =>
+                        (element instanceof HTMLInputElement ||
+                            element instanceof HTMLTextAreaElement) &&
+                        !element.validity.valid
+                );
+                if (invalid) {
+                    setSection(
+                        invalid.closest<HTMLElement>('[data-settings-panel]')
+                            ?.dataset.settingsPanel || 'general'
+                    );
+                    globalThis.requestAnimationFrame(() => {
+                        invalid.focus();
+                        invalid.reportValidity();
+                    });
+                    return;
+                }
+                setPending(true);
+                setError('');
+                const folder = {
+                    destination: destination.path.trim(),
+                    destination_id: destination.id,
+                    destination_account_ref: destination.account,
+                };
+                const payload = manual
+                    ? { url: url.trim(), ...folder }
+                    : {
+                          name: name.trim(),
+                          rss_url: url.trim(),
+                          ...folder,
+                          enabled: subscription?.enabled ?? true,
+                          interval_minutes: Number(interval),
+                          regex,
+                          replacement,
+                          rename_enabled: renaming,
+                      };
+                const path = manual
+                    ? '/api/jobs'
+                    : `/api/subscriptions${subscription ? `/${subscription.id}` : ''}`;
+                void api(
+                    path,
+                    !manual && subscription ? 'PUT' : 'POST',
+                    payload
+                )
+                    .then(onSaved)
+                    .then(() => {
+                        if (active.current) {
+                            onClose();
+                        }
+                    })
+                    .catch((error_: unknown) => {
+                        setError(errorMessage(error_));
+                    })
+                    .finally(() => {
+                        setPending(false);
+                    });
+            }}
         >
-            <form
-                id='subscription-form'
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    if (pending) {
-                        return;
-                    }
-                    setPending(true);
-                    setError('');
-                    const folder = {
-                        destination: destination.path.trim(),
-                        destination_id: destination.id,
-                        destination_account_ref: destination.account,
-                    };
-                    const payload = manual
-                        ? { url: url.trim(), ...folder }
-                        : {
-                              name: name.trim(),
-                              rss_url: url.trim(),
-                              ...folder,
-                              enabled,
-                              interval_minutes: Number(interval),
-                              regex,
-                              replacement,
-                              rename_enabled: renaming,
-                          };
-                    const path = manual
-                        ? '/api/jobs'
-                        : `/api/subscriptions${subscription ? `/${subscription.id}` : ''}`;
-                    void api(
-                        path,
-                        !manual && subscription ? 'PUT' : 'POST',
-                        payload
-                    )
-                        .then(onSaved)
-                        .then(() => {
-                            if (active.current) {
-                                onClose();
-                            }
-                        })
-                        .catch((error_: unknown) => {
-                            setError(errorMessage(error_));
-                        })
-                        .finally(() => {
-                            setPending(false);
-                        });
-                }}
+            <SettingsPanel
+                id='subscription-settings'
+                label={manual ? t('新增任務') : undefined}
+                section='general'
+                value={section}
             >
+                {!manual && <h2>{t('訂閱設定')}</h2>}
                 <div className='form-grid'>
                     {!manual && (
                         <FormField
@@ -230,109 +255,147 @@ export function SubscriptionDialog({
                         </FormField>
                     )}
                 </div>
-                {!manual && (
-                    <>
-                        <CheckboxField
-                            checked={enabled}
-                            id='sub-enabled'
-                            label={t('啟用自動追蹤')}
-                            onChange={setEnabled}
-                        />
-                        <CheckboxField
-                            checked={renaming}
-                            className='rename-toggle'
-                            help={t(
-                                '未勾選時保留原始檔名，只整理到目標資料夾。'
-                            )}
-                            id='sub-rename-enabled'
-                            label={t('重命名檔案')}
-                            onChange={setRenaming}
-                        />
-                        {renaming && (
-                            <div
-                                className='rule-block form-stack'
-                                id='rename-options'
+            </SettingsPanel>
+            {!manual && (
+                <SettingsPanel
+                    id='subscription-settings'
+                    section='naming'
+                    value={section}
+                >
+                    <h2>{t('檔名規則')}</h2>
+                    <CheckboxField
+                        checked={renaming}
+                        className='rename-toggle'
+                        help={t('未勾選時保留原始檔名，只整理到目標資料夾。')}
+                        id='sub-rename-enabled'
+                        label={t('重命名檔案')}
+                        onChange={setRenaming}
+                    />
+                    {renaming && (
+                        <div
+                            className='rule-block form-stack'
+                            id='rename-options'
+                        >
+                            <FormField
+                                help={t(
+                                    'Go RE2；不支援 lookbehind 或反向參照。'
+                                )}
+                                id='sub-regex'
+                                label={t('尋找 Regex')}
                             >
-                                <FormField
-                                    help={t(
-                                        'Go RE2；不支援 lookbehind 或反向參照。'
-                                    )}
-                                    id='sub-regex'
-                                    label={t('尋找 Regex')}
-                                >
-                                    <textarea
-                                        className='code-input'
-                                        onChange={(event) => {
-                                            setRegex(event.target.value);
-                                        }}
-                                        onCompositionEnd={() => {
-                                            setComposing(false);
-                                        }}
-                                        onCompositionStart={() => {
-                                            setComposing(true);
-                                        }}
-                                        required
-                                        rows={3}
-                                        value={regex}
-                                    />
-                                </FormField>
-                                <FormField
-                                    help={t(
-                                        '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。'
-                                    )}
-                                    id='sub-replacement'
-                                    label={t('替換為')}
-                                >
-                                    <input
-                                        className='code-input'
-                                        onChange={(event) => {
-                                            setReplacement(event.target.value);
-                                        }}
-                                        onCompositionEnd={() => {
-                                            setComposing(false);
-                                        }}
-                                        onCompositionStart={() => {
-                                            setComposing(true);
-                                        }}
-                                        placeholder={t('留空可移除匹配部分')}
-                                        value={replacement}
-                                    />
-                                </FormField>
-                                <RenamePreview
-                                    key={url.trim()}
-                                    paused={composing}
-                                    rule={rule}
-                                    subscriptionID={subscription?.id ?? 0}
-                                    url={url}
+                                <textarea
+                                    className='code-input'
+                                    onChange={(event) => {
+                                        setRegex(event.target.value);
+                                    }}
+                                    onCompositionEnd={() => {
+                                        setComposing(false);
+                                    }}
+                                    onCompositionStart={() => {
+                                        setComposing(true);
+                                    }}
+                                    required
+                                    rows={3}
+                                    value={regex}
                                 />
-                            </div>
+                            </FormField>
+                            <FormField
+                                help={t(
+                                    '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。'
+                                )}
+                                id='sub-replacement'
+                                label={t('替換為')}
+                            >
+                                <input
+                                    className='code-input'
+                                    onChange={(event) => {
+                                        setReplacement(event.target.value);
+                                    }}
+                                    onCompositionEnd={() => {
+                                        setComposing(false);
+                                    }}
+                                    onCompositionStart={() => {
+                                        setComposing(true);
+                                    }}
+                                    placeholder={t('留空可移除匹配部分')}
+                                    value={replacement}
+                                />
+                            </FormField>
+                            <RenamePreview
+                                key={url.trim()}
+                                paused={composing}
+                                rule={rule}
+                                subscriptionID={subscription?.id ?? 0}
+                                url={url}
+                            />
+                        </div>
+                    )}
+                    <p className='field-help' id='baseline-help'>
+                        {t(
+                            '首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載。Regex 不匹配時保留原名。'
                         )}
-                        <p className='field-help' id='baseline-help'>
-                            {t(
-                                '首次檢查只建立基準。如需下載既有項目，儲存後使用「補抓」勾選並確認下載。Regex 不匹配時保留原名。'
-                            )}
-                        </p>
-                    </>
-                )}
-                <Feedback message={t(error)} />
-                <div className='dialog-footer'>
-                    <button
-                        className='button subtle'
-                        onClick={onClose}
-                        type='button'
-                    >
-                        {t('取消')}
-                    </button>
-                    <button
-                        className='button primary'
-                        disabled={pending}
-                        id='save-subscription'
-                        type='submit'
-                    >
-                        {t(manual ? '新增任務' : '儲存訂閱')}
-                    </button>
-                </div>
-            </form>
+                    </p>
+                </SettingsPanel>
+            )}
+            <Feedback message={t(error)} />
+            <div className='dialog-footer'>
+                <button
+                    className='button subtle'
+                    onClick={onClose}
+                    type='button'
+                >
+                    {t('取消')}
+                </button>
+                <button
+                    className='button primary'
+                    disabled={pending}
+                    id='save-subscription'
+                    type='submit'
+                >
+                    {t(manual ? '新增任務' : '儲存訂閱')}
+                </button>
+            </div>
+        </form>
+    );
+    return (
+        <Dialog
+            id='subscription-dialog'
+            onClose={onClose}
+            scroll
+            title={subscription ? subscription.name : t(title)}
+        >
+            {manual ? (
+                form
+            ) : (
+                <SettingsLayout
+                    disabled={pending}
+                    id='subscription-settings'
+                    onChange={setSection}
+                    sections={[
+                        { id: 'general', label: '訂閱設定' },
+                        { id: 'naming', label: '檔名規則' },
+                        ...(subscription
+                            ? [{ id: 'manage', label: '管理訂閱' }]
+                            : []),
+                    ]}
+                    value={section}
+                >
+                    {form}
+                    {subscription && (
+                        <SettingsPanel
+                            id='subscription-settings'
+                            section='manage'
+                            value={section}
+                        >
+                            <SubscriptionActions
+                                onDeleted={onClose}
+                                onSaved={onSaved}
+                                subscription={subscription}
+                            />
+                        </SettingsPanel>
+                    )}
+                </SettingsLayout>
+            )}
         </Dialog>
     );
 }

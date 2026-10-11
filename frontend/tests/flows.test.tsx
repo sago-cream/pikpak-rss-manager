@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { App } from '../src/components/App.js';
 import { Auth } from '../src/components/Auth.js';
-import { BackfillDialog } from '../src/components/BackfillDialog.js';
+import { BackfillPanel } from '../src/components/BackfillPanel.js';
 import { FolderPicker } from '../src/components/FolderPicker.js';
 import { Preferences } from '../src/components/Preferences.js';
 import { RenamePreview } from '../src/components/RenamePreview.js';
@@ -23,7 +23,7 @@ import { Workspace } from '../src/components/Workspace.js';
 import { api, setCSRF } from '../src/lib/api.js';
 import { translate } from '../src/lib/i18n.js';
 import { currentFilename } from '../src/lib/jobs.js';
-import type { Job, Rule } from '../src/lib/types.js';
+import type { Job, Rule, Subscription } from '../src/lib/types.js';
 
 function response(value: unknown, status = 200): Response {
     return Response.json(value, {
@@ -31,6 +31,12 @@ function response(value: unknown, status = 200): Response {
         headers: { 'Content-Type': 'application/json' },
     });
 }
+const requestPath = (input: RequestInfo | URL): string =>
+    typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
 const success = async () => undefined;
 const job = (id: string, state: string): Job => ({
     id,
@@ -224,6 +230,7 @@ describe('React flows', () => {
                 await vi.advanceTimersByTimeAsync(600);
             });
             expect(fetch).not.toHaveBeenCalled();
+            fireEvent.click(screen.getByRole('button', { name: '檔名規則' }));
             fireEvent.click(screen.getByLabelText('重命名檔案'));
             expect(
                 screen.getByText(
@@ -238,10 +245,12 @@ describe('React flows', () => {
                 await vi.advanceTimersByTimeAsync(1);
             });
             expect(fetch).toHaveBeenCalledOnce();
+            fireEvent.click(screen.getByRole('button', { name: '訂閱設定' }));
             fireEvent.change(screen.getByLabelText('RSS 連結'), {
                 target: { value: 'not-a-url' },
             });
             expect(signals[0].aborted).toBe(true);
+            fireEvent.click(screen.getByRole('button', { name: '檔名規則' }));
             expect(
                 screen.getByRole('button', { name: '重新整理種子檔名' })
             ).toHaveProperty('disabled', true);
@@ -249,6 +258,7 @@ describe('React flows', () => {
                 await vi.advanceTimersByTimeAsync(600);
             });
             expect(fetch).toHaveBeenCalledOnce();
+            fireEvent.click(screen.getByRole('button', { name: '訂閱設定' }));
             fireEvent.change(screen.getByLabelText('RSS 連結'), {
                 target: { value: 'https://public.test/new' },
             });
@@ -270,6 +280,7 @@ describe('React flows', () => {
                     })
                 );
             });
+            fireEvent.click(screen.getByRole('button', { name: '檔名規則' }));
             expect(screen.getByRole('option').textContent).toBe('new.mkv');
             expect(screen.queryByText('old.mkv')).toBeNull();
         } finally {
@@ -432,6 +443,227 @@ describe('React flows', () => {
         fireEvent.change(select, { target: { value: 'running' } });
         expect(document.activeElement).toBe(select);
     });
+    it('toggles tracking without opening settings and retains subscription rules on failed updates', async () => {
+        let sub: Subscription = {
+            id: 7,
+            name: '測試訂閱',
+            rss_url: 'https://public.test/rss',
+            destination: 'Series',
+            destination_id: 'folder-7',
+            destination_account_ref: 'account-ref',
+            enabled: false,
+            interval_minutes: 30,
+            initialized: true,
+            last_checked: 1,
+            next_check: 2,
+            last_error: '',
+            rename_enabled: false,
+            regex: 'original',
+            replacement: 'requested',
+        };
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input, options) => {
+                const path = requestPath(input);
+                if (options?.method === 'PUT') {
+                    const payload = JSON.parse(
+                        options.body as string
+                    ) as Subscription;
+                    if (!payload.enabled) {
+                        return response({ error: 'fixture save failed' }, 400);
+                    }
+                    sub = { ...sub, ...payload };
+                    return response(sub);
+                }
+                if (path === '/api/subscriptions') {
+                    return response([sub]);
+                }
+                if (path === '/api/jobs' || path === '/api/events') {
+                    return response([]);
+                }
+                return response({ connected: true });
+            });
+        render(
+            <Preferences>
+                <Workspace onAuthenticated={success} version='test' />
+            </Preferences>
+        );
+        await userEvent.click(
+            await screen.findByRole('button', { name: '繼續追蹤 測試訂閱' })
+        );
+        const pause = await screen.findByRole('button', {
+            name: '暫停追蹤 測試訂閱',
+        });
+        expect(document.querySelector('dialog')).toBeNull();
+        const mutation = fetch.mock.calls.find(
+            ([, options]) => options?.method === 'PUT'
+        )!;
+        expect(JSON.parse(mutation[1]!.body as string)).toEqual({
+            name: '測試訂閱',
+            rss_url: 'https://public.test/rss',
+            destination: 'Series',
+            destination_id: 'folder-7',
+            destination_account_ref: 'account-ref',
+            interval_minutes: 30,
+            rename_enabled: false,
+            regex: 'original',
+            replacement: 'requested',
+            enabled: true,
+        });
+        await userEvent.click(pause);
+        await screen.findByText('fixture save failed');
+        expect(
+            screen.getByRole('button', { name: '暫停追蹤 測試訂閱' })
+        ).toBeTruthy();
+        expect(screen.queryByRole('searchbox')).toBeNull();
+        await userEvent.click(
+            document.querySelector<HTMLButtonElement>(
+                '[data-subscription-settings="7"]'
+            )!
+        );
+        expect(screen.getByRole('dialog', { name: '測試訂閱' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: '檔名規則' })).toBeTruthy();
+    });
+    it('preserves subscription drafts across naming and management, keeps backfill inline and saves a paused subscription as paused', async () => {
+        const sub: Subscription = {
+            id: 7,
+            name: '測試訂閱',
+            rss_url: 'https://public.test/rss',
+            destination: '',
+            enabled: false,
+            interval_minutes: 30,
+            initialized: true,
+            last_checked: 1,
+            next_check: 2,
+            last_error: '',
+            rename_enabled: false,
+            regex: '',
+            replacement: '',
+        };
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input) =>
+                response(
+                    requestPath(input).endsWith('/backfill/preview')
+                        ? { token: 'fixture', items: [], notices: [] }
+                        : { ok: true }
+                )
+            );
+        const saved = vi.fn(success);
+        render(
+            <Preferences>
+                <SubscriptionDialog
+                    onClose={vi.fn<() => void>()}
+                    onSaved={saved}
+                    status={{ connected: true }}
+                    subscription={sub}
+                />
+            </Preferences>
+        );
+        expect(screen.queryByLabelText('啟用自動追蹤')).toBeNull();
+        await userEvent.clear(screen.getByLabelText('訂閱名稱'));
+        await userEvent.type(screen.getByLabelText('訂閱名稱'), '草稿名稱');
+        await userEvent.click(screen.getByRole('button', { name: '檔名規則' }));
+        expect(screen.getByLabelText('重命名檔案')).toBeTruthy();
+        await userEvent.click(screen.getByRole('button', { name: '管理訂閱' }));
+        await userEvent.click(
+            screen.getByRole('button', { name: '檢查新的發布' })
+        );
+        await screen.findByText('訂閱檢查完成');
+        expect(
+            fetch.mock.calls.some(([path]) =>
+                requestPath(path).endsWith('/7/check')
+            )
+        ).toBe(true);
+        await userEvent.click(screen.getByRole('button', { name: '補抓' }));
+        await screen.findByText('RSS 中沒有可下載的項目');
+        expect(document.querySelector('form form')).toBeNull();
+        expect(document.querySelectorAll('dialog')).toHaveLength(1);
+        await userEvent.click(screen.getByRole('button', { name: '取消' }));
+        await userEvent.click(screen.getByRole('button', { name: '訂閱設定' }));
+        expect(screen.getByLabelText('訂閱名稱')).toHaveProperty(
+            'value',
+            '草稿名稱'
+        );
+        await userEvent.click(screen.getByRole('button', { name: '儲存訂閱' }));
+        await waitFor(() => {
+            expect(saved).toHaveBeenCalledTimes(2);
+        });
+        const mutation = fetch.mock.calls.find(([path]) =>
+            requestPath(path).endsWith('/7')
+        )!;
+        expect(JSON.parse(mutation[1]!.body as string)).toMatchObject({
+            name: '草稿名稱',
+            enabled: false,
+        });
+    });
+    it('confirms subscription deletion and keeps settings open when deletion fails', async () => {
+        const sub: Subscription = {
+            id: 7,
+            name: '測試訂閱',
+            rss_url: 'https://public.test/rss',
+            destination: '',
+            enabled: false,
+            interval_minutes: 30,
+            initialized: true,
+            last_checked: 1,
+            next_check: 2,
+            last_error: '',
+            rename_enabled: false,
+            regex: '',
+            replacement: '',
+        };
+        const confirm = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(
+                response({ error: 'fixture deletion failed' }, 400)
+            );
+        const close = vi.fn<() => void>();
+        render(
+            <Preferences>
+                <SubscriptionDialog
+                    onClose={close}
+                    onSaved={success}
+                    status={{ connected: true }}
+                    subscription={sub}
+                />
+            </Preferences>
+        );
+        await userEvent.click(screen.getByRole('button', { name: '管理訂閱' }));
+        await userEvent.click(screen.getByRole('button', { name: '刪除訂閱' }));
+        expect(fetch).not.toHaveBeenCalled();
+        confirm.mockReturnValue(true);
+        await userEvent.click(screen.getByRole('button', { name: '刪除訂閱' }));
+        await screen.findByText('fixture deletion failed');
+        expect(close).not.toHaveBeenCalled();
+        expect(fetch.mock.calls[0][1]).toHaveProperty('method', 'DELETE');
+    });
+    it('reveals and focuses invalid fields in another subscription settings section before saving', async () => {
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(response({ ok: true }));
+        render(
+            <Preferences>
+                <SubscriptionDialog
+                    onClose={vi.fn<() => void>()}
+                    onSaved={success}
+                    status={{ connected: true }}
+                />
+            </Preferences>
+        );
+        await userEvent.click(screen.getByRole('button', { name: '檔名規則' }));
+        await userEvent.click(screen.getByRole('button', { name: '儲存訂閱' }));
+        await waitFor(() => {
+            expect(document.activeElement).toBe(
+                screen.getByLabelText('訂閱名稱')
+            );
+        });
+        expect(
+            document.querySelector('#subscription-settings-general')
+        ).toHaveProperty('hidden', false);
+        expect(fetch).not.toHaveBeenCalled();
+    });
     it('submits manual downloads to root without subscription or rename fields', async () => {
         const fetch = vi
             .spyOn(globalThis, 'fetch')
@@ -518,7 +750,7 @@ describe('React flows', () => {
         vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
         render(
             <Preferences>
-                <BackfillDialog
+                <BackfillPanel
                     onClose={vi.fn<() => void>()}
                     onSaved={success}
                     subscriptionID={1}

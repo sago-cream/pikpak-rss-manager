@@ -11,7 +11,6 @@ import type {
     Subscription,
     WorkspaceData,
 } from '../lib/types.js';
-import { BackfillDialog } from './BackfillDialog.js';
 import { Dialog } from './Dialog.js';
 import { Icon } from './Icon.js';
 import { JobDialog } from './JobDialog.js';
@@ -24,7 +23,6 @@ import { Tasks } from './Tasks.js';
 type Modal =
     | { type: 'subscription'; subscription?: Subscription; manual?: boolean }
     | { type: 'job'; id: string }
-    | { type: 'backfill'; id: number }
     | { type: 'settings' | 'events' };
 export function Workspace({
     version,
@@ -317,49 +315,48 @@ export function Workspace({
                                     onAdd={() => {
                                         setModal({ type: 'subscription' });
                                     }}
-                                    onBackfill={(id) => {
-                                        setModal({ type: 'backfill', id });
-                                    }}
-                                    onCheck={(id) => {
-                                        void action(
-                                            'check',
-                                            async () => {
-                                                await api(
-                                                    `/api/subscriptions/${id}/check`,
-                                                    'POST',
-                                                    { backfill: false }
-                                                );
-                                                await refresh();
-                                            },
-                                            '訂閱檢查完成'
-                                        );
-                                    }}
-                                    onDelete={(id) => {
-                                        if (
-                                            globalThis.confirm(
-                                                t(
-                                                    '刪除這筆訂閱？已建立的任務與雲端檔案會保留。'
-                                                )
-                                            )
-                                        ) {
-                                            void action(
-                                                'delete',
-                                                async () => {
-                                                    await api(
-                                                        `/api/subscriptions/${id}`,
-                                                        'DELETE'
-                                                    );
-                                                    await refresh();
-                                                },
-                                                '訂閱已刪除'
-                                            );
-                                        }
-                                    }}
                                     onEdit={(subscription) => {
                                         setModal({
                                             type: 'subscription',
                                             subscription,
                                         });
+                                    }}
+                                    onToggle={(subscription) => {
+                                        void action(
+                                            'toggle',
+                                            async () => {
+                                                await api(
+                                                    `/api/subscriptions/${subscription.id}`,
+                                                    'PUT',
+                                                    {
+                                                        name: subscription.name,
+                                                        rss_url:
+                                                            subscription.rss_url,
+                                                        destination:
+                                                            subscription.destination,
+                                                        destination_id:
+                                                            subscription.destination_id ||
+                                                            '',
+                                                        destination_account_ref:
+                                                            subscription.destination_account_ref ||
+                                                            '',
+                                                        interval_minutes:
+                                                            subscription.interval_minutes,
+                                                        rename_enabled:
+                                                            subscription.rename_enabled,
+                                                        regex: subscription.regex,
+                                                        replacement:
+                                                            subscription.replacement,
+                                                        enabled:
+                                                            !subscription.enabled,
+                                                    }
+                                                );
+                                                await refresh();
+                                            },
+                                            subscription.enabled
+                                                ? '已暫停追蹤'
+                                                : '已繼續追蹤'
+                                        );
                                     }}
                                     subscriptions={data.subscriptions}
                                 />
@@ -414,13 +411,6 @@ export function Workspace({
                     onSaved={refresh}
                     status={data.status}
                     subscription={modal.subscription}
-                />
-            )}
-            {modal?.type === 'backfill' && (
-                <BackfillDialog
-                    onClose={close}
-                    onSaved={refresh}
-                    subscriptionID={modal.id}
                 />
             )}
             {modal?.type === 'job' && (
