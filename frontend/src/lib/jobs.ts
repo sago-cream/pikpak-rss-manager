@@ -14,7 +14,6 @@ export const reviewStates = [
     'paused_quota',
     'paused_account',
 ];
-export type JobFilter = 'all' | 'running' | 'review' | 'complete';
 export const jobLabels: Record<string, string> = {
     queued: '等待處理',
     submitting: '正在提交',
@@ -28,23 +27,22 @@ export const jobLabels: Record<string, string> = {
     paused_quota: '配額暫停',
     paused_account: '帳號暫停',
 };
-export function filterJobs(jobs: Job[], filter: JobFilter): Job[] {
-    const items = jobs.filter(
-        (job) =>
-            filter === 'all' ||
-            (filter === 'running' && runningStates.includes(job.state)) ||
-            (filter === 'review' && reviewStates.includes(job.state)) ||
-            (filter === 'complete' && job.state === 'complete')
-    );
-    const priority = (job: Job) =>
-        reviewStates.includes(job.state)
-            ? 0
-            : runningStates.includes(job.state)
-              ? 1
-              : 2;
-    return filter === 'all'
-        ? items.toSorted((a, b) => priority(a) - priority(b))
-        : items;
+export function jobColor(state: string): 'green' | 'orange' | 'purple' {
+    return state === 'complete'
+        ? 'green'
+        : reviewStates.includes(state)
+          ? 'orange'
+          : 'purple';
+}
+export function sortJobs(jobs: Job[], completedFirst = false): Job[] {
+    return jobs.toSorted((a, b) => {
+        const completion =
+            Number(a.state === 'complete') - Number(b.state === 'complete');
+        return (
+            (completedFirst ? -completion : completion) ||
+            b.created_at - a.created_at
+        );
+    });
 }
 export function currentFilename(file: {
     actual_name?: string;

@@ -414,68 +414,6 @@ tr:last-child td {
     border-bottom: 0;
 }
 
-.job-name {
-    min-width: 210px;
-    max-width: 500px;
-}
-
-.job-name strong {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.job-name > span {
-    display: block;
-    font-size: 10px;
-    color: var(--muted);
-    max-width: 440px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    margin-top: 3px;
-}
-
-.job-row {
-    position: relative;
-    cursor: pointer;
-}
-
-.job-row:hover,
-.job-row:has(.job-open:focus-visible) {
-    background: var(--accent-light);
-}
-
-.job-row:has(.job-open:focus-visible) {
-    outline: 3px solid var(--accent);
-    outline-offset: -3px;
-}
-
-.job-open {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: inherit;
-}
-
-.job-open::after {
-    position: absolute;
-    inset: 0;
-    content: '';
-}
-
-.job-open:focus-visible {
-    outline: none;
-}
-
-.progress-caption {
-    font-size: 9px;
-    color: var(--muted);
-    margin-top: 5px;
-}
-
 .nowrap {
     white-space: nowrap;
     font-size: 10px;
@@ -1144,14 +1082,6 @@ dialog::backdrop {
         padding: 14px 15px;
     }
 
-    .job-name {
-        min-width: 180px;
-    }
-
-    .job-name > span {
-        max-width: 210px;
-    }
-
     .panel-heading {
         padding: 18px;
     }
@@ -1272,50 +1202,6 @@ select:focus-visible {
     flex-wrap: wrap;
     gap: 12px;
 }
-@media (max-width: 600px) {
-    #jobs-list table,
-    #jobs-list tbody {
-        display: block;
-    }
-    #jobs-list thead {
-        display: block;
-    }
-    #jobs-list thead tr {
-        align-items: center;
-        padding: 0 12px;
-        gap: 8px;
-    }
-    #jobs-list th {
-        padding: 0;
-        border: 0;
-    }
-    #jobs-list th:nth-child(n + 3) {
-        display: none;
-    }
-    #jobs-list tr {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        padding: 18px;
-        border-bottom: 1px solid var(--line);
-    }
-    #jobs-list tr:last-child {
-        border-bottom: 0;
-    }
-    #jobs-list td {
-        display: block;
-        min-width: 0;
-        padding: 0;
-        border: 0;
-    }
-    #jobs-list .job-name {
-        grid-column: 1 / -1;
-    }
-    #jobs-list td.nowrap {
-        text-align: right;
-    }
-}
-
 /* First-run setup shares the login layout and existing theme tokens. */
 .onboarding-progress {
     display: flex;
@@ -1599,13 +1485,6 @@ button.connection-pill:hover {
     padding: 16px 0;
     margin: 0;
 }
-#jobs-list {
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-}
-#jobs-list table {
-    background: transparent;
-}
 #jobs-more {
     display: block;
     min-height: 44px;
@@ -1624,33 +1503,8 @@ button.connection-pill:hover {
     width: 20px;
     height: 20px;
 }
-.job-status-column {
-    padding: 0 12px;
-}
-.job-status-filter {
-    width: 160px;
-    max-width: 100%;
-    color: var(--muted);
-}
-.job-status-filter select {
-    min-height: 44px;
-    padding: 8px 4px;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    cursor: pointer;
-}
-.job-status-filter:hover,
-.job-status-filter:hover select {
-    color: var(--accent);
-}
-#jobs-list .jobs-empty td {
-    text-align: center;
-}
-/* The tracking control stays independent of the card's settings hit area. */
-.subscription-row {
+/* Leading controls and menus stay independent of the row hit area. */
+.workspace-row {
     position: relative;
     display: flex;
     align-items: flex-start;
@@ -1658,14 +1512,14 @@ button.connection-pill:hover {
     padding: 20px 12px;
     border-top: 1px solid var(--line);
 }
-.subscription-row:last-child {
+.workspace-row:last-child {
     border-bottom: 1px solid var(--line);
 }
-.subscription-row:hover,
-.subscription-row:has(.subscription-open:focus-visible) {
+.workspace-row:hover,
+.workspace-row:has(.workspace-row-open:focus-visible) {
     background: var(--accent-light);
 }
-.subscription-row:has(.subscription-open:focus-visible) {
+.workspace-row:has(.workspace-row-open:focus-visible) {
     outline: 3px solid var(--accent);
     outline-offset: -3px;
 }
@@ -1682,16 +1536,16 @@ button.connection-pill:hover {
     :is(.subscription-info, .subscription-menu) {
     opacity: 0.8;
 }
-.subscription-info {
+.workspace-row-info {
     flex: 1;
     min-width: 0;
 }
-.subscription-info h3 {
+.workspace-row-info h3 {
     margin: 0;
     overflow-wrap: anywhere;
     font-size: 14px;
 }
-.subscription-open {
+.workspace-row-open {
     padding: 0;
     border: 0;
     background: transparent;
@@ -1699,12 +1553,12 @@ button.connection-pill:hover {
     font: inherit;
     text-align: left;
 }
-.subscription-open::after {
+.workspace-row-open::after {
     position: absolute;
     inset: 0;
     content: '';
 }
-.subscription-open:focus-visible {
+.workspace-row-open:focus-visible {
     outline: none;
 }
 .subscription-meta {
@@ -1728,7 +1582,7 @@ button.connection-pill:hover {
     font-size: 12px;
 }
 .subscription-toggle,
-.subscription-menu {
+.workspace-row-menu {
     position: relative;
     z-index: 1;
     flex-shrink: 0;
@@ -1739,13 +1593,13 @@ button.connection-pill:hover {
     color: var(--muted);
 }
 .subscription-toggle:hover,
-.subscription-menu:hover {
+.workspace-row-menu:hover {
     background: var(--accent-light);
     color: var(--accent);
     opacity: 1;
 }
 .subscription-toggle svg,
-.subscription-menu svg {
+.workspace-row-menu svg {
     width: 20px;
     height: 20px;
 }
@@ -1836,12 +1690,9 @@ button.connection-pill:hover {
         margin-top: 24px;
     }
     .subscription-toggle,
-    .subscription-menu {
+    .workspace-row-menu {
         width: 44px;
         height: 44px;
-    }
-    #jobs-list .jobs-empty td {
-        grid-column: 1 / -1;
     }
     #utility-dialog {
         padding: 16px;
@@ -1934,4 +1785,87 @@ button.connection-pill:hover {
 }
 .select-control:has(select:disabled) > .select-chevron {
     opacity: 0.5;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.task-sort,
+.section-clear {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    color: var(--muted);
+}
+.task-sort:hover,
+.task-sort[aria-pressed='true'],
+.section-clear:hover {
+    color: var(--accent);
+    background: var(--accent-light);
+}
+.task-sort svg,
+.section-clear svg {
+    width: 16px;
+    height: 16px;
+}
+.job-indicator {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    align-self: center;
+}
+.job-indicator .dot {
+    width: 8px;
+    height: 8px;
+}
+.job-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 0;
+}
+.job-filename {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.job-meta time,
+.meta-separator {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+@media (max-width: 650px) {
+    .task-sort,
+    .section-clear,
+    .job-indicator {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (max-width: 650px) {
+    .job-meta {
+        display: block;
+    }
+    .job-filename {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .job-meta .meta-separator {
+        margin: 0 8px;
+    }
+}
+
+.task-progress {
+    font-variant-numeric: tabular-nums;
 }

@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import {
+    ArrowDownUp,
     ArrowRight,
     ChevronDown,
     ChevronRight,
@@ -23,6 +24,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 export type IconName =
+    | 'sort'
     | 'more-vertical'
     | 'play'
     | 'pause'
@@ -44,6 +46,7 @@ export type IconName =
     | 'chevron-right';
 
 const icons: Record<IconName, LucideIcon> = {
+    'sort': ArrowDownUp,
     'more-vertical': EllipsisVertical,
     'play': Play,
     'pause': Pause,

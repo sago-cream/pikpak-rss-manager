@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
 
-import { filterJobs } from '../lib/jobs.js';
-import type { JobFilter } from '../lib/jobs.js';
+import { jobColor, jobLabels, sortJobs } from '../lib/jobs.js';
 import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
-import { Badge } from './Badge.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
-import { Select } from './Select.js';
+import { WorkspaceRow } from './WorkspaceRow.js';
 
 export function Tasks({
     jobs,
@@ -25,9 +24,9 @@ export function Tasks({
     busy: boolean;
 }): JSX.Element {
     const { t } = usePreferences();
-    const [filter, setFilter] = useState<JobFilter>('all');
+    const [completedFirst, setCompletedFirst] = useState(false);
     const [limit, setLimit] = useState(8);
-    const items = filterJobs(jobs, filter);
+    const items = sortJobs(jobs, completedFirst);
     return (
         <section
             aria-labelledby='jobs-title'
@@ -35,106 +34,78 @@ export function Tasks({
             id='view-jobs'
         >
             <div className='workspace-section-heading'>
-                <h2 id='jobs-title'>{t('離線任務')}</h2>
+                <div className='section-title'>
+                    <h2 id='jobs-title'>{t('離線任務')}</h2>
+                    <button
+                        aria-label={t('已完成優先')}
+                        aria-pressed={completedFirst}
+                        className='icon-button task-sort'
+                        id='job-sort'
+                        onClick={() => {
+                            setCompletedFirst((value) => !value);
+                            setLimit(8);
+                        }}
+                        title={`${t('排序')}：${t(completedFirst ? '已完成優先' : '未完成優先')}`}
+                        type='button'
+                    >
+                        <Icon name='sort' />
+                    </button>
+                </div>
                 <div className='section-actions'>
-                    {filter === 'complete' && items.length > 0 && (
-                        <button
-                            className='text-button'
-                            disabled={busy}
-                            id='clear-completed-jobs'
-                            onClick={onClear}
-                            type='button'
-                        >
-                            {t('清除已完成任務')}
-                        </button>
-                    )}
+                    {completedFirst &&
+                        jobs.some((job) => job.state === 'complete') && (
+                            <button
+                                aria-label={t('清除已完成任務')}
+                                className='icon-button section-clear'
+                                disabled={busy}
+                                id='clear-completed-jobs'
+                                onClick={onClear}
+                                title={t('清除已完成任務')}
+                                type='button'
+                            >
+                                <Icon name='trash' />
+                            </button>
+                        )}
                     <AddButton kind='task' onClick={onAdd} />
                 </div>
             </div>
             <div id='jobs-list'>
-                <div className='table-scroll'>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope='col'>{t('發布與作品')}</th>
-                                <th className='job-status-column' scope='col'>
-                                    <Select
-                                        aria-label={t('任務狀態')}
-                                        className='job-status-filter'
-                                        id='job-status-filter'
-                                        onChange={(event) => {
-                                            setFilter(
-                                                event.target.value as JobFilter
-                                            );
-                                            setLimit(8);
-                                        }}
-                                        value={filter}
-                                    >
-                                        {Object.entries({
-                                            all: '全部',
-                                            running: '處理中',
-                                            review: '待處理',
-                                            complete: '已完成',
-                                        }).map(([value, label]) => (
-                                            <option key={value} value={value}>
-                                                {t('狀態')} · {t(label)}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                </th>
-                                <th scope='col'>{t('時間')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.slice(0, limit).map((job) => (
-                                <tr className='job-row' key={job.id}>
-                                    <td className='job-name'>
-                                        <strong>
-                                            <button
-                                                aria-label={`${job.rule.title} · ${job.title}`}
-                                                className='job-open'
-                                                data-job={job.id}
-                                                onClick={() => {
-                                                    onOpen(job.id);
-                                                }}
-                                                type='button'
-                                            >
-                                                {job.rule.title}
-                                            </button>
-                                        </strong>
-                                        <span title={job.title}>
-                                            {job.title}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <Badge state={job.state} />
-                                        {job.state === 'downloading' && (
-                                            <div className='progress-caption'>
-                                                {Math.round(job.progress)}%
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className='muted nowrap'>
-                                        {date(job.created_at)}
-                                    </td>
-                                </tr>
-                            ))}
-                            {items.length === 0 && (
-                                <tr className='jobs-empty'>
-                                    <td colSpan={3}>
-                                        <p className='workspace-idle'>
-                                            {t(
-                                                jobs.length > 0
-                                                    ? '沒有符合的任務'
-                                                    : '尚無任務'
-                                            )}
-                                        </p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {items.slice(0, limit).map((job) => (
+                    <WorkspaceRow
+                        id={job.id}
+                        key={job.id}
+                        kind='job'
+                        label={`${job.rule.title} · ${job.title} · ${t(jobLabels[job.state] || job.state)}`}
+                        leading={
+                            <span
+                                className='job-indicator'
+                                title={t(jobLabels[job.state] || job.state)}
+                            >
+                                <span
+                                    aria-hidden='true'
+                                    className={`dot ${jobColor(job.state) === 'orange' ? 'amber' : jobColor(job.state)}`}
+                                />
+                            </span>
+                        }
+                        onOpen={() => {
+                            onOpen(job.id);
+                        }}
+                        title={job.rule.title || job.title}
+                    >
+                        <div className='job-meta'>
+                            <span className='job-filename' title={job.title}>
+                                {job.title}
+                            </span>
+                            <span aria-hidden='true' className='meta-separator'>
+                                ·
+                            </span>
+                            <time>{date(job.created_at)}</time>
+                        </div>
+                    </WorkspaceRow>
+                ))}
+                {items.length === 0 && (
+                    <p className='workspace-idle'>{t('尚無任務')}</p>
+                )}
             </div>
             {items.length > limit && (
                 <button

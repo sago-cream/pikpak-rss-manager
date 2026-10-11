@@ -28,7 +28,7 @@ Forgot the password? Open **Forgot password** on the login page and follow the [
 ## Use
 
 - **Subscriptions:** choose an RSS URL, destination and interval. Use the card’s play/pause control to toggle tracking. Click the card or its three-dot button for subscription and naming settings, or **Manage subscription** for checking, **Backfill** and deletion. First check establishes a baseline. Backfill selects whole torrents. Repeated explicit downloads are allowed.
-- **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. **Delete task** cancels incomplete downloads while preserving files. **Clear completed tasks** removes completed records only.
+- **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. Click a task for status and details. The sort icon beside the heading switches between unfinished and completed first. **Delete task** cancels incomplete downloads while preserving files. In completed-first order, the trash icon removes completed records only.
 - **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Enabling renaming loads torrent filenames for preview. Select a filename to test the rule and use the refresh icon to reload. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 

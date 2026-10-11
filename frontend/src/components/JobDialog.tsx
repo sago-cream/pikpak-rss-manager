@@ -97,6 +97,11 @@ export function JobDialog({
                         <p className='muted'>{details.job.title}</p>
                         <div className='detail-meta'>
                             <Badge state={details.job.state} />
+                            {details.job.state === 'downloading' && (
+                                <span className='task-progress'>
+                                    {Math.round(details.job.progress)}%
+                                </span>
+                            )}
                             <span>
                                 {t('目標：')}
                                 {details.job.destination || t('根目錄')}

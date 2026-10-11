@@ -1,14 +1,12 @@
 import type { JSX } from 'react';
 
-import { jobLabels, reviewStates } from '../lib/jobs.js';
+import { jobColor, jobLabels } from '../lib/jobs.js';
 import { usePreferences } from './Preferences.js';
 
 export function Badge({ state }: { state: string }): JSX.Element {
     const { t } = usePreferences();
     return (
-        <span
-            className={`badge ${state === 'complete' ? 'green' : reviewStates.includes(state) ? 'orange' : 'purple'}`}
-        >
+        <span className={`badge ${jobColor(state)}`}>
             {t(jobLabels[state] || state)}
         </span>
     );

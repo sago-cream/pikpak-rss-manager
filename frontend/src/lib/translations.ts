@@ -14,6 +14,9 @@ export const translations: Record<string, string> = {
 
     '帳號選單': 'Account menu',
     '任務狀態': 'Task status',
+    '已完成優先': 'Completed first',
+    '未完成優先': 'Unfinished first',
+    '排序': 'Sort',
     '顯示更多': 'Show more',
     '已更新': 'Updated',
     '找不到訂閱': 'No subscriptions found',

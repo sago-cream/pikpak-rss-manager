@@ -37,6 +37,10 @@ const requestPath = (input: RequestInfo | URL): string =>
         : input instanceof URL
           ? input.href
           : input.url;
+const taskOrder = () =>
+    [...document.querySelectorAll<HTMLElement>('[data-job]')].map(
+        (element) => element.dataset.job
+    );
 const success = async () => undefined;
 const job = (id: string, state: string): Job => ({
     id,
@@ -398,50 +402,94 @@ describe('React flows', () => {
             'https://edited.test'
         );
     });
-    it('prioritizes review tasks, opens details with pointer and keyboard, and retains filter focus', async () => {
+    it('orders tasks by completion and time, keeps status in accessible names, and opens details with pointer and keyboard', async () => {
         const onOpen = vi.fn<(id: string) => void>();
+        const onClear = vi.fn<() => void>();
         render(
             <Preferences>
                 <Tasks
                     busy={false}
-                    date={() => ''}
+                    date={() => '10/12 08:00'}
                     jobs={[
-                        job('done', 'complete'),
-                        job('running', 'queued'),
-                        job('review', 'needs_review'),
+                        { ...job('done', 'complete'), created_at: 400 },
+                        { ...job('running', 'queued'), created_at: 200 },
+                        { ...job('review', 'needs_review'), created_at: 300 },
                     ]}
                     onAdd={vi.fn<() => void>()}
-                    onClear={vi.fn<() => void>()}
+                    onClear={onClear}
                     onOpen={onOpen}
                 />
             </Preferences>
         );
-        expect(
-            [...document.querySelectorAll<HTMLElement>('[data-job]')].map(
-                (element) => element.dataset.job
-            )
-        ).toEqual(['review', 'running', 'done']);
+        expect(taskOrder()).toEqual(['review', 'running', 'done']);
+        expect(screen.queryByRole('table')).toBeNull();
+        expect(screen.queryByRole('combobox')).toBeNull();
+        expect(screen.queryByText('待處理')).toBeNull();
+        expect(document.querySelector('.job-meta')?.textContent).toBe(
+            '使用者.mkv·10/12 08:00'
+        );
         const firstTask = screen.getAllByRole('button', {
-            name: '使用者 · 使用者.mkv',
+            name: '使用者 · 使用者.mkv · 待處理',
         })[0];
         await userEvent.click(firstTask);
         firstTask.focus();
         await userEvent.keyboard('{Enter}');
         await userEvent.keyboard(' ');
         expect(onOpen.mock.calls).toEqual([['review'], ['review'], ['review']]);
-        expect(screen.queryByText('查看')).toBeNull();
-        const select = screen.getByLabelText('任務狀態');
-        await userEvent.selectOptions(select, 'complete');
-        expect(
+        await userEvent.click(
+            document.querySelector<HTMLButtonElement>(
+                '[data-task-details="done"]'
+            )!
+        );
+        expect(onOpen).toHaveBeenLastCalledWith('done');
+        const sort = screen.getByRole('button', { name: '已完成優先' });
+        await userEvent.click(sort);
+        expect(taskOrder()).toEqual(['done', 'review', 'running']);
+        expect(sort.getAttribute('aria-pressed')).toBe('true');
+        expect(document.activeElement).toBe(sort);
+        await userEvent.click(
             screen.getByRole('button', { name: '清除已完成任務' })
-        ).toBeTruthy();
-        await userEvent.selectOptions(select, 'complete');
+        );
+        expect(onClear).toHaveBeenCalledOnce();
+        await userEvent.click(sort);
+        expect(taskOrder()).toEqual(['review', 'running', 'done']);
         expect(
-            document.querySelector<HTMLElement>('[data-job]')?.dataset.job
-        ).toBe('done');
-        select.focus();
-        fireEvent.change(select, { target: { value: 'running' } });
-        expect(document.activeElement).toBe(select);
+            screen.queryByRole('button', { name: '清除已完成任務' })
+        ).toBeNull();
+    });
+    it('opens a dot-only task card into full status and download progress', async () => {
+        const downloading = {
+            ...job('downloading', 'downloading'),
+            progress: 43,
+            destination: 'Series',
+        };
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            const path = requestPath(input);
+            if (path === '/api/jobs/downloading') {
+                return response({ job: downloading, files: [] });
+            }
+            if (path === '/api/jobs') {
+                return response([downloading]);
+            }
+            if (path === '/api/subscriptions' || path === '/api/events') {
+                return response([]);
+            }
+            return response({ connected: true });
+        });
+        render(
+            <Preferences>
+                <Workspace onAuthenticated={success} version='test' />
+            </Preferences>
+        );
+        const [card] = await screen.findAllByRole('button', {
+            name: '使用者 · 使用者.mkv · 雲端下載中',
+        });
+        expect(screen.queryByText('43%')).toBeNull();
+        expect(screen.queryByText('雲端下載中')).toBeNull();
+        await userEvent.click(card);
+        await screen.findByText('43%');
+        expect(screen.getByText('雲端下載中')).toBeTruthy();
+        expect(screen.getByText('Series', { exact: false })).toBeTruthy();
     });
     it('toggles tracking without opening settings and retains subscription rules on failed updates', async () => {
         let sub: Subscription = {
