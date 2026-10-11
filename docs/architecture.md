@@ -33,6 +33,7 @@ Backfill preview reads one RSS snapshot and each distinct torrent URL once, with
 PAT requires Read & write files and Cloud Download. The MCP adapter has no move, Trash or permanent-deletion operations. Jobs do not create staging, backup or attachment folders, scan destination differences, overwrite or clean cloud content. Manual destination paths can create their explicitly named folders. SQLite migrations remain, but staged-job and template-rule compatibility is removed.
 
 - Feed/torrent metadata: 2 MiB per resource. Full sample reads: one feed snapshot, each distinct torrent once, at most five concurrent requests, 32 MiB total metadata, 10,000 filenames/8 MiB output, 90-second overall and 15-second torrent timeouts. Partial successes are retained.
+- Enabling renaming loads torrent filenames automatically after a valid RSS URL settles for 500 ms. The refresh icon rereads metadata while retaining the selected filename. Regex edits update only the naming preview, without rereading the feed.
 - Preview reads metadata only. It does not submit tasks or change baselines. The shared renderer returns raw_name, normalized name and warnings.
 - Selected folder IDs carry opaque account references. The server revalidates IDs/account ownership. Folder creation is sent once. Uncertain results require review.
 - First-run UI: administrator creation, then PAT connection. Authenticated users without a saved or connected account resume the connection step. Saved accounts retain the dashboard when authorization expires. Connection errors appear in Settings.

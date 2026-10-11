@@ -185,7 +185,8 @@ export const translations: Record<string, string> = {
     '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。':
         'Use $1, ${name}, or $$ for a literal $. Preserve the extension.',
     '檔名預覽': 'Filename preview',
-    '讀取種子檔名': 'Read torrent filenames',
+    '重新整理種子檔名': 'Refresh torrent filenames',
+    '請填寫有效的 RSS 連結': 'Enter a valid RSS URL.',
     '種子檔名': 'Torrent filename',
     '選擇種子檔名': 'Select a torrent filename',
     '取消': 'Cancel',

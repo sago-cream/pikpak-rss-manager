@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -173,11 +180,102 @@ describe('React flows', () => {
                 />
             </Preferences>
         );
-        await userEvent.click(
-            screen.getByRole('button', { name: '讀取種子檔名' })
-        );
+        await waitFor(() => {
+            expect(signals).toHaveLength(2);
+        });
         preview.unmount();
         expect(signals[1].aborted).toBe(true);
+    });
+    it('debounces enabled source reads, skips invalid URLs and ignores cancelled responses', async () => {
+        vi.useFakeTimers();
+        const oldSource = Promise.withResolvers<Response>();
+        const signals: AbortSignal[] = [];
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (_input, options) => {
+                signals.push(options!.signal!);
+                return signals.length === 1
+                    ? await oldSource.promise
+                    : response({
+                          items: [
+                              {
+                                  kind: 'torrent_file',
+                                  title: 'new',
+                                  filename: 'new.mkv',
+                              },
+                          ],
+                          notices: [],
+                      });
+            });
+        const view = render(
+            <Preferences>
+                <SubscriptionDialog
+                    onClose={vi.fn<() => void>()}
+                    onSaved={success}
+                    status={{ connected: true }}
+                />
+            </Preferences>
+        );
+        try {
+            fireEvent.change(screen.getByLabelText('RSS 連結'), {
+                target: { value: 'https://public.test/old' },
+            });
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(600);
+            });
+            expect(fetch).not.toHaveBeenCalled();
+            fireEvent.click(screen.getByLabelText('重命名檔案'));
+            expect(
+                screen.getByText(
+                    '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。'
+                )
+            ).toBeTruthy();
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(499);
+            });
+            expect(fetch).not.toHaveBeenCalled();
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1);
+            });
+            expect(fetch).toHaveBeenCalledOnce();
+            fireEvent.change(screen.getByLabelText('RSS 連結'), {
+                target: { value: 'not-a-url' },
+            });
+            expect(signals[0].aborted).toBe(true);
+            expect(
+                screen.getByRole('button', { name: '重新整理種子檔名' })
+            ).toHaveProperty('disabled', true);
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(600);
+            });
+            expect(fetch).toHaveBeenCalledOnce();
+            fireEvent.change(screen.getByLabelText('RSS 連結'), {
+                target: { value: 'https://public.test/new' },
+            });
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(500);
+            });
+            expect(fetch).toHaveBeenCalledTimes(2);
+            await act(async () => {
+                oldSource.resolve(
+                    response({
+                        items: [
+                            {
+                                kind: 'torrent_file',
+                                title: 'old',
+                                filename: 'old.mkv',
+                            },
+                        ],
+                        notices: [],
+                    })
+                );
+            });
+            expect(screen.getByRole('option').textContent).toBe('new.mkv');
+            expect(screen.queryByText('old.mkv')).toBeNull();
+        } finally {
+            view.unmount();
+            vi.useRealTimers();
+        }
     });
     it('rejects setup mismatch without an API mutation and clears passwords', async () => {
         const fetch = vi.spyOn(globalThis, 'fetch');
@@ -439,36 +537,43 @@ describe('React flows', () => {
             { token: 'confirmation-token', selected: ['torrent-1'] },
         ]);
     });
-    it('reads only torrent filenames, previews with the Go API and cancels on close', async () => {
-        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
-            (typeof input === 'string'
-                ? input
-                : input instanceof URL
-                  ? input.href
-                  : input.url
-            ).endsWith('/samples')
-                ? response({
-                      items: [
-                          {
-                              kind: 'title',
-                              title: 'ignore',
-                              filename: 'guessed.mkv',
-                          },
-                          {
-                              kind: 'torrent_file',
-                              title: 'raw',
-                              filename: 'raw[01].mkv',
-                          },
-                          {
-                              kind: 'torrent_file',
-                              title: 'raw',
-                              filename: 'raw[01].mkv',
-                          },
-                      ],
-                      notices: [],
-                  })
-                : response({ name: 'rawS01E01.mkv' })
-        );
+    it('automatically loads filenames once in Strict Mode and preserves selection through refresh and retry', async () => {
+        let reads = 0;
+        const items = [
+            { kind: 'title', title: 'ignore', filename: 'guessed.mkv' },
+            { kind: 'torrent_file', title: 'raw', filename: 'raw[01].mkv' },
+            { kind: 'torrent_file', title: 'raw', filename: 'raw[01].mkv' },
+            { kind: 'torrent_file', title: 'raw', filename: 'raw[02].mkv' },
+        ];
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input, options) => {
+                const path =
+                    typeof input === 'string'
+                        ? input
+                        : input instanceof URL
+                          ? input.href
+                          : input.url;
+                if (path.endsWith('/samples')) {
+                    reads++;
+                    return reads === 2
+                        ? response({ error: '來源回傳非成功狀態' }, 400)
+                        : response({
+                              items: reads > 2 ? items.toReversed() : items,
+                              notices: [],
+                          });
+                }
+                const body = JSON.parse(options?.body as string) as {
+                    filename: string;
+                    rule: Rule;
+                };
+                return response({
+                    name: body.filename.replace(
+                        new RegExp(body.rule.regex),
+                        body.rule.replacement
+                    ),
+                });
+            });
         const rule: Rule = {
             title: '',
             regex: String.raw`\[(\d+)\]`,
@@ -476,26 +581,56 @@ describe('React flows', () => {
             rename_enabled: true,
         };
         const view = render(
-            <Preferences>
-                <RenamePreview
-                    rule={rule}
-                    subscriptionID={1}
-                    url='https://public.test/rss'
-                />
-            </Preferences>
-        );
-        await userEvent.click(
-            screen.getByRole('button', { name: '讀取種子檔名' })
+            <StrictMode>
+                <Preferences>
+                    <RenamePreview
+                        rule={rule}
+                        subscriptionID={1}
+                        url='https://public.test/rss'
+                    />
+                </Preferences>
+            </StrictMode>
         );
         const options = await screen.findAllByRole('option');
         expect(options.map((option) => option.textContent)).toEqual([
             'raw[01].mkv',
+            'raw[02].mkv',
         ]);
         expect(await screen.findByText('rawS01E01.mkv')).toBeTruthy();
+        expect(reads).toBe(1);
+        await userEvent.selectOptions(screen.getByLabelText('種子檔名'), '1');
+        expect(await screen.findByText('rawS01E02.mkv')).toBeTruthy();
         await userEvent.click(
-            screen.getByRole('button', { name: '讀取種子檔名' })
+            screen.getByRole('button', { name: '重新整理種子檔名' })
         );
-        expect(await screen.findByText('rawS01E01.mkv')).toBeTruthy();
+        expect(await screen.findByText('來源回傳非成功狀態')).toBeTruthy();
+        expect(screen.getByLabelText('種子檔名')).toHaveProperty('value', '1');
+        await userEvent.click(
+            screen.getByRole('button', { name: '重新整理種子檔名' })
+        );
+        await waitFor(() => {
+            expect(screen.getByLabelText('種子檔名')).toHaveProperty(
+                'value',
+                '0'
+            );
+        });
+        expect(screen.getByText('rawS01E02.mkv')).toBeTruthy();
+        view.rerender(
+            <StrictMode>
+                <Preferences>
+                    <RenamePreview
+                        rule={{ ...rule, replacement: 'S02E$1' }}
+                        subscriptionID={1}
+                        url='https://public.test/rss'
+                    />
+                </Preferences>
+            </StrictMode>
+        );
+        expect(await screen.findByText('rawS02E02.mkv')).toBeTruthy();
+        expect(reads).toBe(3);
+        expect(
+            fetch.mock.calls.filter((call) => call[0] === '/api/rules/preview')
+        ).toHaveLength(3);
         view.unmount();
     });
     it('preserves actual filenames and translates application copy with literal regex references', () => {

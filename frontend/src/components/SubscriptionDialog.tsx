@@ -282,7 +282,7 @@ export function SubscriptionDialog({
                                 </FormField>
                                 <FormField
                                     help={t(
-                                        `支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。`
+                                        '支援 $1、${name}；$$ 表示字面 $。請保留需要的副檔名。'
                                     )}
                                     id='sub-replacement'
                                     label={t('替換為')}

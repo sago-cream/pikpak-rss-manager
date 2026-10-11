@@ -29,7 +29,7 @@ Forgot the password? Open **Forgot password** on the login page and follow the [
 
 - **Subscriptions:** choose an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects whole torrents. Repeated explicit downloads are allowed.
 - **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. **Delete task** cancels incomplete downloads while preserving files. **Clear completed tasks** removes completed records only.
-- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Select a torrent filename to preview. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
+- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Enabling renaming loads torrent filenames for preview. Select a filename to test the rule and use the refresh icon to reload. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
 ## Update

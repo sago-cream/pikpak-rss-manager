@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
 import { api } from '../lib/api.js';
@@ -10,6 +10,7 @@ import type {
     SourceSample,
 } from '../lib/types.js';
 import { FormField } from './FormField.js';
+import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
 
 export function RenamePreview({
@@ -33,6 +34,14 @@ export function RenamePreview({
     const [samples, setSamples] = useState<SourceSample[]>([]);
     const [selected, setSelected] = useState('0');
     const request = useRef<AbortController | null>(null);
+    const autoLoad = useRef<ReturnType<typeof setTimeout> | undefined>(
+        undefined
+    );
+    const selectedSample = useRef<SourceSample | undefined>(undefined);
+    const sourceURL = url.trim();
+    const canLoad =
+        URL.canParse(sourceURL) &&
+        ['http:', 'https:'].includes(new URL(sourceURL).protocol);
     const filename = samples.at(Number(selected))?.filename;
     const { title, regex, rename_enabled: renameEnabled, replacement } = rule;
     const signature = JSON.stringify([
@@ -45,7 +54,6 @@ export function RenamePreview({
     ]);
     const currentResult = renderedRule === signature ? result : null;
     const currentError = renderedRule === signature ? error : '';
-    useEffect(() => () => request.current?.abort(), []);
     useEffect(() => {
         if (!filename || paused) {
             return;
@@ -86,11 +94,11 @@ export function RenamePreview({
             controller.abort();
         };
     }, [filename, title, regex, replacement, renameEnabled, signature, paused]);
-    const load = async () => {
-        if (!url.trim()) {
-            setNotice('請先填寫 RSS 連結');
+    const load = useCallback(async () => {
+        if (!canLoad) {
             return;
         }
+        clearTimeout(autoLoad.current);
         request.current?.abort();
         const controller = new AbortController();
         request.current = controller;
@@ -101,7 +109,7 @@ export function RenamePreview({
             const response = await api<SampleResult>(
                 '/api/feeds/samples',
                 'POST',
-                { url: url.trim(), subscription_id: subscriptionID },
+                { url: sourceURL, subscription_id: subscriptionID },
                 controller.signal
             );
             if (controller.signal.aborted) {
@@ -117,15 +125,14 @@ export function RenamePreview({
                 return true;
             });
             setSamples(items);
-            const previous: SourceSample | undefined = samples.at(
-                Number(selected)
-            );
+            const previous = selectedSample.current;
             const index = items.findIndex(
                 (sample) =>
                     sample.title === previous?.title &&
                     sample.filename === previous.filename
             );
             setSelected(String(Math.max(0, index)));
+            selectedSample.current = items.at(Math.max(0, index));
             setNotices([...new Set(response.notices)]);
 
             setNotice(
@@ -142,22 +149,35 @@ export function RenamePreview({
                 setPending(false);
             }
         }
-    };
+    }, [canLoad, sourceURL, subscriptionID]);
+    useEffect(() => {
+        if (canLoad && renameEnabled) {
+            autoLoad.current = globalThis.setTimeout(() => {
+                void load();
+            }, 500);
+        }
+        return () => {
+            clearTimeout(autoLoad.current);
+            request.current?.abort();
+        };
+    }, [canLoad, renameEnabled, load]);
     return (
         <div className='preview-box'>
             <div className='preview-heading'>
                 <h3>{t('檔名預覽')}</h3>
                 <button
                     aria-busy={pending}
-                    className='button primary'
-                    disabled={pending}
+                    aria-label={t('重新整理種子檔名')}
+                    className='icon-button preview-refresh'
+                    disabled={pending || !canLoad}
                     id='source-samples'
                     onClick={() => {
                         void load();
                     }}
+                    title={t('重新整理種子檔名')}
                     type='button'
                 >
-                    {t(pending ? '讀取中…' : '讀取種子檔名')}
+                    <Icon name='refresh' />
                 </button>
             </div>
             {samples.length > 0 && (
@@ -165,6 +185,9 @@ export function RenamePreview({
                     <select
                         onChange={(event) => {
                             setSelected(event.target.value);
+                            selectedSample.current = samples.at(
+                                Number(event.target.value)
+                            );
                         }}
                         value={selected}
                     >
@@ -183,7 +206,12 @@ export function RenamePreview({
                 </FormField>
             )}
             <p className='field-help' id='preview-source-help' role='status'>
-                {[t(notice), ...notices.map(t)].filter(Boolean).join(' ')}
+                {[
+                    t(canLoad ? notice : '請填寫有效的 RSS 連結'),
+                    ...notices.map(t),
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
             </p>
             <div
                 aria-live='polite'
