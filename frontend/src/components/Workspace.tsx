@@ -311,41 +311,6 @@ export function Workspace({
                         </div>
                         {data && (
                             <div className='workspace-body'>
-                                <Tasks
-                                    busy={Boolean(busy)}
-                                    date={date}
-                                    jobs={data.jobs}
-                                    onAdd={() => {
-                                        setModal({
-                                            type: 'subscription',
-                                            manual: true,
-                                        });
-                                    }}
-                                    onClear={() => {
-                                        if (
-                                            globalThis.confirm(
-                                                t(
-                                                    '清除所有已完成任務紀錄？雲端檔案會保留。'
-                                                )
-                                            )
-                                        ) {
-                                            void action(
-                                                'clear',
-                                                async () => {
-                                                    await api(
-                                                        '/api/jobs/completed',
-                                                        'DELETE'
-                                                    );
-                                                    await refresh();
-                                                },
-                                                '已清除已完成任務'
-                                            );
-                                        }
-                                    }}
-                                    onOpen={(id) => {
-                                        setModal({ type: 'job', id });
-                                    }}
-                                />
                                 <Subscriptions
                                     busy={Boolean(busy)}
                                     date={date}
@@ -397,6 +362,41 @@ export function Workspace({
                                         });
                                     }}
                                     subscriptions={data.subscriptions}
+                                />
+                                <Tasks
+                                    busy={Boolean(busy)}
+                                    date={date}
+                                    jobs={data.jobs}
+                                    onAdd={() => {
+                                        setModal({
+                                            type: 'subscription',
+                                            manual: true,
+                                        });
+                                    }}
+                                    onClear={() => {
+                                        if (
+                                            globalThis.confirm(
+                                                t(
+                                                    '清除所有已完成任務紀錄？雲端檔案會保留。'
+                                                )
+                                            )
+                                        ) {
+                                            void action(
+                                                'clear',
+                                                async () => {
+                                                    await api(
+                                                        '/api/jobs/completed',
+                                                        'DELETE'
+                                                    );
+                                                    await refresh();
+                                                },
+                                                '已清除已完成任務'
+                                            );
+                                        }
+                                    }}
+                                    onOpen={(id) => {
+                                        setModal({ type: 'job', id });
+                                    }}
                                 />
                             </div>
                         )}

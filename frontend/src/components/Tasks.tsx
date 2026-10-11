@@ -97,11 +97,6 @@ export function Tasks({
                                         <span title={job.title}>
                                             {job.title}
                                         </span>
-                                        {job.error && (
-                                            <small className='error'>
-                                                {t(job.error)}
-                                            </small>
-                                        )}
                                     </td>
                                     <td>
                                         <Badge state={job.state} />

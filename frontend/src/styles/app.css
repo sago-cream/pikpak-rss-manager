@@ -437,13 +437,6 @@ tr:last-child td {
     margin-top: 3px;
 }
 
-.job-name small {
-    display: block;
-    margin-top: 6px;
-    font-size: 10px;
-    max-width: 440px;
-}
-
 .progress-caption {
     font-size: 9px;
     color: var(--muted);
@@ -1839,7 +1832,7 @@ button.connection-pill:hover {
 
 .workspace-body {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
     gap: 32px;
     align-items: start;
 }
