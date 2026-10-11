@@ -65,21 +65,33 @@ function filteredJobs(){
   return items;
 }
 function selectJobFilter(filter){
-  jobFilter=filter;jobLimit=8;
-  for(const button of document.querySelectorAll('[data-filter]')){
-    const selected=button.dataset.filter===filter;
-    button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));
-  }
-  render();
+  if(!['all','running','review','complete'].includes(filter))return;
+  const focused=document.activeElement?.id==='job-status-filter';
+  jobFilter=filter;jobLimit=8;render();
+  if(focused)$('#job-status-filter').focus({preventScroll:true});
+}
+function icon(name){
+  const paths={
+    rss:'<path d="M5 11a8 8 0 0 1 8 8M5 4a15 15 0 0 1 15 15"/><circle cx="5" cy="19" r="1"/>',
+    folder:'<path d="M3 7h7l2 2h9v11H3zM3 7V4h7l2 3"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    edit:'<path d="m15 4 5 5-11 11H4v-5zM13 6l5 5"/>',
+    check:'<path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/>',
+    backfill:'<path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/>',
+    trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>'
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">${paths[name]}</svg>`;
 }
 function empty(title, description, button = '') { return tr`<div class="empty-state"><h3>${escapeHTML(title)}</h3>${description?tr`<p>${escapeHTML(description)}</p>`:''}${button}</div>`; }
 function subscriptionRows(items) {
   if(!items.length)return tr`<p class="workspace-idle">${data.subscriptions.length?t('找不到訂閱'):t('尚無訂閱')}</p>`;
-  return items.map(s=>tr`<article class="subscription-row"><div class="subscription-info"><div class="subscription-name"><h3>${escapeHTML(s.name)}</h3><span class="badge ${s.enabled?'green':''}">${s.enabled?t('追蹤中'):t('已停用')}</span></div><p class="muted">${escapeHTML(s.destination||t('根目錄'))} · 每 ${s.interval_minutes} 分鐘 · ${date(s.last_checked)}</p>${s.last_error?tr`<p class="error">${escapeHTML(s.last_error)}</p>`:''}</div><div class="subscription-actions"><button class="text-button" data-edit="${s.id}">編輯訂閱</button><button class="text-button" data-check="${s.id}" title="檢查新的發布">檢查</button><button class="text-button" data-backfill="${s.id}" title="處理 RSS 中仍可取得的現有項目">補抓</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}">×</button></div></article>`).join('');
+  return items.map(s=>tr`<article class="subscription-row"><div class="subscription-summary"><span class="subscription-symbol">${icon('rss')}</span><div class="subscription-info"><div class="subscription-name"><h3>${escapeHTML(s.name)}</h3><span class="badge ${s.enabled?'green':''}">${s.enabled?t('追蹤中'):t('已停用')}</span></div><div class="subscription-meta"><span title="${escapeHTML(s.destination||t('根目錄'))}">${icon('folder')}<span class="destination-text">${escapeHTML(s.destination||t('根目錄'))}</span></span><span>${icon('clock')}每 ${s.interval_minutes} 分鐘</span></div></div></div>${s.last_error?tr`<p class="error">${escapeHTML(s.last_error)}</p>`:''}<div class="subscription-footer"><time class="muted" title="${t('上次檢查')}">${date(s.last_checked)}</time><div class="subscription-actions"><button class="icon-button" data-edit="${s.id}" aria-label="編輯訂閱" title="編輯訂閱">${icon('edit')}</button><button class="icon-button" data-check="${s.id}" aria-label="檢查新的發布" title="檢查新的發布">${icon('check')}</button><button class="icon-button" data-backfill="${s.id}" aria-label="補抓" title="處理 RSS 中仍可取得的現有項目">${icon('backfill')}</button><button class="icon-button danger" data-delete="${s.id}" aria-label="刪除 ${escapeHTML(s.name)}" title="刪除訂閱">${icon('trash')}</button></div></div></article>`).join('');
 }
 function jobsTable(items) {
-  if (!items.length) return empty(t('尚無任務'),'');
-  return tr`<div class="table-scroll"><table><thead><tr><th>發布與作品</th><th>狀態</th><th>時間</th><th></th></tr></thead><tbody>${items.map(j=>tr`<tr><td class="job-name"><strong>${escapeHTML(j.rule.title)}</strong><span title="${escapeHTML(j.title)}">${escapeHTML(j.title)}</span>${j.error ? tr`<small class="error">${escapeHTML(j.error)}</small>` : ''}</td><td>${badge(j.state)}${j.state==='downloading' ? tr`<div class="progress-caption">${Math.round(j.progress)}%</div>` : ''}</td><td class="muted nowrap">${date(j.created_at)}</td><td><div class="job-actions"><button class="text-button" data-job="${escapeHTML(j.id)}">查看 →</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  const filters={all:t('全部'),running:t('處理中'),review:t('待處理'),complete:t('已完成')};
+  const options=Object.entries(filters).map(([value,label])=>`<option value="${value}"${jobFilter===value?' selected':''}>${t('狀態')} · ${label}</option>`).join('');
+  const rows=items.map(j=>tr`<tr><td class="job-name"><strong>${escapeHTML(j.rule.title)}</strong><span title="${escapeHTML(j.title)}">${escapeHTML(j.title)}</span>${j.error ? tr`<small class="error">${escapeHTML(j.error)}</small>` : ''}</td><td>${badge(j.state)}${j.state==='downloading' ? tr`<div class="progress-caption">${Math.round(j.progress)}%</div>` : ''}</td><td class="muted nowrap">${date(j.created_at)}</td><td><div class="job-actions"><button class="text-button" data-job="${escapeHTML(j.id)}">查看 →</button></div></td></tr>`).join('');
+  return tr`<div class="table-scroll"><table><thead><tr><th scope="col">發布與作品</th><th scope="col" class="job-status-column"><select id="job-status-filter" class="job-status-filter" aria-label="任務狀態">${options}</select></th><th scope="col">時間</th><th scope="col"></th></tr></thead><tbody>${rows||tr`<tr class="jobs-empty"><td colspan="4"><p class="workspace-idle">${data.jobs.length?t('沒有符合的任務'):t('尚無任務')}</p></td></tr>`}</tbody></table></div>`;
 }
 function renderOverview(){
   const paused=data.status.paused?translateLiteral('<div class="overview-connection"><span>PikPak 已暫停</span><button class="text-button" data-view="settings">修復連線 →</button></div>'):'';
@@ -89,12 +101,12 @@ function renderOverview(){
 function render() {
   $('#overview-content').innerHTML=renderOverview();
   const isEmpty=!data.subscriptions.length&&!data.jobs.length;
-  for(const element of document.querySelectorAll('.workspace-section, .heading-actions'))element.classList.toggle('hidden',isEmpty);
+  for(const element of document.querySelectorAll('.workspace-section, .heading-actions [data-manual-task], .heading-actions .new-subscription'))element.classList.toggle('hidden',isEmpty);
   const search=($('#subscription-search').value||'').toLowerCase();
   $('#subscriptions-list').innerHTML=subscriptionRows(data.subscriptions.filter(s=>s.name.toLowerCase().includes(search)));
   $('#subscription-count').textContent=tr`共 ${data.subscriptions.length} 筆訂閱`;
   const jobs=filteredJobs();
-  $('#jobs-list').innerHTML=jobs.length?jobsTable(jobs.slice(0,jobLimit)):translateLiteral('<p class="workspace-idle">尚無任務</p>');
+  $('#jobs-list').innerHTML=jobsTable(jobs.slice(0,jobLimit));
   $('#jobs-more').classList.toggle('hidden',jobs.length<=jobLimit);
   $('#clear-completed-jobs').classList.toggle('hidden',jobFilter!=='complete'||!jobs.length);
   $('#events-list').innerHTML=data.events.length ? data.events.map(e=>tr`<div class="event-row"><span class="event-dot ${escapeHTML(e.level)}"></span><div><p>${escapeHTML(e.message)}</p><small class="muted">${e.job_id ? tr`任務 ${escapeHTML(e.job_id.slice(0,8))}` : e.subscription_id ? tr`訂閱 #${e.subscription_id}` : t('系統')}</small></div><time>${date(e.created_at)}</time></div>`).join('') : empty(t('尚無日誌'),'');
@@ -246,7 +258,6 @@ document.addEventListener('click',async event=>{
   if(button.id==='folder-more'&&folderState){await loadFolders(folderState.current.id,folderState.next_token,true);return;}
   if(button.id==='folder-select'&&folderState){$('#sub-destination').value=folderState.current.path;$('#sub-destination-id').value=folderState.current.id;$('#sub-destination-account-ref').value=folderState.account_ref;closeFolderBrowser();return;}
   if(button.dataset.job){await showJob(button.dataset.job);return;}
-  if(button.dataset.filter){selectJobFilter(button.dataset.filter);return;}
   button.disabled=true;
   try {
     if(button.id==='refresh'){await load();toast(t('已更新'));}
@@ -345,6 +356,7 @@ async function start(){
   $('#app-settings-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.target.querySelector('button[type=submit]');button.disabled=true;try{await api('/api/settings/app','POST',{public_url:$('#settings-public-url').value.trim(),allow_private_feeds:$('#settings-private-feeds').checked});csrf=(await api('/api/session')).csrf;toast(t('網站設定已儲存'));}catch(e){toast(e.message,true);}finally{button.disabled=false;}});
   $('#utility-dialog').addEventListener('close',()=>{if(currentView==='settings'||currentView==='events'){currentView='overview';history.replaceState(null,'','#overview');$('#profile-toggle').focus({preventScroll:true});}});
   $('#profile-menu').addEventListener('beforetoggle',event=>{if(event.newState==='open'){const rect=$('#profile-toggle').getBoundingClientRect(),menu=$('#profile-menu');menu.style.top=(rect.bottom+8)+'px';menu.style.right=Math.max(16,innerWidth-rect.right)+'px';}});
+  document.addEventListener('change',event=>{if(event.target.id==='job-status-filter')selectJobFilter(event.target.value);});
   $('#subscription-search').addEventListener('input',render);await load();showView(location.hash.slice(1)||'overview');
   $('#sub-rename-enabled').addEventListener('change',updateRenameOptions);
   for(const id of ['sub-name','sub-regex','sub-replacement']){
