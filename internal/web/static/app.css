@@ -1230,7 +1230,6 @@ button.connection-pill:hover { color:var(--accent); }
 
 .forgot-password,.recovery-back { display:inline-block; margin-top:24px; }
 .recovery-help { margin:0 0 24px; }
-.recovery-help summary { cursor:pointer; color:var(--accent); padding:8px 0; font-size:12px; }
 .recovery-command { display:block; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 #recovery-help .field-help { margin:12px 0; }
 #recovery-form .error:empty { display:none; }
@@ -1303,3 +1302,6 @@ button.connection-pill:hover { color:var(--accent); }
 .workspace-body { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:32px; align-items:start; }
 .workspace-body .workspace-section { min-width:0; }
 @media(max-width:1000px){.workspace-body { grid-template-columns:1fr; gap:0; }}
+
+#token-form .pat-create-copy { margin:0; }
+.pat-create-copy .text-link { font-size:inherit; }

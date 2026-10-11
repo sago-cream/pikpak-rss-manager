@@ -18,8 +18,6 @@ const translations = {
   '忘記密碼':'Forgot password',
   '忘記密碼 · PikPak RSS':'Forgot password · PikPak RSS',
   '在伺服器取得復原碼：':'Create a recovery code on the server:',
-  '本機執行':'Run locally',
-  '請使用原本的 APP_DATA_DIR。':'Use the existing APP_DATA_DIR.',
   '復原碼 15 分鐘內有效，只能使用一次。':'The code expires in 15 minutes and can be used once.',
   '復原碼':'Recovery code',
   '請輸入復原碼':'Enter a recovery code.',
@@ -39,7 +37,7 @@ const translations = {
 
   '設定進度':'Setup progress','連接 PikPak':'Connect PikPak','下一步':'Next',
   'PAT 需具備「讀寫檔案」及「雲端下載」權限。':'PAT requires Read & write files and Cloud Download permissions.',
-  '還沒有 PAT 嗎？建立 PAT':'No PAT yet? Create PAT','PAT 權限說明':'PAT permission help','驗證並完成設定':'Connect and finish setup','PikPak RSS · 連接 PikPak':'PikPak RSS · Connect PikPak',
+  '還沒有 PAT 嗎？':'No PAT yet?', '建立 PAT':'Create PAT','PAT 權限說明':'PAT permission help','驗證並完成設定':'Connect and finish setup','PikPak RSS · 連接 PikPak':'PikPak RSS · Connect PikPak',
 
   '切換為英文':'Switch to English','切換為繁體中文':'Switch to Traditional Chinese',
   '網站網址說明':'Site URL help','內網 RSS 說明':'Private network feed help',
