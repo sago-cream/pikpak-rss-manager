@@ -1916,21 +1916,6 @@ button.connection-pill:hover {
     background: var(--surface);
     overflow: hidden;
 }
-.subscription-row[data-paused='false'] {
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--accent) 5%, var(--surface)),
-        var(--surface) 60%
-    );
-}
-.subscription-row[data-paused='false']::before {
-    content: '';
-    position: absolute;
-    inset: 16px auto 16px 0;
-    width: 3px;
-    border-radius: 2px;
-    background: var(--accent);
-}
 .subscription-row:hover,
 .subscription-row:has(.workspace-row-open:focus-visible) {
     border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
