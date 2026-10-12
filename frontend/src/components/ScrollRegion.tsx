@@ -30,10 +30,15 @@ export function ScrollRegion({
         if (typeof ResizeObserver === 'undefined') {
             return;
         }
-        const observer = new ResizeObserver(syncGutter);
+        let frame = 0;
+        const observer = new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(syncGutter);
+        });
         observer.observe(element);
         return () => {
             observer.disconnect();
+            cancelAnimationFrame(frame);
         };
     }, []);
     return (
