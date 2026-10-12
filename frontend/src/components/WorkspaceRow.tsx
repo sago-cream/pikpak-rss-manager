@@ -42,20 +42,19 @@ export function WorkspaceRow({
                 </h3>
                 {children}
             </div>
-            <button
-                aria-label={label}
-                className={`icon-button workspace-row-menu ${kind}-menu`}
-                data-subscription-settings={
-                    kind === 'subscription' ? id : undefined
-                }
-                data-task-details={kind === 'job' ? id : undefined}
-                disabled={disabled}
-                onClick={onOpen}
-                title={label}
-                type='button'
-            >
-                <Icon name='more-vertical' />
-            </button>
+            {kind === 'job' && (
+                <button
+                    aria-label={label}
+                    className={`icon-button workspace-row-menu ${kind}-menu`}
+                    data-task-details={id}
+                    disabled={disabled}
+                    onClick={onOpen}
+                    title={label}
+                    type='button'
+                >
+                    <Icon name='more-vertical' />
+                </button>
+            )}
         </article>
     );
 }

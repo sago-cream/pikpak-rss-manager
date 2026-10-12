@@ -151,16 +151,6 @@
 #enabled-field {
     margin-bottom: 24px;
 }
-.rule-block select {
-    width: 100%;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--ink);
-    font: inherit;
-    margin-top: 0;
-}
 .rename-preview-row {
     display: grid;
     grid-template-columns: 86px minmax(0, 1fr);

@@ -14,6 +14,8 @@ HTMLDialogElement.prototype.showModal = function showModal() {
 HTMLElement.prototype.hidePopover = function hidePopover() {
     delete this.dataset.open;
 };
+HTMLElement.prototype.hasPointerCapture = () => false;
+HTMLElement.prototype.scrollIntoView = () => undefined;
 afterEach(() => {
     cleanup();
     localStorage.clear();

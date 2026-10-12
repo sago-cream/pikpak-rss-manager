@@ -154,16 +154,15 @@ export function Appearance({
                 <Select
                     aria-label={t('語言')}
                     className='language-select'
-                    onChange={(event) => {
-                        setLanguage(
-                            event.target.value === 'en' ? 'en' : 'zh-Hant'
-                        );
+                    onValueChange={(value) => {
+                        setLanguage(value === 'en' ? 'en' : 'zh-Hant');
                     }}
+                    options={[
+                        { value: 'zh-Hant', label: '繁體中文' },
+                        { value: 'en', label: 'English' },
+                    ]}
                     value={language}
-                >
-                    <option value='zh-Hant'>繁體中文</option>
-                    <option value='en'>English</option>
-                </Select>
+                />
             )}
         </div>
     );

@@ -43,8 +43,8 @@ export function jobIcon(state: string): IconName {
           : 'backfill';
 }
 export const jobGroups = [
-    { color: 'warning', label: '待處理' },
-    { color: 'purple', label: '處理中' },
+    { color: 'warning', label: '需要處理' },
+    { color: 'purple', label: '進行中' },
     { color: 'green', label: '已完成' },
 ] as const;
 export function sortJobs(jobs: Job[]): Job[] {

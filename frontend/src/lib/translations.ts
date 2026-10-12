@@ -6,6 +6,10 @@ export const messageUpdates: Record<string, string> = {
 };
 export const translations: Record<string, string> = {
     '任務清單': 'Task list',
+    'RSS 訂閱': 'RSS subscriptions',
+    '下載任務': 'Download tasks',
+    '需要處理': 'Needs attention',
+    '帳號與設定': 'Account & settings',
     '訂閱清單': 'Subscription list',
     '放棄未儲存的變更？': 'Discard unsaved changes?',
     '技術資訊': 'Technical details',

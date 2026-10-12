@@ -1189,19 +1189,6 @@ textarea {
     flex-shrink: 0;
     vertical-align: middle;
 }
-.language-select select {
-    font: inherit;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 8px;
-}
-.language-select:focus-visible,
-select:focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 3px;
-}
 .login-page {
     display: flex;
     justify-content: center;
@@ -1377,15 +1364,15 @@ button.connection-pill:hover {
     padding-top: 16px;
 }
 .profile-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: grid;
+    place-items: center;
     background: transparent;
     color: var(--ink);
     border: 0;
     border-radius: 12px;
-    padding: 4px 8px;
-    min-height: 44px;
+    padding: 12px;
+    width: 44px;
+    height: 44px;
 }
 .profile-toggle:hover {
     background: var(--accent-light);
@@ -1393,23 +1380,14 @@ button.connection-pill:hover {
 .profile-toggle svg {
     width: 20px;
     height: 20px;
-    flex-shrink: 0;
 }
-.profile-avatar {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--accent-light);
-    color: var(--accent);
-    font-weight: 650;
-}
-#profile-name {
-    max-width: 200px;
+.profile-account-name {
+    display: block;
+    margin-bottom: 8px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 14px;
 }
 .profile-menu {
     position: fixed;
@@ -1456,7 +1434,7 @@ button.connection-pill:hover {
     flex: 1;
     min-width: 0;
 }
-.profile-menu .language-select select {
+.profile-menu .language-select .select-trigger {
     height: 44px;
 }
 .profile-footer {
@@ -1475,6 +1453,10 @@ button.connection-pill:hover {
 .workspace-section {
     margin-top: 32px;
     scroll-margin-top: 24px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-inset);
 }
 .workspace-section-heading {
     flex-shrink: 0;
@@ -1483,6 +1465,7 @@ button.connection-pill:hover {
     align-items: center;
     gap: 16px;
     margin-bottom: 16px;
+    min-height: 44px;
 }
 .section-actions {
     display: flex;
@@ -1520,8 +1503,8 @@ button.connection-pill:hover {
     position: relative;
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 20px 12px;
+    gap: 16px;
+    padding: 20px 16px;
     border-top: 1px solid var(--line);
 }
 .workspace-row:last-child {
@@ -1537,15 +1520,16 @@ button.connection-pill:hover {
 }
 .subscription-row[data-paused='true'] {
     opacity: 0.6;
+    border-style: dashed;
 }
 .subscription-row[data-paused='true']:has(.subscription-toggle:hover),
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible) {
     opacity: 1;
 }
 .subscription-row[data-paused='true']:has(.subscription-toggle:hover)
-    :is(.subscription-info, .subscription-menu),
+    .subscription-info,
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible)
-    :is(.subscription-info, .subscription-menu) {
+    .subscription-info {
     opacity: 0.6;
 }
 .workspace-row-info {
@@ -1604,11 +1588,28 @@ button.connection-pill:hover {
     background: transparent;
     color: var(--muted);
 }
+.subscription-toggle {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+.subscription-row[data-paused='false'] .subscription-toggle {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    background: var(--accent-light);
+    color: var(--accent);
+}
+.subscription-row[data-paused='true'] .subscription-toggle svg {
+    transform: translateX(1px);
+}
 .subscription-toggle:hover,
 .workspace-row-menu:hover {
     background: var(--accent-light);
     color: var(--accent);
     opacity: 1;
+}
+.subscription-row .subscription-toggle:hover {
+    background: var(--action);
+    color: var(--on-accent);
 }
 .subscription-toggle svg,
 .workspace-row-menu svg {
@@ -1694,9 +1695,6 @@ button.connection-pill:hover {
     }
     .content {
         padding: 24px 20px 32px;
-    }
-    #profile-name {
-        display: none;
     }
     .workspace-section {
         margin-top: 24px;
@@ -1786,23 +1784,135 @@ button.connection-pill:hover {
     position: relative;
     min-width: 0;
 }
-.select-control > select.select-input {
-    appearance: none;
+.select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     width: 100%;
-    padding-inline-end: 40px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12px;
+    text-align: left;
 }
-.select-control > .select-chevron {
-    position: absolute;
-    inset-inline-end: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+.select-trigger:hover:not(:disabled),
+.select-trigger[data-state='open'] {
+    background: var(--surface-inset);
+    border-color: var(--muted);
+}
+.select-trigger:focus:not(:focus-visible) {
+    outline: none;
+}
+.select-trigger:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+.select-trigger:disabled {
+    cursor: not-allowed;
+}
+.select-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.select-chevron {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
     color: var(--muted);
     pointer-events: none;
 }
-.select-control:has(select:disabled) > .select-chevron {
+.select-menu {
+    width: var(--radix-select-trigger-width);
+    max-width: calc(100vw - 32px);
+    max-height: min(320px, var(--radix-select-content-available-height));
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    z-index: 1100;
+}
+.select-options {
+    padding: 4px;
+}
+.select-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+.select-option > span:first-child {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.select-option[data-highlighted] {
+    background: var(--accent-light);
+    color: var(--accent);
+    outline: none;
+}
+.select-option[data-disabled] {
     opacity: 0.5;
+    cursor: not-allowed;
+}
+.select-indicator,
+.select-scroll {
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+}
+.select-indicator svg,
+.select-scroll svg {
+    width: 16px;
+    height: 16px;
+}
+.select-scroll {
+    height: 24px;
+}
+.select-scroll-up svg {
+    transform: rotate(180deg);
+}
+@media (max-width: 650px) {
+    .select-trigger,
+    .select-option {
+        min-height: 44px;
+    }
+    .workspace-section {
+        padding: 16px;
+    }
+    .workspace-section-heading:has(.task-state-filter) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+    }
+    .section-title:has(.task-state-filter) {
+        display: contents;
+    }
+    .workspace-section-heading .task-state-filter {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+    }
+    .workspace-section-heading:has(.task-state-filter) .section-actions {
+        grid-column: 2;
+        grid-row: 1;
+        margin-left: 0;
+    }
 }
 
 .section-title {
@@ -1832,21 +1942,20 @@ button.connection-pill:hover {
     width: 144px;
     max-width: 100%;
 }
-.task-state-filter > select.select-input {
-    min-height: 40px;
-    padding: 8px 40px 8px 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 12px;
-    cursor: pointer;
-}
 .job-group + .job-group {
     margin-top: 24px;
 }
+.job-group {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.job-group .workspace-row:last-child {
+    border-bottom: 0;
+}
 .job-group-title {
-    padding: 8px 12px;
+    padding: 12px 16px;
     margin: 0;
     font-size: 12px;
     color: var(--muted);
@@ -1898,9 +2007,6 @@ button.connection-pill:hover {
     .job-indicator {
         width: 44px;
         height: 44px;
-    }
-    .task-state-filter > select.select-input {
-        min-height: 44px;
     }
 }
 
@@ -2021,8 +2127,42 @@ button.connection-pill:hover {
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    padding: 4px;
+    margin: -4px;
 }
 .workspace-scroll:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
+}
+#subscriptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.subscription-row {
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.subscription-row[data-paused='false'] {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent) 5%, var(--surface)),
+        var(--surface) 60%
+    );
+}
+.subscription-row[data-paused='false']::before {
+    content: '';
+    position: absolute;
+    inset: 16px auto 16px 0;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+.subscription-row:hover,
+.subscription-row:has(.workspace-row-open:focus-visible) {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+    background: var(--accent-light);
 }

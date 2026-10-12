@@ -184,26 +184,16 @@ export function RenamePreview({
             {samples.length > 0 && (
                 <FormField id='preview-source' label={t('種子檔名')}>
                     <Select
-                        onChange={(event) => {
-                            setSelected(event.target.value);
-                            selectedSample.current = samples.at(
-                                Number(event.target.value)
-                            );
+                        onValueChange={(value) => {
+                            setSelected(value);
+                            selectedSample.current = samples.at(Number(value));
                         }}
+                        options={samples.map((sample, index) => ({
+                            value: String(index),
+                            label: sample.filename,
+                        }))}
                         value={selected}
-                    >
-                        {samples.map((sample, index) => (
-                            <option
-                                key={JSON.stringify([
-                                    sample.title,
-                                    sample.filename,
-                                ])}
-                                value={index}
-                            >
-                                {sample.filename}
-                            </option>
-                        ))}
-                    </Select>
+                    />
                 </FormField>
             )}
             <p className='field-help' id='preview-source-help' role='status'>

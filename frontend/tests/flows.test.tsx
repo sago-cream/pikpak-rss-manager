@@ -42,6 +42,10 @@ const taskOrder = () =>
         (element) => element.dataset.job
     );
 const success = async () => undefined;
+const chooseOption = async (control: HTMLElement, label: string) => {
+    await userEvent.click(control);
+    await userEvent.click(screen.getByRole('option', { name: label }));
+};
 const job = (id: string, state: string): Job => ({
     id,
     state,
@@ -285,7 +289,9 @@ describe('React flows', () => {
                 );
             });
             fireEvent.click(screen.getByRole('button', { name: '檔名規則' }));
-            expect(screen.getByRole('option').textContent).toBe('new.mkv');
+            expect(screen.getByLabelText('種子檔名').textContent).toBe(
+                'new.mkv'
+            );
             expect(screen.queryByText('old.mkv')).toBeNull();
         } finally {
             view.unmount();
@@ -427,10 +433,10 @@ describe('React flows', () => {
             [...document.querySelectorAll('.job-group-title')].map(
                 (heading) => heading.textContent
             )
-        ).toEqual(['待處理', '處理中', '已完成']);
+        ).toEqual(['需要處理', '進行中', '已完成']);
         expect(screen.queryByRole('table')).toBeNull();
         const filter = screen.getByRole('combobox', { name: '任務狀態' });
-        expect(filter).toHaveProperty('value', 'all');
+        expect(filter.textContent).toBe('全部');
         expect(document.querySelector('.job-meta')?.textContent).toBe(
             '使用者.mkv·10/12 08:00'
         );
@@ -448,20 +454,20 @@ describe('React flows', () => {
             )!
         );
         expect(onOpen).toHaveBeenLastCalledWith('done');
-        await userEvent.selectOptions(filter, 'warning');
+        await chooseOption(filter, '需要處理');
         expect(taskOrder()).toEqual(['review', 'failed']);
-        expect(screen.queryByRole('heading', { name: '處理中' })).toBeNull();
+        expect(screen.queryByRole('heading', { name: '進行中' })).toBeNull();
         expect(screen.queryByRole('heading', { name: '已完成' })).toBeNull();
-        await userEvent.selectOptions(filter, 'purple');
+        await chooseOption(filter, '進行中');
         expect(taskOrder()).toEqual(['running']);
-        await userEvent.selectOptions(filter, 'green');
+        await chooseOption(filter, '已完成');
         expect(taskOrder()).toEqual(['done']);
         expect(document.activeElement).toBe(filter);
         await userEvent.click(
             screen.getByRole('button', { name: '清除已完成任務' })
         );
         expect(onClear).toHaveBeenCalledOnce();
-        await userEvent.selectOptions(filter, 'all');
+        await chooseOption(filter, '全部');
         expect(taskOrder()).toEqual(['review', 'failed', 'running', 'done']);
         expect(
             screen.queryByRole('button', { name: '清除已完成任務' })
@@ -481,11 +487,11 @@ describe('React flows', () => {
             </Preferences>
         );
         const filter = screen.getByRole('combobox', { name: '任務狀態' });
-        await userEvent.selectOptions(filter, 'green');
+        await chooseOption(filter, '已完成');
         expect(screen.getByText('沒有符合的任務')).toBeTruthy();
         expect(taskOrder()).toEqual([]);
         expect(screen.queryByRole('heading', { name: '已完成' })).toBeNull();
-        await userEvent.selectOptions(filter, 'all');
+        await chooseOption(filter, '全部');
         expect(taskOrder()).toEqual(['running']);
         rerender(
             <Preferences>
@@ -602,9 +608,7 @@ describe('React flows', () => {
         ).toBeTruthy();
         expect(screen.queryByRole('searchbox')).toBeNull();
         await userEvent.click(
-            document.querySelector<HTMLButtonElement>(
-                '[data-subscription-settings="7"]'
-            )!
+            document.querySelector<HTMLButtonElement>('[data-edit="7"]')!
         );
         expect(screen.getByRole('dialog', { name: '測試訂閱' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '檔名規則' })).toBeTruthy();
@@ -922,27 +926,30 @@ describe('React flows', () => {
                 </Preferences>
             </StrictMode>
         );
+        await userEvent.click(await screen.findByLabelText('種子檔名'));
         const options = await screen.findAllByRole('option');
         expect(options.map((option) => option.textContent)).toEqual([
             'raw[01].mkv',
             'raw[02].mkv',
         ]);
+        await userEvent.keyboard('{Escape}');
         expect(await screen.findByText('rawS01E01.mkv')).toBeTruthy();
         expect(reads).toBe(1);
-        await userEvent.selectOptions(screen.getByLabelText('種子檔名'), '1');
+        await chooseOption(screen.getByLabelText('種子檔名'), 'raw[02].mkv');
         expect(await screen.findByText('rawS01E02.mkv')).toBeTruthy();
         await userEvent.click(
             screen.getByRole('button', { name: '重新整理種子檔名' })
         );
         expect(await screen.findByText('來源回傳非成功狀態')).toBeTruthy();
-        expect(screen.getByLabelText('種子檔名')).toHaveProperty('value', '1');
+        expect(screen.getByLabelText('種子檔名').textContent).toBe(
+            'raw[02].mkv'
+        );
         await userEvent.click(
             screen.getByRole('button', { name: '重新整理種子檔名' })
         );
         await waitFor(() => {
-            expect(screen.getByLabelText('種子檔名')).toHaveProperty(
-                'value',
-                '0'
+            expect(screen.getByLabelText('種子檔名').textContent).toBe(
+                'raw[02].mkv'
             );
         });
         expect(screen.getByText('rawS01E02.mkv')).toBeTruthy();

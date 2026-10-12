@@ -283,10 +283,10 @@ describe('Workspace audit interactions', () => {
             name: '任務',
         });
         await userEvent.click(tabs);
-        await userEvent.selectOptions(
-            screen.getByRole('combobox', { name: '任務狀態' }),
-            'purple'
+        await userEvent.click(
+            screen.getByRole('combobox', { name: '任務狀態' })
         );
+        await userEvent.click(screen.getByRole('option', { name: '進行中' }));
         await userEvent.click(screen.getByRole('button', { name: '訂閱' }));
         await userEvent.click(tabs);
         expect(
@@ -294,8 +294,8 @@ describe('Workspace audit interactions', () => {
                 .mobileView
         ).toBe('jobs');
         expect(
-            screen.getByRole('combobox', { name: '任務狀態' })
-        ).toHaveProperty('value', 'purple');
+            screen.getByRole('combobox', { name: '任務狀態' }).textContent
+        ).toBe('進行中');
         const opener = document.querySelector<HTMLButtonElement>(
             '[data-job="queued"]'
         )!;

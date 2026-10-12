@@ -46,27 +46,27 @@ export function Tasks({
         >
             <div className='workspace-section-heading'>
                 <div className='section-title'>
-                    <h2 id='jobs-title'>{t('離線任務')}</h2>
+                    <h2 id='jobs-title'>{t('下載任務')}</h2>
                     <Select
                         aria-label={t('任務狀態')}
                         className='task-state-filter'
                         id='job-state-filter'
-                        onChange={(event) => {
-                            setFilter(event.target.value as JobFilter);
+                        onValueChange={(value) => {
+                            setFilter(value as JobFilter);
                             const list = document.querySelector('#jobs-list');
                             if (list) {
                                 list.scrollTop = 0;
                             }
                         }}
+                        options={[
+                            { value: 'all', label: t('全部') },
+                            ...jobGroups.map((group) => ({
+                                value: group.color,
+                                label: t(group.label),
+                            })),
+                        ]}
                         value={filter}
-                    >
-                        <option value='all'>{t('全部')}</option>
-                        {jobGroups.map((group) => (
-                            <option key={group.color} value={group.color}>
-                                {t(group.label)}
-                            </option>
-                        ))}
-                    </Select>
+                    />
                 </div>
                 <div className='section-actions'>
                     {jobs.some((job) => job.state === 'complete') && (

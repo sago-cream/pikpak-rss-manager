@@ -30,7 +30,7 @@ export function Subscriptions({
             id='view-subscriptions'
         >
             <div className='workspace-section-heading'>
-                <h2 id='subscriptions-title'>{t('訂閱管理')}</h2>
+                <h2 id='subscriptions-title'>{t('RSS 訂閱')}</h2>
                 <AddButton kind='subscription' onClick={onAdd} />
             </div>
             <ScrollRegion id='subscriptions-list' label={t('訂閱清單')}>

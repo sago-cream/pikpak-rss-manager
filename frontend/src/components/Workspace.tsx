@@ -187,20 +187,14 @@ export function Workspace({
                         <Wordmark />
                     </a>
                     <button
-                        aria-label={t('帳號選單')}
+                        aria-label={t('帳號與設定')}
                         className='profile-toggle'
                         id='profile-toggle'
                         popoverTarget='profile-menu'
                         ref={profileButton}
                         type='button'
                     >
-                        <span aria-hidden='true' className='profile-avatar'>
-                            P
-                        </span>
-                        <span id='profile-name'>
-                            {data?.status.name || t('PikPak 帳號')}
-                        </span>
-                        <Icon name='chevron' />
+                        <Icon name='user' />
                     </button>
                 </header>
                 <div
@@ -221,6 +215,9 @@ export function Workspace({
                     popover='auto'
                     ref={profile}
                 >
+                    <strong className='profile-account-name'>
+                        {data?.status.name || t('PikPak 帳號')}
+                    </strong>
                     <div className='connection-pill' id='profile-connection'>
                         <span
                             className={`dot ${connected ? 'green' : 'warning'}`}
