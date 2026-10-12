@@ -16,6 +16,24 @@ import { RowMetadata } from './RowMetadata.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
 
+function DownloadProgress({ job }: { job: Job }): JSX.Element | null {
+    const { t } = usePreferences();
+    if (job.state !== 'downloading' || !Number.isFinite(job.progress)) {
+        return null;
+    }
+    const percent = Math.min(100, Math.max(0, job.progress));
+    return (
+        <div className='job-progress'>
+            <span aria-hidden='true'>{Math.round(percent)}%</span>
+            <ProgressMeter
+                label={`${t('下載進度')} ${job.title}`}
+                shape='circle'
+                value={percent}
+            />
+        </div>
+    );
+}
+
 export function Tasks({
     jobs,
     date,
@@ -102,6 +120,7 @@ export function Tasks({
                                     onOpen(job.id);
                                 }}
                                 title={job.rule.title || job.title}
+                                trailing={<DownloadProgress job={job} />}
                             >
                                 <RowMetadata
                                     items={[
@@ -109,21 +128,8 @@ export function Tasks({
                                             {job.title}
                                         </span>,
                                         <time>{date(job.created_at)}</time>,
-                                        ...(job.state === 'downloading' &&
-                                        Number.isFinite(job.progress)
-                                            ? [
-                                                  `${Math.round(Math.min(100, Math.max(0, job.progress)))}%`,
-                                              ]
-                                            : []),
                                     ]}
                                 />
-                                {job.state === 'downloading' &&
-                                    Number.isFinite(job.progress) && (
-                                        <ProgressMeter
-                                            label={`${t('下載進度')} ${job.title}`}
-                                            value={job.progress}
-                                        />
-                                    )}
                             </WorkspaceRow>
                         ))}
                     </section>

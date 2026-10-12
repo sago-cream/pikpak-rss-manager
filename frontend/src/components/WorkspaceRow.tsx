@@ -35,6 +35,7 @@ export function WorkspaceRow({
                         data-job={kind === 'job' ? id : undefined}
                         disabled={disabled}
                         onClick={onOpen}
+                        title={title}
                         type='button'
                     >
                         {title}

@@ -83,8 +83,38 @@
     stroke: var(--canvas);
     stroke-width: 1;
 }
-.job-info > .progress-meter {
-    margin-top: var(--workspace-edge-space);
+.progress-meter.is-circular {
+    width: var(--workspace-control-icon-size);
+    height: var(--workspace-control-icon-size);
+    flex-shrink: 0;
+}
+.is-circular .meter-track,
+.is-circular .meter-fill {
+    fill: none;
+    stroke-width: 3;
+}
+.is-circular .meter-track {
+    stroke: var(--line);
+}
+.is-circular .meter-fill {
+    stroke: var(--accent);
+    stroke-linecap: round;
+}
+.job-row:has(.job-progress) {
+    display: grid;
+    grid-template-columns: var(--workspace-control-size) minmax(0, 1fr) auto;
+    align-items: center;
+}
+.job-progress {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    gap: var(--workspace-edge-space);
+    padding-inline-end: calc(
+        (var(--workspace-control-size) - var(--workspace-control-icon-size)) / 2
+    );
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
 }
 .main {
     display: flex;
@@ -201,6 +231,7 @@
 }
 .job-group {
     flex-shrink: 0;
+    container: task-group / inline-size;
 }
 .job-group-heading {
     display: grid;
@@ -222,6 +253,40 @@
 }
 .workspace-switch {
     display: none;
+}
+
+@container task-group (max-width: 560px) {
+    .job-row:has(.job-progress) {
+        row-gap: var(--workspace-edge-space);
+    }
+    .job-row:has(.job-progress) .job-info {
+        display: contents;
+    }
+    .job-row:has(.job-progress) .job-indicator {
+        grid-column: 1;
+        grid-row: 1 / 3;
+    }
+    .job-row:has(.job-progress) h3 {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+    }
+    .job-row:has(.job-progress) .workspace-row-open {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .job-row:has(.job-progress) .row-metadata {
+        grid-column: 2 / -1;
+        grid-row: 2;
+        margin-top: 0;
+    }
+    .job-progress {
+        grid-column: 3;
+        grid-row: 1;
+    }
 }
 
 @media (max-width: 1000px) {
