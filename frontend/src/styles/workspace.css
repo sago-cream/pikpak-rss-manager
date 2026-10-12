@@ -7,17 +7,6 @@
     --workspace-focus-room: 4px;
     --workspace-control-size: 44px;
     --workspace-control-icon-size: 20px;
-    --workspace-heading-inset: calc(
-        var(--workspace-panel-inset) - var(--workspace-focus-room)
-    );
-    --workspace-action-inset: calc(
-        var(--workspace-panel-inset) -
-            (
-                var(--workspace-control-size) -
-                    var(--workspace-control-icon-size)
-            ) /
-            2
-    );
 }
 
 #root:has(> .app-shell) {
@@ -71,6 +60,14 @@
     gap: var(--workspace-panel-gap);
 }
 .workspace-section {
+    --workspace-scrollbar-width: 0px;
+    --workspace-content-inset: max(
+        var(--workspace-panel-inset),
+        calc(var(--workspace-scrollbar-width) + var(--workspace-focus-room))
+    );
+    --workspace-scroll-end-inset: calc(
+        var(--workspace-content-inset) - var(--workspace-scrollbar-width)
+    );
     min-width: 0;
     min-height: 0;
     display: grid;
@@ -92,7 +89,7 @@
 .workspace-section-heading h2 {
     grid-column: 1;
     grid-row: 1;
-    margin-inline-start: var(--workspace-heading-inset);
+    margin-inline-start: var(--workspace-content-inset);
 }
 .workspace-section-controls {
     grid-column: 2;
@@ -102,7 +99,7 @@
 .section-actions {
     grid-column: 3;
     grid-row: 1;
-    margin-inline-end: var(--workspace-action-inset);
+    margin-inline-end: var(--workspace-edge-space);
 }
 .section-add,
 .section-clear,
@@ -125,7 +122,9 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: var(--workspace-focus-room) var(--workspace-panel-inset);
+    padding-block: var(--workspace-focus-room);
+    padding-inline: var(--workspace-content-inset)
+        var(--workspace-scroll-end-inset);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -199,7 +198,9 @@
     .workspace-section-controls {
         grid-column: 1 / -1;
         grid-row: 2;
-        padding: var(--workspace-focus-room) var(--workspace-panel-inset);
+        padding-block: var(--workspace-focus-room);
+        padding-inline: var(--workspace-content-inset)
+            var(--workspace-scroll-end-inset);
         overflow: hidden;
         scrollbar-width: thin;
         scrollbar-gutter: stable;
