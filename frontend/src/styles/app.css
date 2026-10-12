@@ -1,5 +1,6 @@
 :root {
     --ink: #232333;
+    --wordmark: var(--ink);
     --muted: #696978;
     --accent: #7961d7;
     --accent-dark: #6249bc;
@@ -22,7 +23,7 @@
     --radius: 16px;
     --shadow: 0 12px 48px var(--shadow-color);
     font-family:
-        Inter,
+        'Inter Variable',
         'Noto Sans TC',
         'Microsoft JhengHei',
         system-ui,
@@ -33,6 +34,7 @@
     color: var(--ink);
     font-size: 14px;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -46,7 +48,10 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select,
+code,
+pre {
     font: inherit;
 }
 
@@ -284,20 +289,13 @@ h3 {
     letter-spacing: 0.5px;
 }
 
-.brand-mark {
-    display: block;
-    flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    background: var(--accent);
-    border-radius: 17px;
-    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.brand-mark.small {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+.brand-wordmark {
+    color: var(--wordmark);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
 }
 
 #root:has(> .app-shell) {
@@ -321,11 +319,6 @@ h3 {
     text-decoration: none;
     font-size: 17px;
     letter-spacing: -0.3px;
-}
-
-.brand b {
-    font-weight: 500;
-    color: var(--muted);
 }
 
 .connection-pill {
@@ -685,7 +678,6 @@ input:disabled {
 }
 
 .code-input {
-    font-family: 'Cascadia Code', Consolas, monospace;
     font-size: 11px !important;
 }
 
@@ -762,7 +754,6 @@ dialog::backdrop {
     background: var(--surface-inset);
     border-style: solid;
     border-color: var(--line);
-    font-family: Consolas, monospace;
 }
 
 .preview-result.error {
@@ -817,7 +808,6 @@ dialog::backdrop {
 .id-list dd {
     margin: 0;
     overflow-wrap: anywhere;
-    font-family: Consolas, monospace;
     color: var(--muted);
 }
 
@@ -865,6 +855,7 @@ dialog::backdrop {
 
 .login-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
@@ -1058,9 +1049,8 @@ dialog::backdrop {
         font-size: 16px;
     }
 
-    .brand-mark.small {
-        width: 30px;
-        height: 30px;
+    .brand-wordmark {
+        font-size: 18px;
     }
 
     .main {

@@ -29,6 +29,7 @@
 }
 html[data-theme='dark'] {
     color-scheme: dark;
+    --wordmark: #fff;
     --ink: #e7e7ef;
     --muted: #a7a5b8;
     --accent: #b4a0ff;

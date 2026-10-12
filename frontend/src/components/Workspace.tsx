@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
-import brand from '../assets/favicon.svg';
 import { api } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import type {
@@ -19,6 +18,7 @@ import { Settings } from './Settings.js';
 import { SubscriptionDialog } from './SubscriptionDialog.js';
 import { Subscriptions } from './Subscriptions.js';
 import { Tasks } from './Tasks.js';
+import { Wordmark } from './Wordmark.js';
 
 type Modal =
     | { type: 'subscription'; subscription?: Subscription; manual?: boolean }
@@ -184,10 +184,7 @@ export function Workspace({
                         className='brand'
                         href={import.meta.env.DEV ? '/ui/' : '/'}
                     >
-                        <img alt='' className='brand-mark small' src={brand} />
-                        <span>
-                            PikPak <b>RSS</b>
-                        </span>
+                        <Wordmark />
                     </a>
                     <button
                         aria-busy={busy.has('refresh')}

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './components/App.js';
 import { Preferences } from './components/Preferences.js';
 
+import '@fontsource-variable/inter/index.css';
 import './styles/app.css';
 import './styles/subscriptions.css';
 import './styles/theme.css';

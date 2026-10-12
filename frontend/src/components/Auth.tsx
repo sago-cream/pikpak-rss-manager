@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
 
-import brand from '../assets/favicon.svg';
 import { api } from '../lib/api.js';
 import { errorMessage } from '../lib/i18n.js';
 import type { Page } from '../lib/types.js';
 import { CheckboxField, Feedback, FormField } from './FormField.js';
 import { Appearance, usePreferences } from './Preferences.js';
 import { TokenForm } from './TokenForm.js';
+import { Wordmark } from './Wordmark.js';
 
 export function Auth({
     page,
@@ -84,7 +84,7 @@ export function Auth({
         >
             <main className='login-shell'>
                 <div className='login-header'>
-                    <img alt='' className='brand-mark' src={brand} />
+                    <Wordmark />
                     <Appearance
                         toggleLanguage={setup || onboarding || recovery}
                     />
