@@ -1419,7 +1419,6 @@ button.connection-pill:hover {
 }
 .subscription-row[data-paused='true'] {
     opacity: 0.6;
-    border-style: dashed;
 }
 .subscription-row[data-paused='true']:has(.subscription-toggle:hover),
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible) {
@@ -1438,7 +1437,7 @@ button.connection-pill:hover {
 .workspace-row-info h3 {
     margin: 0;
     overflow-wrap: anywhere;
-    font-size: 14px;
+    font-size: inherit;
 }
 .workspace-row-open {
     padding: 0;
@@ -1462,7 +1461,7 @@ button.connection-pill:hover {
     gap: 4px 16px;
     margin-top: 8px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: inherit;
 }
 .destination-text {
     overflow: hidden;
@@ -1487,28 +1486,11 @@ button.connection-pill:hover {
     background: transparent;
     color: var(--muted);
 }
-.subscription-toggle {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--surface);
-}
-.subscription-row[data-paused='false'] .subscription-toggle {
-    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
-    background: var(--accent-light);
-    color: var(--accent);
-}
-.subscription-row[data-paused='true'] .subscription-toggle svg {
-    transform: translateX(1px);
-}
 .subscription-toggle:hover,
 .workspace-row-menu:hover {
     background: var(--accent-light);
     color: var(--accent);
     opacity: 1;
-}
-.subscription-row .subscription-toggle:hover {
-    background: var(--action);
-    color: var(--on-accent);
 }
 .subscription-toggle svg,
 .workspace-row-menu svg {
@@ -1810,7 +1792,7 @@ button.connection-pill:hover {
     gap: 8px;
     margin-top: 8px;
     color: var(--muted);
-    font-size: 12px;
+    font-size: inherit;
     min-width: 0;
 }
 .job-filename {
