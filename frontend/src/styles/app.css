@@ -1366,7 +1366,7 @@ button.connection-pill:hover {
 
 .workspace-header {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 16px;
     padding: 16px 40px;
@@ -1514,15 +1514,6 @@ button.connection-pill:hover {
 }
 #clear-completed-jobs {
     min-height: 44px;
-}
-.workspace-refresh {
-    width: 44px;
-    height: 44px;
-    background: transparent;
-}
-.workspace-refresh svg {
-    width: 20px;
-    height: 20px;
 }
 /* Leading controls and menus stay independent of the row hit area. */
 .workspace-row {

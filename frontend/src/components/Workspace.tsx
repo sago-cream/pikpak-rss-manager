@@ -187,25 +187,6 @@ export function Workspace({
                         <Wordmark />
                     </a>
                     <button
-                        aria-busy={busy.has('refresh')}
-                        aria-label={t('重新整理')}
-                        className='icon-button workspace-refresh'
-                        disabled={busy.has('refresh')}
-                        id='refresh'
-                        onClick={() => {
-                            void action('refresh', refresh, '已更新');
-                        }}
-                        title={t('重新整理')}
-                        type='button'
-                    >
-                        <Icon
-                            className={
-                                busy.has('refresh') ? 'is-loading' : undefined
-                            }
-                            name={busy.has('refresh') ? 'loading' : 'refresh'}
-                        />
-                    </button>
-                    <button
                         aria-label={t('帳號選單')}
                         className='profile-toggle'
                         id='profile-toggle'
