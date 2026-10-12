@@ -5,6 +5,8 @@ export const messageUpdates: Record<string, string> = {
         '改名未確認，請檢查同名衝突後重試',
 };
 export const translations: Record<string, string> = {
+    '任務清單': 'Task list',
+    '訂閱清單': 'Subscription list',
     '放棄未儲存的變更？': 'Discard unsaved changes?',
     '技術資訊': 'Technical details',
     '任務詳細資料': 'Task details',

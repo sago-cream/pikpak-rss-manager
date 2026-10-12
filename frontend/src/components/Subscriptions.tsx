@@ -4,6 +4,7 @@ import type { Subscription } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { ScrollRegion } from './ScrollRegion.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
 
 export function Subscriptions({
@@ -32,7 +33,7 @@ export function Subscriptions({
                 <h2 id='subscriptions-title'>{t('訂閱管理')}</h2>
                 <AddButton kind='subscription' onClick={onAdd} />
             </div>
-            <div id='subscriptions-list'>
+            <ScrollRegion id='subscriptions-list' label={t('訂閱清單')}>
                 {subscriptions.map((sub) => (
                     <WorkspaceRow
                         disabled={pending.has(`toggle-${sub.id}`)}
@@ -98,7 +99,7 @@ export function Subscriptions({
                 {subscriptions.length === 0 && (
                     <p className='workspace-idle'>{t('尚無訂閱')}</p>
                 )}
-            </div>
+            </ScrollRegion>
         </section>
     );
 }

@@ -6,6 +6,7 @@ import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { ScrollRegion } from './ScrollRegion.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
 
 export function Tasks({
@@ -54,7 +55,7 @@ export function Tasks({
                         <button
                             aria-busy={busy}
                             aria-label={t('清除已完成任務')}
-                            className='icon-button section-clear danger'
+                            className='icon-button section-clear'
                             disabled={busy}
                             id='clear-completed-jobs'
                             onClick={onClear}
@@ -70,7 +71,7 @@ export function Tasks({
                     <AddButton kind='task' onClick={onAdd} />
                 </div>
             </div>
-            <div id='jobs-list'>
+            <ScrollRegion id='jobs-list' label={t('任務清單')}>
                 {items.map((job) => (
                     <WorkspaceRow
                         id={job.id}
@@ -104,7 +105,7 @@ export function Tasks({
                 {items.length === 0 && (
                     <p className='workspace-idle'>{t('尚無任務')}</p>
                 )}
-            </div>
+            </ScrollRegion>
         </section>
     );
 }
