@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
-import { api } from '../lib/api.js';
+import { api, APIError } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
 import type {
     Job,
@@ -196,6 +196,53 @@ export function Workspace({
                     </a>
                     {data && (
                         <WorkspaceSummary
+                            checking={busy.has('check-subscriptions')}
+                            onCheck={() => {
+                                void action(
+                                    'check-subscriptions',
+                                    async () => {
+                                        const subscriptions =
+                                            await api<Subscription[]>(
+                                                '/api/subscriptions'
+                                            );
+                                        let firstError: Error | undefined;
+                                        for (const subscription of subscriptions.filter(
+                                            (sub) => sub.enabled
+                                        )) {
+                                            try {
+                                                // The worker serializes feed checks; send one
+                                                // request at a time.
+                                                // eslint-disable-next-line no-await-in-loop
+                                                await api(
+                                                    `/api/subscriptions/${subscription.id}/check`,
+                                                    'POST',
+                                                    {}
+                                                );
+                                            } catch (error) {
+                                                if (
+                                                    error instanceof APIError &&
+                                                    error.status === 401
+                                                ) {
+                                                    throw error;
+                                                }
+                                                firstError ??=
+                                                    error instanceof Error
+                                                        ? error
+                                                        : new Error(
+                                                              errorMessage(
+                                                                  error
+                                                              )
+                                                          );
+                                            }
+                                        }
+                                        await refresh();
+                                        if (firstError) {
+                                            throw firstError;
+                                        }
+                                    },
+                                    'RSS 檢查完成'
+                                );
+                            }}
                             status={data.status}
                             subscriptions={data.subscriptions}
                         />

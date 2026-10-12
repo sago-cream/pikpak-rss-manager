@@ -5,6 +5,10 @@ export const messageUpdates: Record<string, string> = {
         '改名未確認，請檢查同名衝突後重試',
 };
 export const translations: Record<string, string> = {
+    '立即檢查 RSS': 'Check RSS now',
+    '檢查所有啟用的 RSS 訂閱': 'Check all enabled RSS subscriptions',
+    '正在檢查…': 'Checking…',
+    'RSS 檢查完成': 'RSS checks complete',
     'PikPak 空間': 'PikPak storage',
     '空間資料暫不可用': 'Storage unavailable',
     '剩餘 %s': '%s free',

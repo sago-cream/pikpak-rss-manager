@@ -1,8 +1,16 @@
-import { act, render, screen } from '@testing-library/react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Preferences } from '../src/components/Preferences.js';
 import { Tasks } from '../src/components/Tasks.js';
+import { Workspace } from '../src/components/Workspace.js';
 import { WorkspaceSummary } from '../src/components/WorkspaceSummary.js';
 import type { Job, Subscription } from '../src/lib/types.js';
 
@@ -51,6 +59,141 @@ const taskProps = {
 };
 
 describe('Dashboard telemetry', () => {
+    it('checks the latest enabled feeds once, shows pending feedback and refreshes the schedule', async () => {
+        globalThis.history.replaceState(null, '', '#overview');
+        const now = Math.floor(Date.now() / 1000);
+        const clock = vi.spyOn(Date, 'now').mockReturnValue(now * 1000);
+        const subscriptions = [
+            subscription(1, now + 60),
+            subscription(2, now + 180),
+            subscription(3, now, false),
+        ];
+        const pending = Promise.withResolvers<Response>();
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input, options) => {
+                const path =
+                    typeof input === 'string'
+                        ? input
+                        : input instanceof URL
+                          ? input.href
+                          : input.url;
+                if (options?.method === 'POST') {
+                    return await pending.promise;
+                }
+                return Response.json(
+                    path === '/api/subscriptions'
+                        ? subscriptions
+                        : path === '/api/jobs' || path === '/api/events'
+                          ? []
+                          : { connected: true }
+                );
+            });
+        render(
+            <Preferences>
+                <Workspace
+                    onAuthenticated={async () => undefined}
+                    version='test'
+                />
+            </Preferences>
+        );
+        const button = await screen.findByRole('button', {
+            name: '立即檢查 RSS',
+        });
+        // Simulate a subscription paused in another client after the initial snapshot.
+        subscriptions[0].enabled = false;
+        await userEvent.click(button);
+        await screen.findByText('正在檢查…');
+        expect(button.getAttribute('aria-busy')).toBe('true');
+        expect(button).toHaveProperty('disabled', true);
+        expect(
+            button.querySelector('.lucide-refresh-cw.is-loading')
+        ).toBeTruthy();
+        fireEvent.click(button);
+        const writes = () =>
+            fetch.mock.calls.filter(
+                ([, options]) => options?.method === 'POST'
+            );
+        await waitFor(() => {
+            expect(writes()).toHaveLength(1);
+        });
+        expect(writes()[0][0]).toBe('/api/subscriptions/2/check');
+        expect(JSON.parse(writes()[0][1]?.body as string)).toEqual({});
+        clock.mockReturnValue((now + 5) * 1000);
+        subscriptions[1].next_check = now + 5 + 600;
+        await act(async () => {
+            pending.resolve(Response.json({ ok: true }));
+        });
+        await screen.findByText('RSS 檢查完成');
+        expect(button).toHaveProperty('disabled', false);
+        expect(button.getAttribute('aria-busy')).toBe('false');
+        await waitFor(() => {
+            expect(
+                screen.getByRole('region', { name: '下次 RSS 檢查' })
+                    .textContent
+            ).toBe('下次檢查 · 10 分鐘後');
+        });
+        expect(writes()).toHaveLength(1);
+        clock.mockRestore();
+    });
+    it('continues checking other feeds after an error and refreshes data without retrying the failed request', async () => {
+        globalThis.history.replaceState(null, '', '#overview');
+        const now = Math.floor(Date.now() / 1000);
+        const subscriptions = [
+            subscription(1, now + 60),
+            subscription(2, now + 180),
+        ];
+        const fetch = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async (input, options) => {
+                const path =
+                    typeof input === 'string'
+                        ? input
+                        : input instanceof URL
+                          ? input.href
+                          : input.url;
+                if (options?.method === 'POST') {
+                    if (path === '/api/subscriptions/1/check') {
+                        return Response.json(
+                            { error: '來源回傳非成功狀態' },
+                            { status: 500 }
+                        );
+                    }
+                    subscriptions[1].next_check = now + 600;
+                    return Response.json({ ok: true });
+                }
+                return Response.json(
+                    path === '/api/subscriptions'
+                        ? subscriptions
+                        : path === '/api/jobs' || path === '/api/events'
+                          ? []
+                          : { connected: true }
+                );
+            });
+        render(
+            <Preferences>
+                <Workspace
+                    onAuthenticated={async () => undefined}
+                    version='test'
+                />
+            </Preferences>
+        );
+        const button = await screen.findByRole('button', {
+            name: '立即檢查 RSS',
+        });
+        await userEvent.click(button);
+        const feedback = await screen.findByRole('status');
+        expect(feedback.textContent).toBe('來源回傳非成功狀態');
+        expect(
+            fetch.mock.calls
+                .filter(([, options]) => options?.method === 'POST')
+                .map(([input]) => input)
+        ).toEqual(['/api/subscriptions/1/check', '/api/subscriptions/2/check']);
+        expect(
+            fetch.mock.calls.filter(([input]) => input === '/api/subscriptions')
+        ).toHaveLength(3);
+        expect(button).toHaveProperty('disabled', false);
+    });
     it('shows storage capacity and free space, without presenting missing data as zero usage', () => {
         const subscriptions: Subscription[] = [];
         const { rerender } = render(
@@ -121,9 +264,15 @@ describe('Dashboard telemetry', () => {
             expect(
                 screen.getAllByRole('region', { name: '下次 RSS 檢查' })
             ).toHaveLength(1);
-            expect(screen.getByText('下次檢查 · 30 秒後')).toBeTruthy();
+            expect(
+                screen.getByRole('region', { name: '下次 RSS 檢查' })
+                    .textContent
+            ).toBe('下次檢查 · 30 秒後');
             await act(() => vi.advanceTimersByTime(30_000));
-            expect(screen.getByText('下次檢查 · 即將檢查')).toBeTruthy();
+            expect(
+                screen.getByRole('region', { name: '下次 RSS 檢查' })
+                    .textContent
+            ).toBe('下次檢查 · 即將檢查');
             rerender(
                 <Preferences>
                     <WorkspaceSummary
@@ -132,7 +281,10 @@ describe('Dashboard telemetry', () => {
                     />
                 </Preferences>
             );
-            expect(screen.getByText('下次檢查 · RSS 已暫停')).toBeTruthy();
+            expect(
+                screen.getByRole('region', { name: '下次 RSS 檢查' })
+                    .textContent
+            ).toBe('下次檢查 · RSS 已暫停');
             expect(
                 screen.queryByRole('meter', { name: 'RSS 檢查週期' })
             ).toBeNull();
@@ -144,7 +296,10 @@ describe('Dashboard telemetry', () => {
                     />
                 </Preferences>
             );
-            expect(screen.getByText('下次檢查 · 尚無啟用訂閱')).toBeTruthy();
+            expect(
+                screen.getByRole('region', { name: '下次 RSS 檢查' })
+                    .textContent
+            ).toBe('下次檢查 · 尚無啟用訂閱');
         } finally {
             vi.useRealTimers();
         }

@@ -32,15 +32,16 @@
 }
 .workspace-summary {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: var(--workspace-panel-gap);
     min-width: 0;
 }
 .workspace-stat {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) var(--workspace-meter-size);
+    grid-template-rows: auto var(--workspace-meter-size);
+    align-content: center;
     align-items: center;
-    gap: var(--workspace-edge-space);
+    gap: var(--workspace-focus-room);
     min-height: var(--workspace-control-size);
     min-width: 0;
     color: var(--muted);
@@ -56,11 +57,41 @@
     width: var(--workspace-control-icon-size);
     height: var(--workspace-control-icon-size);
 }
+.rss-schedule {
+    display: flex;
+    align-items: center;
+    gap: var(--workspace-edge-space);
+    min-width: 0;
+}
+.rss-refresh {
+    width: var(--workspace-control-size);
+    height: var(--workspace-control-size);
+    flex-shrink: 0;
+}
+.rss-refresh:hover:not(:disabled) {
+    color: var(--accent);
+}
+.rss-refresh:disabled:not([aria-busy='true']) {
+    cursor: default;
+}
+.rss-schedule-content {
+    flex: 1;
+    min-width: 0;
+}
+.rss-schedule-content .workspace-stat-text {
+    display: block;
+}
+.rss-countdown {
+    display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
 .storage-percent {
     margin-inline-start: auto;
     color: var(--ink);
 }
 .progress-meter {
+    display: block;
     height: var(--workspace-meter-size);
     overflow: hidden;
     border-radius: calc(var(--workspace-meter-size) / 2);
@@ -343,7 +374,7 @@
     .workspace-stat-text {
         flex-wrap: wrap;
     }
-    .workspace-stat-text .ui-icon {
+    .storage-stat .ui-icon {
         display: none;
     }
 }

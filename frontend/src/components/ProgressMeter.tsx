@@ -19,7 +19,7 @@ export function ProgressMeter({
 }): JSX.Element {
     const percent = Math.min(100, Math.max(0, value));
     return (
-        <div
+        <span
             aria-label={label}
             aria-valuemax={100}
             aria-valuemin={0}
@@ -62,6 +62,6 @@ export function ProgressMeter({
                     )}
                 </svg>
             )}
-        </div>
+        </span>
     );
 }

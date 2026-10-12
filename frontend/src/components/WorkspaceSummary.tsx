@@ -61,9 +61,13 @@ function StorageMeter({ status }: { status: Status }): JSX.Element {
 function RssSchedule({
     subscriptions,
     status,
+    checking,
+    onCheck,
 }: {
     subscriptions: Subscription[];
     status: Status;
+    checking: boolean;
+    onCheck?: () => void;
 }): JSX.Element {
     const { t } = usePreferences();
     const [now, setNow] = useState(() => Date.now() / 1000);
@@ -74,12 +78,14 @@ function RssSchedule({
             }
         };
         const timer = globalThis.setInterval(tick, 15_000);
+        const immediate = globalThis.setTimeout(tick, 0);
         document.addEventListener('visibilitychange', tick);
         return () => {
             clearInterval(timer);
+            clearTimeout(immediate);
             document.removeEventListener('visibilitychange', tick);
         };
-    }, []);
+    }, [subscriptions]);
     const next = subscriptions
         .filter((sub) => sub.enabled)
         .toSorted((a, b) => (a.next_check || 0) - (b.next_check || 0))
@@ -100,25 +106,43 @@ function RssSchedule({
         ? 100 * (1 - seconds / Math.max(1, next.interval_minutes * 60))
         : 0;
     return (
-        <section
-            aria-label={t('下次 RSS 檢查')}
-            className='workspace-stat rss-schedule'
-            title={next?.name}
-        >
-            <div className='workspace-stat-text'>
-                <Icon name='rss' />
-                <span>
-                    {t('下次檢查')} · {label}
-                </span>
-            </div>
-            {active && (
-                <ProgressMeter
-                    kind='meter'
-                    label={t('RSS 檢查週期')}
-                    value={elapsed}
-                    valueText={label}
+        <section aria-label={t('下次 RSS 檢查')} className='rss-schedule'>
+            <button
+                aria-busy={checking}
+                aria-describedby='rss-next-check-label'
+                aria-label={t('立即檢查 RSS')}
+                className='icon-button rss-refresh'
+                disabled={!active || checking || !onCheck}
+                id='check-all-subscriptions'
+                onClick={onCheck}
+                title={t('檢查所有啟用的 RSS 訂閱')}
+                type='button'
+            >
+                <Icon
+                    className={checking ? 'is-loading' : undefined}
+                    name='refresh'
                 />
-            )}
+            </button>
+            <div className='workspace-stat rss-schedule-content'>
+                <span className='workspace-stat-text' id='rss-next-check-label'>
+                    {checking ? (
+                        t('正在檢查…')
+                    ) : (
+                        <>
+                            {t('下次檢查')}{' '}
+                            <span className='rss-countdown'>· {label}</span>
+                        </>
+                    )}
+                </span>
+                {active && (
+                    <ProgressMeter
+                        kind='meter'
+                        label={t('RSS 檢查週期')}
+                        value={elapsed}
+                        valueText={label}
+                    />
+                )}
+            </div>
         </section>
     );
 }
@@ -126,13 +150,22 @@ function RssSchedule({
 export function WorkspaceSummary({
     status,
     subscriptions,
+    checking = false,
+    onCheck,
 }: {
     status: Status;
     subscriptions: Subscription[];
+    checking?: boolean;
+    onCheck?: () => void;
 }): JSX.Element {
     return (
         <div className='workspace-summary'>
-            <RssSchedule status={status} subscriptions={subscriptions} />
+            <RssSchedule
+                checking={checking}
+                onCheck={onCheck}
+                status={status}
+                subscriptions={subscriptions}
+            />
             <StorageMeter status={status} />
         </div>
     );
