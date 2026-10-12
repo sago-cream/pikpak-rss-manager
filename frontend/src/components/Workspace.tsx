@@ -176,6 +176,13 @@ export function Workspace({
         globalThis.history.replaceState(null, '', `#${type}`);
     };
     const connected = data?.status.connected && !data.status.paused;
+    const accountName = data?.status.name?.trim() || t('PikPak 帳號');
+    const accountInitial =
+        [
+            ...new Intl.Segmenter(undefined, {
+                granularity: 'grapheme',
+            }).segment(accountName),
+        ][0]?.segment.toLocaleUpperCase() || 'P';
     return (
         <>
             <div className='app-shell'>
@@ -192,9 +199,12 @@ export function Workspace({
                         id='profile-toggle'
                         popoverTarget='profile-menu'
                         ref={profileButton}
+                        title={accountName}
                         type='button'
                     >
-                        <Icon name='user' />
+                        <span aria-hidden='true' className='profile-avatar'>
+                            {accountInitial}
+                        </span>
                     </button>
                 </header>
                 <div
@@ -216,7 +226,7 @@ export function Workspace({
                     ref={profile}
                 >
                     <strong className='profile-account-name'>
-                        {data?.status.name || t('PikPak 帳號')}
+                        {accountName}
                     </strong>
                     <div className='connection-pill' id='profile-connection'>
                         <span

@@ -1369,17 +1369,25 @@ button.connection-pill:hover {
     background: transparent;
     color: var(--ink);
     border: 0;
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: 50%;
+    padding: 6px;
     width: 44px;
     height: 44px;
 }
 .profile-toggle:hover {
     background: var(--accent-light);
 }
-.profile-toggle svg {
-    width: 20px;
-    height: 20px;
+.profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--action);
+    color: var(--on-accent);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
 }
 .profile-account-name {
     display: block;
@@ -1937,6 +1945,7 @@ button.connection-pill:hover {
 }
 .section-title:has(.task-state-filter) {
     flex-wrap: wrap;
+    gap: 16px;
 }
 .task-state-filter {
     width: 144px;

@@ -22,7 +22,6 @@ import {
     Rss,
     Sun,
     Trash2,
-    UserRound,
     X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -30,7 +29,6 @@ import type { LucideIcon } from 'lucide-react';
 export type IconName =
     | 'cleanup'
     | 'tick'
-    | 'user'
     | 'alert'
     | 'loading'
     | 'more-vertical'
@@ -56,7 +54,6 @@ export type IconName =
 const icons: Record<IconName, LucideIcon> = {
     'cleanup': BrushCleaning,
     'tick': Check,
-    'user': UserRound,
     'alert': CircleAlert,
     'loading': LoaderCircle,
     'more-vertical': EllipsisVertical,
