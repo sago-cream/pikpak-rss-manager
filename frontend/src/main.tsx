@@ -8,6 +8,7 @@ import '@fontsource-variable/inter/index.css';
 import './styles/app.css';
 import './styles/subscriptions.css';
 import './styles/theme.css';
+import './styles/workspace.css';
 
 const root = document.querySelector('#root');
 if (!root) {

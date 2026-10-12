@@ -5,6 +5,7 @@ import {
     render,
     screen,
     waitFor,
+    within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -434,6 +435,12 @@ describe('React flows', () => {
                 (heading) => heading.textContent
             )
         ).toEqual(['需要處理', '進行中', '已完成']);
+        expect(
+            within(screen.getByRole('region', { name: '已完成' })).getByRole(
+                'button',
+                { name: '清除已完成任務' }
+            )
+        ).toBeTruthy();
         expect(screen.queryByRole('table')).toBeNull();
         const filter = screen.getByRole('combobox', { name: '任務狀態' });
         expect(filter.textContent).toBe('全部');
@@ -458,6 +465,9 @@ describe('React flows', () => {
         expect(taskOrder()).toEqual(['review', 'failed']);
         expect(screen.queryByRole('heading', { name: '進行中' })).toBeNull();
         expect(screen.queryByRole('heading', { name: '已完成' })).toBeNull();
+        expect(
+            screen.queryByRole('button', { name: '清除已完成任務' })
+        ).toBeNull();
         await chooseOption(filter, '進行中');
         expect(taskOrder()).toEqual(['running']);
         await chooseOption(filter, '已完成');
