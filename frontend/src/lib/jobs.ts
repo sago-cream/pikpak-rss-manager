@@ -42,15 +42,19 @@ export function jobIcon(state: string): IconName {
           ? 'alert'
           : 'backfill';
 }
-export function sortJobs(jobs: Job[], completedFirst = false): Job[] {
-    return jobs.toSorted((a, b) => {
-        const completion =
-            Number(a.state === 'complete') - Number(b.state === 'complete');
-        return (
-            (completedFirst ? -completion : completion) ||
-            b.created_at - a.created_at
-        );
-    });
+export const jobGroups = [
+    { color: 'warning', label: '待處理' },
+    { color: 'purple', label: '處理中' },
+    { color: 'green', label: '已完成' },
+] as const;
+export function sortJobs(jobs: Job[]): Job[] {
+    return jobs.toSorted(
+        (a, b) =>
+            jobGroups.findIndex((group) => group.color === jobColor(a.state)) -
+                jobGroups.findIndex(
+                    (group) => group.color === jobColor(b.state)
+                ) || b.created_at - a.created_at
+    );
 }
 export function currentFilename(file: {
     actual_name?: string;

@@ -1811,23 +1811,45 @@ button.connection-pill:hover {
     gap: 8px;
     min-width: 0;
 }
-.task-sort,
 .section-clear {
     width: 40px;
     height: 40px;
     background: transparent;
     color: var(--muted);
 }
-.task-sort:hover,
-.task-sort[aria-pressed='true'],
 .section-clear:hover {
     color: var(--accent);
     background: var(--accent-light);
 }
-.task-sort svg,
 .section-clear svg {
     width: 16px;
     height: 16px;
+}
+.section-title:has(.task-state-filter) {
+    flex-wrap: wrap;
+}
+.task-state-filter {
+    width: 144px;
+    max-width: 100%;
+}
+.task-state-filter > select.select-input {
+    min-height: 40px;
+    padding: 8px 40px 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+.job-group + .job-group {
+    margin-top: 24px;
+}
+.job-group-title {
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
 }
 .job-indicator {
     display: grid;
@@ -1872,11 +1894,13 @@ button.connection-pill:hover {
     font-variant-numeric: tabular-nums;
 }
 @media (max-width: 650px) {
-    .task-sort,
     .section-clear,
     .job-indicator {
         width: 44px;
         height: 44px;
+    }
+    .task-state-filter > select.select-input {
+        min-height: 44px;
     }
 }
 

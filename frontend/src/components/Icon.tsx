@@ -1,6 +1,5 @@
 import type { JSX } from 'react';
 import {
-    ArrowDownUp,
     ArrowRight,
     BrushCleaning,
     ChevronDown,
@@ -30,7 +29,6 @@ export type IconName =
     | 'cleanup'
     | 'alert'
     | 'loading'
-    | 'sort'
     | 'more-vertical'
     | 'play'
     | 'pause'
@@ -55,7 +53,6 @@ const icons: Record<IconName, LucideIcon> = {
     'cleanup': BrushCleaning,
     'alert': CircleAlert,
     'loading': LoaderCircle,
-    'sort': ArrowDownUp,
     'more-vertical': EllipsisVertical,
     'play': Play,
     'pause': Pause,
