@@ -255,7 +255,7 @@ describe('Workspace audit interactions', () => {
             expect(fix).toHaveBeenCalledOnce();
         }
     });
-    it('keeps the task filter when switching mobile sections and restores focus to the opening row', async () => {
+    it('keeps all task sections when switching mobile sections and restores focus to the opening row', async () => {
         globalThis.history.replaceState(null, '', '#overview');
         vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             const path =
@@ -283,19 +283,14 @@ describe('Workspace audit interactions', () => {
             name: '任務',
         });
         await userEvent.click(tabs);
-        await userEvent.click(
-            screen.getByRole('combobox', { name: '任務狀態' })
-        );
-        await userEvent.click(screen.getByRole('option', { name: '進行中' }));
         await userEvent.click(screen.getByRole('button', { name: '訂閱' }));
         await userEvent.click(tabs);
         expect(
             document.querySelector<HTMLElement>('.workspace-body')?.dataset
                 .mobileView
         ).toBe('jobs');
-        expect(
-            screen.getByRole('combobox', { name: '任務狀態' }).textContent
-        ).toBe('進行中');
+        expect(screen.getByRole('heading', { name: '進行中' })).toBeTruthy();
+        expect(screen.getByRole('heading', { name: '已完成' })).toBeTruthy();
         const opener = document.querySelector<HTMLButtonElement>(
             '[data-job="queued"]'
         )!;

@@ -28,7 +28,6 @@ export const translations: Record<string, string> = {
     '原名：': 'Original: ',
 
     '帳號選單': 'Account menu',
-    '任務狀態': 'Task status',
     '顯示更多': 'Show more',
     '已更新': 'Updated',
     '找不到訂閱': 'No subscriptions found',
@@ -153,7 +152,6 @@ export const translations: Record<string, string> = {
     'PikPak 授權': 'PikPak authorization',
     '設定分類': 'Settings categories',
     '上次檢查': 'Last checked',
-    '沒有符合的任務': 'No matching tasks',
     '未綁定': 'Not connected',
     '尚未綁定': 'Not connected',
     '個人存取權杖（PAT）': 'Personal access token (PAT)',

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { JSX } from 'react';
 
 import {
@@ -12,11 +11,9 @@ import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
-import { Select } from './Select.js';
+import { RowMetadata } from './RowMetadata.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
-
-type JobFilter = 'all' | ReturnType<typeof jobColor>;
 
 export function Tasks({
     jobs,
@@ -34,35 +31,10 @@ export function Tasks({
     busy: boolean;
 }): JSX.Element {
     const { t } = usePreferences();
-    const [filter, setFilter] = useState<JobFilter>('all');
-    const items = sortJobs(jobs).filter(
-        (job) => filter === 'all' || jobColor(job.state) === filter
-    );
+    const items = sortJobs(jobs);
     return (
         <WorkspacePanel
             actions={<AddButton kind='task' onClick={onAdd} />}
-            controls={
-                <Select
-                    aria-label={t('任務狀態')}
-                    className='task-state-filter'
-                    id='job-state-filter'
-                    onValueChange={(value) => {
-                        setFilter(value as JobFilter);
-                        const list = document.querySelector('#jobs-list');
-                        if (list) {
-                            list.scrollTop = 0;
-                        }
-                    }}
-                    options={[
-                        { value: 'all', label: t('全部') },
-                        ...jobGroups.map((group) => ({
-                            value: group.color,
-                            label: t(group.label),
-                        })),
-                    ]}
-                    value={filter}
-                />
-            }
             id='view-jobs'
             listId='jobs-list'
             listLabel={t('任務清單')}
@@ -130,30 +102,21 @@ export function Tasks({
                                 }}
                                 title={job.rule.title || job.title}
                             >
-                                <div className='job-meta'>
-                                    <span
-                                        className='job-filename'
-                                        title={job.title}
-                                    >
-                                        {job.title}
-                                    </span>
-                                    <span
-                                        aria-hidden='true'
-                                        className='meta-separator'
-                                    >
-                                        ·
-                                    </span>
-                                    <time>{date(job.created_at)}</time>
-                                </div>
+                                <RowMetadata
+                                    items={[
+                                        <span title={job.title}>
+                                            {job.title}
+                                        </span>,
+                                        <time>{date(job.created_at)}</time>,
+                                    ]}
+                                />
                             </WorkspaceRow>
                         ))}
                     </section>
                 );
             })}
             {items.length === 0 && (
-                <p className='workspace-idle'>
-                    {t(jobs.length === 0 ? '尚無任務' : '沒有符合的任務')}
-                </p>
+                <p className='workspace-idle'>{t('尚無任務')}</p>
             )}
         </WorkspacePanel>
     );

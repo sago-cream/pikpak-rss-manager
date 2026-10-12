@@ -1455,20 +1455,17 @@ button.connection-pill:hover {
 .workspace-row-open:focus-visible {
     outline: none;
 }
-.subscription-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 16px;
+.row-metadata {
     margin-top: 8px;
     color: var(--muted);
     font-size: inherit;
+    overflow-wrap: anywhere;
 }
-.destination-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
+.row-metadata-item:not(:first-child) {
+    display: inline-block;
     white-space: nowrap;
 }
-.subscription-schedule {
+.row-metadata time {
     font-variant-numeric: tabular-nums;
 }
 .subscription-info > .error {
@@ -1786,45 +1783,11 @@ button.connection-pill:hover {
 .job-indicator.purple {
     color: var(--accent);
 }
-.job-meta {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: inherit;
-    min-width: 0;
-}
-.job-filename {
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-.job-meta time,
-.meta-separator {
-    flex-shrink: 0;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-}
 @media (max-width: 650px) {
     .section-clear,
     .job-indicator {
         width: 44px;
         height: 44px;
-    }
-}
-
-@media (max-width: 650px) {
-    .job-meta {
-        display: block;
-    }
-    .job-filename {
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
-    .job-meta .meta-separator {
-        margin: 0 8px;
     }
 }
 

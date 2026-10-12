@@ -409,7 +409,7 @@ describe('React flows', () => {
             'https://edited.test'
         );
     });
-    it('groups attention before active and completed tasks, filters states, and opens details with pointer and keyboard', async () => {
+    it('shows all tasks grouped by attention, active and completed, and opens details with pointer and keyboard', async () => {
         const onOpen = vi.fn<(id: string) => void>();
         const onClear = vi.fn<() => void>();
         render(
@@ -442,11 +442,10 @@ describe('React flows', () => {
             )
         ).toBeTruthy();
         expect(screen.queryByRole('table')).toBeNull();
-        const filter = screen.getByRole('combobox', { name: '任務狀態' });
-        expect(filter.textContent).toBe('全部');
-        expect(document.querySelector('.job-meta')?.textContent).toBe(
-            '使用者.mkv·10/12 08:00'
-        );
+        expect(screen.queryByRole('combobox')).toBeNull();
+        expect(
+            document.querySelector('.job-info .row-metadata')?.textContent
+        ).toBe('使用者.mkv · 10/12 08:00');
         const firstTask = screen.getAllByRole('button', {
             name: '使用者 · 使用者.mkv · 待處理',
         })[0];
@@ -461,29 +460,12 @@ describe('React flows', () => {
             )!
         );
         expect(onOpen).toHaveBeenLastCalledWith('done');
-        await chooseOption(filter, '需要處理');
-        expect(taskOrder()).toEqual(['review', 'failed']);
-        expect(screen.queryByRole('heading', { name: '進行中' })).toBeNull();
-        expect(screen.queryByRole('heading', { name: '已完成' })).toBeNull();
-        expect(
-            screen.queryByRole('button', { name: '清除已完成任務' })
-        ).toBeNull();
-        await chooseOption(filter, '進行中');
-        expect(taskOrder()).toEqual(['running']);
-        await chooseOption(filter, '已完成');
-        expect(taskOrder()).toEqual(['done']);
-        expect(document.activeElement).toBe(filter);
         await userEvent.click(
             screen.getByRole('button', { name: '清除已完成任務' })
         );
         expect(onClear).toHaveBeenCalledOnce();
-        await chooseOption(filter, '全部');
-        expect(taskOrder()).toEqual(['review', 'failed', 'running', 'done']);
-        expect(
-            screen.queryByRole('button', { name: '清除已完成任務' })
-        ).toBeTruthy();
     });
-    it('distinguishes an empty task filter from an empty workspace', async () => {
+    it('shows the task empty state only when no tasks remain', () => {
         const props = {
             busy: false,
             date: () => '',
@@ -496,12 +478,6 @@ describe('React flows', () => {
                 <Tasks {...props} jobs={[job('running', 'queued')]} />
             </Preferences>
         );
-        const filter = screen.getByRole('combobox', { name: '任務狀態' });
-        await chooseOption(filter, '已完成');
-        expect(screen.getByText('沒有符合的任務')).toBeTruthy();
-        expect(taskOrder()).toEqual([]);
-        expect(screen.queryByRole('heading', { name: '已完成' })).toBeNull();
-        await chooseOption(filter, '全部');
         expect(taskOrder()).toEqual(['running']);
         rerender(
             <Preferences>

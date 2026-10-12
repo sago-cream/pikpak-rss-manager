@@ -4,6 +4,7 @@ import type { Subscription } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { RowMetadata } from './RowMetadata.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
 
@@ -74,21 +75,17 @@ export function Subscriptions({
                     paused={!sub.enabled}
                     title={sub.name}
                 >
-                    <div className='subscription-meta'>
-                        <span
-                            className='destination-text'
-                            title={sub.destination || t('根目錄')}
-                        >
-                            {sub.destination || t('根目錄')}
-                        </span>
-                        <span className='subscription-schedule'>
+                    <RowMetadata
+                        items={[
+                            <span title={sub.destination || t('根目錄')}>
+                                {sub.destination || t('根目錄')}
+                            </span>,
                             <time title={t('上次檢查')}>
                                 {date(sub.last_checked)}
-                            </time>
-                            {' · '}
-                            {t(`每 ${sub.interval_minutes} 分鐘`)}
-                        </span>
-                    </div>
+                            </time>,
+                            t(`每 ${sub.interval_minutes} 分鐘`),
+                        ]}
+                    />
                     {sub.last_error && (
                         <p className='error'>{t(sub.last_error)}</p>
                     )}
