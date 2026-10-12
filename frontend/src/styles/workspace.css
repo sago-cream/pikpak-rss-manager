@@ -145,6 +145,7 @@
     grid-template-columns: minmax(0, 1fr) var(--workspace-control-size);
     align-items: center;
     min-height: var(--workspace-control-size);
+    padding-block: var(--workspace-edge-space);
     padding-inline: var(--workspace-stack-gap);
 }
 .job-group-title {
