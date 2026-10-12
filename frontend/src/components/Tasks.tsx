@@ -54,7 +54,7 @@ export function Tasks({
                         <button
                             aria-busy={busy}
                             aria-label={t('清除已完成任務')}
-                            className='icon-button section-clear'
+                            className='icon-button section-clear danger'
                             disabled={busy}
                             id='clear-completed-jobs'
                             onClick={onClear}

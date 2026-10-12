@@ -7,7 +7,6 @@ import {
     ChevronRight,
     CircleAlert,
     CircleCheck,
-    CircleX,
     Clock,
     Download,
     EllipsisVertical,
@@ -21,7 +20,6 @@ import {
     Plus,
     RefreshCw,
     Rss,
-    ShieldAlert,
     Sun,
     Trash2,
     X,
@@ -31,9 +29,7 @@ import type { LucideIcon } from 'lucide-react';
 export type IconName =
     | 'cleanup'
     | 'alert'
-    | 'failed'
     | 'loading'
-    | 'auth-alert'
     | 'sort'
     | 'more-vertical'
     | 'play'
@@ -58,9 +54,7 @@ export type IconName =
 const icons: Record<IconName, LucideIcon> = {
     'cleanup': BrushCleaning,
     'alert': CircleAlert,
-    'failed': CircleX,
     'loading': LoaderCircle,
-    'auth-alert': ShieldAlert,
     'sort': ArrowDownUp,
     'more-vertical': EllipsisVertical,
     'play': Play,

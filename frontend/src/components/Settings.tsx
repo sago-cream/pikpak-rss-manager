@@ -44,7 +44,7 @@ export function Settings({
                     <div className='panel-heading'>
                         <h2>{t('PikPak 授權')}</h2>
                         <span
-                            className={`badge ${connected ? 'green' : 'orange'}`}
+                            className={`badge ${connected ? 'green' : 'warning'}`}
                             id='settings-badge'
                         >
                             {t(

@@ -28,39 +28,19 @@ export const jobLabels: Record<string, string> = {
     paused_quota: '配額暫停',
     paused_account: '帳號暫停',
 };
-export function jobColor(state: string): 'green' | 'orange' | 'purple' {
+export function jobColor(state: string): 'green' | 'warning' | 'purple' {
     return state === 'complete'
         ? 'green'
         : reviewStates.includes(state)
-          ? 'orange'
+          ? 'warning'
           : 'purple';
 }
 export function jobIcon(state: string): IconName {
-    if (state === 'complete') {
-        return 'check';
-    }
-    if (state === 'failed') {
-        return 'failed';
-    }
-    if (state === 'paused_auth' || state === 'paused_account') {
-        return 'auth-alert';
-    }
-    if (state === 'paused_quota') {
-        return 'pause';
-    }
-    if (reviewStates.includes(state)) {
-        return 'alert';
-    }
-    if (state === 'downloading') {
-        return 'backfill';
-    }
-    if (state === 'organizing') {
-        return 'edit';
-    }
-    if (state === 'submitting') {
-        return 'refresh';
-    }
-    return 'clock';
+    return state === 'complete'
+        ? 'check'
+        : reviewStates.includes(state)
+          ? 'alert'
+          : 'backfill';
 }
 export function sortJobs(jobs: Job[], completedFirst = false): Job[] {
     return jobs.toSorted((a, b) => {

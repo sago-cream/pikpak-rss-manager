@@ -7,7 +7,7 @@
     --canvas: #f8f8fb;
     --line: #ececf2;
     --green: #187a5b;
-    --orange: #9a5d0a;
+    --warning: var(--danger);
     --surface: #fff;
     --surface-inset: #fcfbff;
     --danger: #b43f50;
@@ -15,7 +15,7 @@
     --action: var(--accent);
     --action-hover: var(--accent-dark);
     --success-bg: color-mix(in srgb, var(--green) 12%, var(--surface));
-    --warning-bg: color-mix(in srgb, var(--orange) 12%, var(--surface));
+    --warning-bg: var(--danger-bg);
     --danger-bg: color-mix(in srgb, var(--danger) 12%, var(--surface));
     --overlay: color-mix(in srgb, var(--ink) 30%, transparent);
     --shadow-color: color-mix(in srgb, var(--ink) 12%, transparent);
@@ -153,6 +153,15 @@ h3 {
     background: var(--accent-light);
 }
 
+.button.danger {
+    background: var(--danger-bg);
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+    color: var(--danger);
+}
+.button.danger:hover {
+    background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+}
+
 .text-button {
     display: inline-flex;
     align-items: center;
@@ -192,6 +201,9 @@ h3 {
     background: var(--accent-light);
 }
 
+.icon-button.danger {
+    color: var(--danger);
+}
 .icon-button.danger:hover {
     background: var(--danger-bg);
     color: var(--danger);
@@ -225,9 +237,9 @@ h3 {
     color: var(--accent);
 }
 
-.badge.orange {
+.badge.warning {
     background: var(--warning-bg);
-    color: var(--orange);
+    color: var(--warning);
 }
 
 .dot {
@@ -243,8 +255,8 @@ h3 {
     background: var(--green);
 }
 
-.dot.amber {
-    background: var(--orange);
+.dot.warning {
+    background: var(--warning);
 }
 
 .error {
@@ -258,10 +270,10 @@ h3 {
 
 .notice {
     padding: 14px 18px;
-    border: 1px solid color-mix(in srgb, var(--orange) 30%, var(--line));
+    border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--line));
     background: var(--warning-bg);
     border-radius: 12px;
-    color: var(--orange);
+    color: var(--warning);
     font-size: 12px;
     margin-bottom: 24px;
 }
@@ -498,7 +510,7 @@ tr:last-child td {
 }
 
 .event-dot.warning {
-    background: var(--orange);
+    background: var(--warning);
 }
 
 .event-dot.error {
@@ -1341,7 +1353,7 @@ button.connection-pill:hover {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    color: var(--orange);
+    color: var(--warning);
     margin: 0 0 24px;
 }
 
@@ -1524,7 +1536,7 @@ button.connection-pill:hover {
     outline-offset: -3px;
 }
 .subscription-row[data-paused='true'] {
-    opacity: 0.8;
+    opacity: 0.6;
 }
 .subscription-row[data-paused='true']:has(.subscription-toggle:hover),
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible) {
@@ -1534,7 +1546,7 @@ button.connection-pill:hover {
     :is(.subscription-info, .subscription-menu),
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible)
     :is(.subscription-info, .subscription-menu) {
-    opacity: 0.8;
+    opacity: 0.6;
 }
 .workspace-row-info {
     flex: 1;
@@ -1826,8 +1838,8 @@ button.connection-pill:hover {
 .job-indicator.green {
     color: var(--green);
 }
-.job-indicator.orange {
-    color: var(--orange);
+.job-indicator.warning {
+    color: var(--warning);
 }
 .job-indicator.purple {
     color: var(--accent);

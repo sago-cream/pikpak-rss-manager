@@ -245,7 +245,7 @@ export function Workspace({
                 >
                     <div className='connection-pill' id='profile-connection'>
                         <span
-                            className={`dot ${connected ? 'green' : 'amber'}`}
+                            className={`dot ${connected ? 'green' : 'warning'}`}
                         />
                         {t(
                             connected

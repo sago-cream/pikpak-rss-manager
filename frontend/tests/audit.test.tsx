@@ -63,7 +63,7 @@ describe('Workspace audit interactions', () => {
             document.querySelector('.job-indicator.green .lucide-circle-check')
         ).toBeTruthy();
         expect(
-            document.querySelector('.job-indicator.purple .lucide-clock')
+            document.querySelector('.job-indicator.purple .lucide-download')
         ).toBeTruthy();
         expect(
             document.querySelector(

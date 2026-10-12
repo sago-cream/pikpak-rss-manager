@@ -140,7 +140,7 @@ export function JobDialog({
                                     onClick={onFixConnection}
                                     type='button'
                                 >
-                                    <Icon name='auth-alert' />
+                                    <Icon name='alert' />
                                     {t('修復連線')}
                                 </button>
                             )}
@@ -241,7 +241,7 @@ function FileDetail({ file }: { file: FileAction }): JSX.Element {
     return (
         <article className='file-detail'>
             <span
-                className={`badge ${file.state === 'done' ? 'green' : 'orange'}`}
+                className={`badge ${file.state === 'done' ? 'green' : 'warning'}`}
             >
                 {t(labels[file.state] || file.state)}
             </span>
