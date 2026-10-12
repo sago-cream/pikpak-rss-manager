@@ -1425,9 +1425,9 @@ button.connection-pill:hover {
     opacity: 1;
 }
 .subscription-row[data-paused='true']:has(.subscription-toggle:hover)
-    .subscription-info,
+    :is(.subscription-info, .subscription-indicator),
 .subscription-row[data-paused='true']:has(.subscription-toggle:focus-visible)
-    .subscription-info {
+    :is(.subscription-info, .subscription-indicator) {
     opacity: 0.6;
 }
 .workspace-row-info {
@@ -1472,8 +1472,7 @@ button.connection-pill:hover {
     margin: 12px 0 0;
     font-size: 12px;
 }
-.subscription-toggle,
-.workspace-row-menu {
+.subscription-toggle {
     position: relative;
     z-index: 1;
     flex-shrink: 0;
@@ -1483,14 +1482,12 @@ button.connection-pill:hover {
     background: transparent;
     color: var(--muted);
 }
-.subscription-toggle:hover,
-.workspace-row-menu:hover {
+.subscription-toggle:hover {
     background: var(--accent-light);
     color: var(--accent);
     opacity: 1;
 }
-.subscription-toggle svg,
-.workspace-row-menu svg {
+.subscription-toggle svg {
     width: 20px;
     height: 20px;
 }
@@ -1568,8 +1565,7 @@ button.connection-pill:hover {
     height: 44px;
 }
 @media (max-width: 650px) {
-    .subscription-toggle,
-    .workspace-row-menu {
+    .subscription-toggle {
         width: 44px;
         height: 44px;
     }

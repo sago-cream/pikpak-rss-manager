@@ -68,6 +68,7 @@ export interface Status {
     message?: string;
     storage_used?: string;
     storage_total?: string;
+    storage_updated_at?: number;
 }
 export interface AppSettings {
     public_url: string;

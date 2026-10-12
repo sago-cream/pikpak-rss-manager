@@ -352,7 +352,15 @@ func (s *Server) Handler() http.Handler {
 		}
 		JSON(w, 200, events)
 	}))
-	mux.HandleFunc("GET /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Manager.Status()) }))
+	mux.HandleFunc("GET /api/settings/pikpak", s.protected(func(w http.ResponseWriter, r *http.Request) {
+		status := s.Manager.Status()
+		if reader, ok := s.Manager.(interface {
+			RefreshStatus(context.Context) pikpak.Status
+		}); ok {
+			status = reader.RefreshStatus(r.Context())
+		}
+		JSON(w, 200, status)
+	}))
 	mux.HandleFunc("GET /api/settings/app", s.protected(func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.appSettings()) }))
 	mux.HandleFunc("POST /api/settings/app", s.protected(s.saveAppSettings))
 	mux.HandleFunc("POST /api/settings/password", s.protected(s.changePassword))

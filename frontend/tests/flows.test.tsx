@@ -455,9 +455,7 @@ describe('React flows', () => {
         await userEvent.keyboard(' ');
         expect(onOpen.mock.calls).toEqual([['review'], ['review'], ['review']]);
         await userEvent.click(
-            document.querySelector<HTMLButtonElement>(
-                '[data-task-details="done"]'
-            )!
+            document.querySelector<HTMLButtonElement>('[data-job="done"]')!
         );
         expect(onOpen).toHaveBeenLastCalledWith('done');
         await userEvent.click(
@@ -513,10 +511,11 @@ describe('React flows', () => {
         const [card] = await screen.findAllByRole('button', {
             name: '使用者 · 使用者.mkv · 雲端下載中',
         });
-        expect(screen.queryByText('43%')).toBeNull();
+        expect(screen.getByText('43%')).toBeTruthy();
         expect(screen.queryByText('雲端下載中')).toBeNull();
         await userEvent.click(card);
-        await screen.findByText('43%');
+        const details = await screen.findByRole('dialog');
+        await within(details).findByText('43%');
         expect(screen.getByText('雲端下載中')).toBeTruthy();
         expect(screen.getByText('Series', { exact: false })).toBeTruthy();
     });

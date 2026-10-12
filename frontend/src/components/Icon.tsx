@@ -9,8 +9,9 @@ import {
     CircleCheck,
     Clock,
     Download,
-    EllipsisVertical,
+    FileSymlink,
     Folder,
+    HardDrive,
     Info,
     LoaderCircle,
     Moon,
@@ -27,11 +28,12 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 export type IconName =
+    | 'file-symlink'
+    | 'storage'
     | 'cleanup'
     | 'tick'
     | 'alert'
     | 'loading'
-    | 'more-vertical'
     | 'play'
     | 'pause'
     | 'info'
@@ -52,11 +54,12 @@ export type IconName =
     | 'chevron-right';
 
 const icons: Record<IconName, LucideIcon> = {
+    'file-symlink': FileSymlink,
+    'storage': HardDrive,
     'cleanup': BrushCleaning,
     'tick': Check,
     'alert': CircleAlert,
     'loading': LoaderCircle,
-    'more-vertical': EllipsisVertical,
     'play': Play,
     'pause': Pause,
     'info': Info,

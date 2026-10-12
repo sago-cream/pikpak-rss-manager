@@ -1,7 +1,5 @@
 import type { JSX, ReactNode } from 'react';
 
-import { Icon } from './Icon.js';
-
 export function WorkspaceRow({
     kind,
     id,
@@ -9,6 +7,7 @@ export function WorkspaceRow({
     label,
     onOpen,
     leading,
+    trailing,
     paused,
     disabled = false,
     children,
@@ -19,6 +18,7 @@ export function WorkspaceRow({
     label: string;
     onOpen: () => void;
     leading: ReactNode;
+    trailing?: ReactNode;
     paused?: boolean;
     disabled?: boolean;
     children: ReactNode;
@@ -42,19 +42,7 @@ export function WorkspaceRow({
                 </h3>
                 {children}
             </div>
-            {kind === 'job' && (
-                <button
-                    aria-label={label}
-                    className={`icon-button workspace-row-menu ${kind}-menu`}
-                    data-task-details={id}
-                    disabled={disabled}
-                    onClick={onOpen}
-                    title={label}
-                    type='button'
-                >
-                    <Icon name='more-vertical' />
-                </button>
-            )}
+            {trailing}
         </article>
     );
 }

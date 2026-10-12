@@ -19,6 +19,7 @@ import { SubscriptionDialog } from './SubscriptionDialog.js';
 import { Subscriptions } from './Subscriptions.js';
 import { Tasks } from './Tasks.js';
 import { Wordmark } from './Wordmark.js';
+import { WorkspaceSummary } from './WorkspaceSummary.js';
 
 type Modal =
     | { type: 'subscription'; subscription?: Subscription; manual?: boolean }
@@ -193,6 +194,12 @@ export function Workspace({
                     >
                         <Wordmark />
                     </a>
+                    {data && (
+                        <WorkspaceSummary
+                            status={data.status}
+                            subscriptions={data.subscriptions}
+                        />
+                    )}
                     <button
                         aria-label={t('帳號與設定')}
                         className='profile-toggle'

@@ -41,6 +41,16 @@ export function Subscriptions({
                     kind='subscription'
                     label={`${t('訂閱設定')} ${sub.name}`}
                     leading={
+                        <span className='subscription-indicator'>
+                            <Icon name='file-symlink' />
+                        </span>
+                    }
+                    onOpen={() => {
+                        onEdit(sub);
+                    }}
+                    paused={!sub.enabled}
+                    title={sub.name}
+                    trailing={
                         <button
                             aria-busy={pending.has(`toggle-${sub.id}`)}
                             aria-label={`${t(sub.enabled ? '暫停追蹤' : '繼續追蹤')} ${sub.name}`}
@@ -69,11 +79,6 @@ export function Subscriptions({
                             />
                         </button>
                     }
-                    onOpen={() => {
-                        onEdit(sub);
-                    }}
-                    paused={!sub.enabled}
-                    title={sub.name}
                 >
                     <RowMetadata
                         items={[

@@ -11,6 +11,7 @@ import type { Job } from '../lib/types.js';
 import { AddButton } from './AddButton.js';
 import { Icon } from './Icon.js';
 import { usePreferences } from './Preferences.js';
+import { ProgressMeter } from './ProgressMeter.js';
 import { RowMetadata } from './RowMetadata.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { WorkspaceRow } from './WorkspaceRow.js';
@@ -108,8 +109,21 @@ export function Tasks({
                                             {job.title}
                                         </span>,
                                         <time>{date(job.created_at)}</time>,
+                                        ...(job.state === 'downloading' &&
+                                        Number.isFinite(job.progress)
+                                            ? [
+                                                  `${Math.round(Math.min(100, Math.max(0, job.progress)))}%`,
+                                              ]
+                                            : []),
                                     ]}
                                 />
+                                {job.state === 'downloading' &&
+                                    Number.isFinite(job.progress) && (
+                                        <ProgressMeter
+                                            label={`${t('下載進度')} ${job.title}`}
+                                            value={job.progress}
+                                        />
+                                    )}
                             </WorkspaceRow>
                         ))}
                     </section>

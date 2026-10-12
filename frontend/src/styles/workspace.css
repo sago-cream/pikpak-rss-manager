@@ -7,6 +7,7 @@
     --workspace-focus-room: 4px;
     --workspace-control-size: 44px;
     --workspace-control-icon-size: 20px;
+    --workspace-meter-size: 4px;
 }
 
 #root:has(> .app-shell) {
@@ -21,10 +22,69 @@
 }
 .workspace-header {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     gap: var(--workspace-stack-gap);
     padding: var(--workspace-edge-space) var(--workspace-page-gutter);
+}
+.workspace-header .profile-toggle {
+    grid-column: 3;
+}
+.workspace-summary {
+    display: flex;
+    align-items: stretch;
+    gap: var(--workspace-panel-gap);
+    min-width: 0;
+}
+.workspace-stat {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) var(--workspace-meter-size);
+    align-items: center;
+    gap: var(--workspace-edge-space);
+    min-height: var(--workspace-control-size);
+    min-width: 0;
+    color: var(--muted);
+}
+.workspace-stat-text {
+    display: flex;
+    align-items: center;
+    gap: var(--workspace-edge-space);
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+}
+.workspace-stat-text .ui-icon {
+    width: var(--workspace-control-icon-size);
+    height: var(--workspace-control-icon-size);
+}
+.storage-percent {
+    margin-inline-start: auto;
+    color: var(--ink);
+}
+.progress-meter {
+    height: var(--workspace-meter-size);
+    overflow: hidden;
+    border-radius: calc(var(--workspace-meter-size) / 2);
+}
+.progress-meter svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.meter-track {
+    fill: var(--line);
+}
+.meter-fill {
+    fill: var(--accent);
+}
+.is-warning .meter-fill {
+    fill: var(--danger);
+}
+.meter-segments {
+    stroke: var(--canvas);
+    stroke-width: 1;
+}
+.job-info > .progress-meter {
+    margin-top: var(--workspace-edge-space);
 }
 .main {
     display: flex;
@@ -99,10 +159,21 @@
 .section-add,
 .section-clear,
 .subscription-toggle,
-.workspace-row-menu,
+.subscription-indicator,
 .job-indicator {
     width: var(--workspace-control-size);
     height: var(--workspace-control-size);
+}
+.subscription-indicator {
+    flex-shrink: 0;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+}
+.subscription-indicator svg {
+    width: var(--workspace-control-icon-size);
+    height: var(--workspace-control-icon-size);
 }
 .section-add svg {
     width: var(--workspace-control-icon-size);
@@ -145,12 +216,31 @@
     margin: 0;
     font-size: 12px;
     color: var(--muted);
+    margin-inline-start: calc(
+        (var(--workspace-control-size) - var(--workspace-control-icon-size)) / 2
+    );
 }
 .workspace-switch {
     display: none;
 }
 
 @media (max-width: 1000px) {
+    .workspace-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        row-gap: var(--workspace-edge-space);
+    }
+    .workspace-header .profile-toggle {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .workspace-summary {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--workspace-stack-gap);
+        padding-bottom: var(--workspace-edge-space);
+    }
     .workspace-body {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -184,5 +274,11 @@
     :root {
         --workspace-page-gutter: 20px;
         --workspace-panel-inset: 16px;
+    }
+    .workspace-stat-text {
+        flex-wrap: wrap;
+    }
+    .workspace-stat-text .ui-icon {
+        display: none;
     }
 }
