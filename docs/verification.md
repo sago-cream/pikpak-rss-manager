@@ -1,12 +1,14 @@
 # Verification
 
-## Current release: v2.0.1 (2026-10-04)
+## Current change: backfill select-all (2026-10-17)
 
-Unconfirmed rename messages now explain PikPak's duplicate-name restriction and ask users to resolve conflicts before retrying. Existing task messages receive the updated Traditional Chinese and English copy without changing filenames or stored records. Download and rename behavior is unchanged.
+The backfill dialog can select or clear all available torrents. The checkbox shows partial selection, excludes rows with metadata errors, and resets when the dialog opens. Confirmation and retry keep the selected whole torrents fixed. Traditional Chinese and English labels are supported.
 
-Release decision: v2.0.1 for a user-visible message fix. No existing tags are changed. Source VERSION and README are synchronized. Post-push CI, multiarch publication and anonymous pulls will be recorded in the GitHub Release.
+Release decision: this user-visible feature warrants a minor release after review and merge. This delivery opens a draft PR only. The published version remains v2.0.1. No release, tag, image publication or deployment is part of this delivery.
 
-Passed locally: `make verify` (formatting, `go test ./...`, `go vet ./...`, JavaScript syntax/localization, task-details checks and application build) with Go 1.27.1, `GOFLAGS=-buildvcs=false` and task-owned workspace caches. The executable reports `v2.0.1`. `git diff --check` and local Markdown links pass. Mocked regression coverage includes destination/root submission, torrent directories and attachments, suffix readback, Regex/nonmatches, rejected/uncertain renames, partial-action/restart recovery, missing task/file IDs, auth/quota/rate failures, baseline/repeated-download/idempotent confirmation behavior, task cancellation and CSRF. Pending submission intent survives account pause and restart, blocks unconfirmed record deletion and prevents resubmission. UI checks cover updated guidance on existing review records in both languages and preserve filenames even when they match an application message. No real PikPak operations were performed for this copy fix. The earlier direct-download validation does not prove the minimal PAT scope combination. Task-created build caches, temporary build directories and the verification executable were removed. Development data, keys and intentional backups were preserved.
+Local checks use Go 1.27.1 and Node.js 24.10.0 with task-owned temporary tools and caches. Passed: `CGO_ENABLED=0 GOFLAGS=-buildvcs=false make verify` (formatting, `go test ./...`, `go vet ./...`, UI syntax/localization/task-details/backfill checks and application build), `git diff --check`, and local Markdown file links. The executable reports `v2.0.1`. `make test-race` needs a C compiler, which is unavailable on this worker. Container checks require Actions because Docker is unavailable locally.
+
+Chromium checks passed against isolated fixture APIs and the actual template/static assets. They cover select-all/clear, partial selection, unavailable rows, keyboard activation, reopening/reset, English labels and a 390-pixel mobile viewport. Matched desktop screenshots compare the exact PR base with the changed assets. JavaScript regression tests also cover loading/empty/all-unavailable plans, canceled confirmation, duplicate-submit protection, identical retry payloads and ignored stale/closed previews. These mocked checks do not prove real PikPak operations. No real PikPak operations were performed for this change.
 
 ## Real PikPak validation and limits
 

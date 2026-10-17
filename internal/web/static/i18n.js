@@ -8,6 +8,7 @@ const messageUpdates = {
   '改名結果無法確認，保留目前檔名；請核對後重試':'改名結果無法確認，已保留目前檔名。PikPak 不允許改成同資料夾內的重複檔名，請檢查是否有同名檔案並排除衝突後重試',
 };
 const translations = {
+  '全選':'Select all',
   '下載所選項目':'Download selected items',
   '下載所選項目？':'Download selected items?',
   '勾選要下載的種子；多檔種子會下載整筆內容，保留原始目錄結構。':'Select torrents to download. Multi-file torrents download in full and keep their directory structure.',

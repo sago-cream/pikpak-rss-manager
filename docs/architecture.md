@@ -21,7 +21,7 @@ Deletion shares the worker/account lock with submission and file actions. Incomp
 
 Jobs rename primary files in place inside the official returned file/folder ID, preserving torrent structure and auxiliary filenames/locations. File actions persist original/requested names, parent IDs and renaming intent before each call, then read back actual_name (including any returned suffix). A lost response is reconciled by ID without repeating the rename. An unchanged name requires review. The review message explains that PikPak rejects renaming to a duplicate filename in the same folder and asks the user to resolve any conflict before retrying. This guidance does not classify every unconfirmed result as a duplicate. Existing stored review messages receive the updated UI copy in both languages. Regex replacement works on actual filenames. Nonmatches retain their names. Renaming is disabled by default.
 
-Backfill preview reads one RSS snapshot and each distinct torrent URL once, with bounded concurrency and metadata/output budgets. Session/account-bound plans expire after 15 minutes. Confirmations validate the subscription and destination again, then atomically queue whole torrents using stable job IDs.
+Backfill preview reads one RSS snapshot and each distinct torrent URL once, with bounded concurrency and metadata/output budgets. Session/account-bound plans expire after 15 minutes. The list has a select-all checkbox for available torrents, including a partial-selection state. Unavailable rows are excluded. Selection resets when the dialog opens and is frozen during confirmation and retries. Confirmations validate the subscription and destination again, then atomically queue whole torrents using stable job IDs.
 
 ## Limits and security
 
