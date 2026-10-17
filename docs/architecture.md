@@ -4,6 +4,8 @@ One Go process, one administrator, one active PikPak account and one SQLite data
 
 The frontend uses React 19, strict TypeScript and Vite, scaffolded with `npm create rail`. Shared React components own form fields, checkbox fields, information popovers, dialogs, PAT entry, styled selects, appearance controls and settings navigation. One Radix-based Select component owns the trigger, themed options, Lucide selection indicators, focus-visible ring and keyboard navigation for language and torrent filenames. Menus stay within the owning dialog or popover layer. All interface glyphs use Lucide through the shared Icon component, with a consistent two-pixel stroke and inherited theme colors. Action labels contain text only. The shared PikPak RSS wordmark uses locally bundled bold Inter, with white text in dark mode and theme ink in light mode. Product text and controls share Inter, with fallback fonts for Chinese glyphs. Labels remain adjacent to controls and information triggers preserve label height. Controlled settings fields retain edits when switching categories. Requests use the existing authenticated JSON API and CSRF token. Source/folder reads and debounced naming previews are cancelled when their components close or inputs change.
 
+Folder creation dialogs render outside the subscription and manual-download forms. Creating a folder never submits the parent draft.
+
 Go `html/template` renders only the initial page and version attributes in Vite's HTML entry. React retrieves session state before exposing management flows. Development uses a loopback Vite server with an API proxy. Production serves fingerprinted assets under `/ui/`. Docker builds the frontend in a Node stage and embeds it in the Go stage.
 
 | Module | Responsibility |

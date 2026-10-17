@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
+import { createPortal } from 'react-dom';
 
 import { api } from '../lib/api.js';
 import { errorMessage, isCancelled } from '../lib/i18n.js';
@@ -260,7 +261,7 @@ function CreateFolder({
             mounted.current = false;
         };
     }, []);
-    return (
+    return createPortal(
         <Dialog
             compact
             id='folder-create-dialog'
@@ -271,6 +272,7 @@ function CreateFolder({
                 id='folder-create-form'
                 onSubmit={(event) => {
                     event.preventDefault();
+                    event.stopPropagation();
                     if (pending) {
                         return;
                     }
@@ -337,6 +339,7 @@ function CreateFolder({
                     </button>
                 </div>
             </form>
-        </Dialog>
+        </Dialog>,
+        document.body
     );
 }
