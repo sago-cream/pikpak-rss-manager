@@ -63,7 +63,7 @@ func TestFirstWebSetupAndRestart(t *testing.T) {
 		csrf = state.CSRF
 		return state.Initialized
 	}
-	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `id="setup-form"`) {
+	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `data-page="setup"`) {
 		t.Fatal("missing initial setup page")
 	}
 	select {
@@ -112,7 +112,7 @@ func TestFirstWebSetupAndRestart(t *testing.T) {
 	if !refreshCSRF() {
 		t.Fatal("setup state not persisted")
 	}
-	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `id="view-settings"`) {
+	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `data-page="onboarding"`) {
 		t.Fatal("setup did not create session")
 	}
 	if code, _ := request("POST", "/api/setup", map[string]string{"password": "overwrite", "confirm_password": "overwrite"}, server.URL); code != 409 {
@@ -179,7 +179,7 @@ func TestFirstWebSetupAndRestart(t *testing.T) {
 	if !refreshCSRF() {
 		t.Fatal("restart reopened initialization")
 	}
-	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `id="login-form"`) || strings.Contains(body, `id="setup-form"`) {
+	if code, body := request("GET", "/", nil, ""); code != 200 || !strings.Contains(body, `data-page="login"`) || strings.Contains(body, `data-page="setup"`) {
 		t.Fatal("restart missing login page")
 	}
 	if code, _ := request("POST", "/api/login", map[string]string{"password": password + "!"}, configuredOrigin); code != 401 {

@@ -106,7 +106,7 @@ func TestDeleteAndClearJobEndpoints(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
 	r.AddCookie(&http.Cookie{Name: "pp_session", Value: "fixture-session"})
 	h.ServeHTTP(page, r)
-	if !strings.Contains(page.Body.String(), `id="clear-completed-jobs"`) {
-		t.Fatal("clear-completed button missing")
+	if !strings.Contains(page.Body.String(), `data-page="app"`) {
+		t.Fatal("authenticated workspace bootstrap missing")
 	}
 }
