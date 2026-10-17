@@ -55,9 +55,15 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	case "recovery-code":
+		if err := issueRecoveryCode(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
 	case "serve":
 	default:
-		fmt.Fprintln(os.Stderr, "用法：pikpak-rss-manager [serve|healthcheck|version]")
+		fmt.Fprintln(os.Stderr, "用法：pikpak-rss-manager [serve|healthcheck|version|recovery-code]")
 		os.Exit(2)
 	}
 	c, err := config.Load()

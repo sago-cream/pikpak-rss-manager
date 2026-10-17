@@ -1,10 +1,19 @@
 # Architecture and API
 
-One Go process, one administrator, one active PikPak account and one SQLite data volume. HTML/CSS/JavaScript are embedded. No frontend build step or local media transfer.
+One Go process, one administrator, one active PikPak account and one SQLite data volume. Vite builds the React frontend into `internal/web/ui/dist`. Go embeds that output in a single binary. Node is a build dependency, with no Node runtime or local media transfer.
+
+The frontend uses React 19, strict TypeScript and Vite, scaffolded with `npm create rail`. Shared React components own form fields, checkbox fields, information popovers, dialogs, PAT entry, styled selects, appearance controls and settings navigation. One Radix-based Select component owns the trigger, themed options, Lucide selection indicators, focus-visible ring and keyboard navigation for language and torrent filenames. Menus stay within the owning dialog or popover layer. All interface glyphs use Lucide through the shared Icon component, with a consistent two-pixel stroke and inherited theme colors. Action labels contain text only. The shared PikPak RSS wordmark uses locally bundled bold Inter, with white text in dark mode and theme ink in light mode. Product text and controls share Inter, with fallback fonts for Chinese glyphs. Labels remain adjacent to controls and information triggers preserve label height. Controlled settings fields retain edits when switching categories. Requests use the existing authenticated JSON API and CSRF token. Source/folder reads and debounced naming previews are cancelled when their components close or inputs change.
+
+Folder creation dialogs render outside the subscription and manual-download forms. Creating a folder never submits the parent draft. Native cancel and close events apply only to their owning dialog. Dismissing a child preserves the parent draft and its discard guard.
+
+Accepted subscription and manual-download saves close the draft before refreshing the workspace. Refresh failures appear in workspace feedback and cannot re-enable an accepted create request.
+
+Go `html/template` renders only the initial page and version attributes in Vite's HTML entry. React retrieves session state before exposing management flows. Development uses a loopback Vite server with an API proxy. Production serves fingerprinted assets under `/ui/`. Docker builds the frontend in a Node stage and embeds it in the Go stage.
 
 | Module | Responsibility |
 |---|---|
-| internal/web | UI, sessions, CSRF, language catalog, API |
+| frontend | React components, styles, language catalog and UI tests |
+| internal/web | Embedded frontend, sessions, CSRF and API |
 | internal/feed | RSS/Atom, bounded torrent metadata, normalized infohashes |
 | internal/rename | Shared regex replacement renderer and filename normalization |
 | internal/pikpak | Typed official MCP adapter and folder operations |
@@ -28,11 +37,16 @@ Backfill preview reads one RSS snapshot and each distinct torrent URL once, with
 PAT requires Read & write files and Cloud Download. The MCP adapter has no move, Trash or permanent-deletion operations. Jobs do not create staging, backup or attachment folders, scan destination differences, overwrite or clean cloud content. Manual destination paths can create their explicitly named folders. SQLite migrations remain, but staged-job and template-rule compatibility is removed.
 
 - Feed/torrent metadata: 2 MiB per resource. Full sample reads: one feed snapshot, each distinct torrent once, at most five concurrent requests, 32 MiB total metadata, 10,000 filenames/8 MiB output, 90-second overall and 15-second torrent timeouts. Partial successes are retained.
+- Enabling renaming loads torrent filenames automatically after a valid RSS URL settles for 500 ms. The refresh icon rereads metadata while retaining the selected filename. Regex edits update only the naming preview, without rereading the feed.
 - Preview reads metadata only. It does not submit tasks or change baselines. The shared renderer returns raw_name, normalized name and warnings.
 - Selected folder IDs carry opaque account references. The server revalidates IDs/account ownership. Folder creation is sent once. Uncertain results require review.
+- First-run UI: administrator creation, then PAT connection. Authenticated users without a saved or connected account resume the connection step. Saved accounts retain the dashboard when authorization expires. Connection errors appear in Settings.
 - First-run password: nonempty, salted Argon2id verifier. PATs/private URLs: AES-GCM with a persistent secret.key. Credentials are never returned or logged. No external password/PAT sources or .env loading.
+- Password recovery requires server access. The `recovery-code` command issues a random 256-bit, one-use code valid for 15 minutes. Only its digest, expiry and bound administrator verifier are stored in an encrypted setting. Recovery atomically consumes the code and replaces its bound verifier. A regular password change invalidates outstanding codes. Successful recovery revokes all sessions and preserves site settings and cloud credentials.
 - Sessions: 12 hours, memory only. Mutations require matching CSRF cookie/header and same-origin checks. HTTP-only/SameSite cookies, login throttling and CSP are enabled.
+- The workspace fills the available width and places RSS subscriptions on the left and offline tasks on the right, with a subscription/task switch on mobile. The dashboard fills the viewport. Each list scrolls independently beneath its section heading. Failure explanations appear in task details. Task rows open details across their full area and support native button keyboard activation, with a subtle hover background and visible focus outline. Task and subscription cards share a row component, full-row activation and hover styling. Subscription cards use rounded solid surfaces with gaps and borders. Task sections have bordered surfaces. Both use their full row to open details. A shared WorkspacePanel component gives both panels a fixed header row and an inset, independently scrolling list. Dashboard layout rules live in workspace.css with shared spacing and optical-control alignment tokens. Desktop uses a two-column grid and mobile switches panels. Status-section headings have equal heights and align with the leading task icons. Tasks show a colored Lucide status icon and filename followed by time. Active tasks share a download icon, attention states share a circle-alert icon and completed tasks use a circle-check icon. The full status appears in accessible button names and task details. Panel labels are RSS 訂閱 and 下載任務; task sections are 需要處理, 進行中 and 已完成, and the profile menu is labelled 帳號與設定. All labels have English equivalents. Tasks appear in attention, active and completed sections, in red, purple and green order. Each section sorts newest first. All returned tasks appear by default, and a secondary brush icon at the right of the Completed section heading clears completed local records while retaining cloud files. Task details lead with status, destination and state-specific recovery actions. Files requiring attention appear first, with completed files and internal IDs collapsed. The header contains the wordmark, a global next-RSS-check indicator, a storage meter and the account menu; its padded profile trigger shows a filled circular avatar with the first character of the account name. The account name appears inside the menu. Dashboard data refreshes every 15 seconds while visible and no dialog is open. The RSS indicator uses the earliest enabled subscription schedule and shows due, paused or no-active-subscription states. Only its Lucide refresh icon is a button, with a 44-pixel target, keyboard activation, a focus-visible outline and a countdown description. It checks the current enabled feeds sequentially through the existing check endpoint, then refreshes dashboard data. Header statistics center their text and closely spaced bars as one group. Pending checks disable repeated activation and show loading feedback. A failed feed does not block checks of other feeds, and expired sessions stop the batch. Downloading rows show reported percentage beside a circular progress meter at the far right, centered vertically. In narrower task panels, progress shares the title line without increasing its height and metadata spans the remaining row width. Other task states retain their status icons without estimated download progress. Storage reads are cached for one minute and bounded to five seconds, with concurrent readers using the last snapshot. Failed reads retain the last successful values and timestamp without changing worker state. Account switches discard responses from the previous connection. Each section has a labelled plus icon for adding a task or subscription, including empty workspaces. Subscription and task metadata share a dot-separated row component. Subscriptions show destination, last-check time and check interval. Tasks show filename and creation time, with download progress in a separate trailing area when available. Both text lines inherit the body size, with weight and muted color carrying the hierarchy. A purple Lucide FileSymlink icon marks each subscription and a right-aligned play/pause control changes tracking directly, preserving the saved feed, destination and naming settings. Paused cards use 0.6 opacity and restore the control to full opacity on hover or keyboard focus. Clicking subscription cards opens settings with sections for subscription details, naming rules and management. Management contains checking, inline backfill selection and confirmed deletion. The shared settings sidebar keeps drafts mounted across section changes, and form validation reveals hidden invalid fields before saving. Editing an existing subscription preserves its tracking state. The account menu opens Settings and Logs in dialogs and contains theme, language and sign-out controls. Settings navigation switches between PikPak authorization, site settings and password settings while retaining unsaved form values. Shared dialog guards confirm discarding changed drafts, and unchanged forms disable saving. Save actions align at the bottom of settings sections. Closing dialogs returns focus to their opener, with an account-menu fallback when it is unavailable. Tracking operations show loading only on the affected subscription and keep other cards usable. Setup and login retain their header controls.
 - UI language is a browser preference. Only application literals and message fields are translated. Names, paths, URLs, regex and filenames remain intact.
+- Light and dark themes share CSS color tokens. Purple marks actions and active tasks. Green marks connected/completed states. Red marks attention, errors and delete actions. Completed-record cleanup uses the secondary action style. Filename previews use neutral colors.
 
 ## Authentication
 
@@ -46,7 +60,7 @@ Sources: [MCP connection guide](https://mypikpak.com/en-US/help-center/connected
 
 ## JSON API
 
-Except health, session, setup and login, endpoints require an authenticated session. POST/PUT/DELETE require pp_csrf and X-CSRF-Token. Setup/login also require CSRF.
+Except health, session, setup, login and password recovery, endpoints require an authenticated session. POST/PUT/DELETE require pp_csrf and X-CSRF-Token. Setup, login and recovery also require CSRF. Recovery additionally requires the server-issued one-time code.
 
 | Endpoint | Purpose |
 |---|---|
@@ -70,22 +84,23 @@ Except health, session, setup and login, endpoints require an authenticated sess
 | DELETE /api/jobs/completed | Remove all completed records/file actions, preserve cloud files. Returns deleted count |
 | GET /api/events | Last 150 entries, 30-day retention |
 | GET/POST /api/settings/app | Site URL/private-feed policy |
+| POST /api/password/recovery | Server-issued code, new_password, confirm_password. Consume code and revoke sessions |
 | POST /api/settings/password | current_password, new_password, confirm_password. Revoke all sessions on success |
-| GET/POST /api/settings/pikpak | Status/write-only PAT |
+| GET/POST /api/settings/pikpak | Status with storage_used, storage_total and storage_updated_at / write-only PAT |
 | POST /api/settings/pikpak/check | Reconnect |
 
 Manual tasks detect Magnet, `.torrent` and HTTP/HTTPS links automatically. Display names use Magnet dn, torrent metadata or the URL path/host, with a resource-key fallback. Direct URLs are submitted to PikPak without fetching their content locally. Torrent URLs are resolved using the same metadata size/timeout/private-network policy as feeds. Manual tasks preserve filenames. Settings and cloud processing share a lock to prevent account switches between destination validation and queue insertion.
 
 ## Testing
 
-Run from the repository root with Go 1.27.1, GNU Make and Node.js:
+Run from the repository root with Go 1.27.1, GNU Make and Node.js 24 with npm:
 
 ```sh
 make verify
 make test-race
 ```
 
-`make verify` checks Go formatting, tests, vet, UI syntax/localization and the application build. Race tests require a supported C toolchain. Docker checks additionally require Docker, Compose and Buildx:
+`make verify` checks Go formatting, Go tests/vet, React types/lint/formatting/component tests, and the application build. Race tests require a supported C toolchain. Docker checks additionally require Docker, Compose and Buildx:
 
 ```sh
 make docker-build IMAGE=pikpak-rss-manager:test

@@ -15,13 +15,19 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: make frontend-install
       - name: Formatting
         run: make check-format
       - name: Tests with race detector
         run: make test-race
       - name: Vet
         run: make vet
-      - name: UI syntax and localization
+      - name: React checks and component tests
         run: make test-ui
       - name: Build
         run: |

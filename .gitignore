@@ -14,3 +14,5 @@ coverage/
 *.exe
 /pikpak-rss-manager
 **/pikpak-pat.txt
+
+node_modules/

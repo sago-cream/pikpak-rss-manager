@@ -1,0 +1,48 @@
+:root {
+    color-scheme: light;
+}
+.appearance-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 22px;
+    line-height: 1;
+}
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+.theme-toggle:hover {
+    background: var(--accent-light);
+}
+html[data-theme='dark'] {
+    color-scheme: dark;
+    --wordmark: #fff;
+    --ink: #e7e7ef;
+    --muted: #a7a5b8;
+    --accent: #b4a0ff;
+    --accent-dark: #8064d5;
+    --accent-light: #302743;
+    --canvas: #14131b;
+    --surface: #201e29;
+    --line: #383441;
+    --green: #71d2ad;
+    --danger: #f098a4;
+    --surface-inset: #25222f;
+    --action: #7053c5;
+    --action-hover: #8064d5;
+    --overlay: #0008;
+    --shadow-color: #0003;
+}

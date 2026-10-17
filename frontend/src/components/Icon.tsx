@@ -1,0 +1,100 @@
+import type { JSX } from 'react';
+import {
+    ArrowRight,
+    BrushCleaning,
+    Check,
+    ChevronDown,
+    ChevronRight,
+    CircleAlert,
+    CircleCheck,
+    Clock,
+    Download,
+    FileSymlink,
+    Folder,
+    HardDrive,
+    Info,
+    LoaderCircle,
+    Moon,
+    Pause,
+    Pencil,
+    Play,
+    Plus,
+    RefreshCw,
+    Rss,
+    Sun,
+    Trash2,
+    X,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+export type IconName =
+    | 'file-symlink'
+    | 'storage'
+    | 'cleanup'
+    | 'tick'
+    | 'alert'
+    | 'loading'
+    | 'play'
+    | 'pause'
+    | 'info'
+    | 'rss'
+    | 'folder'
+    | 'clock'
+    | 'edit'
+    | 'check'
+    | 'backfill'
+    | 'trash'
+    | 'refresh'
+    | 'chevron'
+    | 'sun'
+    | 'moon'
+    | 'close'
+    | 'plus'
+    | 'arrow-right'
+    | 'chevron-right';
+
+const icons: Record<IconName, LucideIcon> = {
+    'file-symlink': FileSymlink,
+    'storage': HardDrive,
+    'cleanup': BrushCleaning,
+    'tick': Check,
+    'alert': CircleAlert,
+    'loading': LoaderCircle,
+    'play': Play,
+    'pause': Pause,
+    'info': Info,
+    'rss': Rss,
+    'folder': Folder,
+    'clock': Clock,
+    'edit': Pencil,
+    'check': CircleCheck,
+    'backfill': Download,
+    'trash': Trash2,
+    'refresh': RefreshCw,
+    'chevron': ChevronDown,
+    'sun': Sun,
+    'moon': Moon,
+    'close': X,
+    'plus': Plus,
+    'arrow-right': ArrowRight,
+    'chevron-right': ChevronRight,
+};
+
+export function Icon({
+    name,
+    className,
+}: {
+    name: IconName;
+    className?: string;
+}): JSX.Element {
+    const Glyph = icons[name];
+    return (
+        <Glyph
+            aria-hidden='true'
+            className={`ui-icon${className ? ` ${className}` : ''}`}
+            focusable='false'
+            size={24}
+            strokeWidth={2}
+        />
+    );
+}

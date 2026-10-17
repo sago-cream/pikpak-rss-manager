@@ -5,17 +5,19 @@ import (
 	"errors"
 	"github.com/wade00754/pikpak-rss-manager/internal/store"
 	"sync"
+	"time"
 )
 
 type Status struct {
-	Connected    bool   `json:"connected"`
-	Name         string `json:"name"`
-	Source       string `json:"source"`
-	External     bool   `json:"external"`
-	Paused       string `json:"paused"`
-	Message      string `json:"message"`
-	StorageTotal string `json:"storage_total"`
-	StorageUsed  string `json:"storage_used"`
+	Connected        bool   `json:"connected"`
+	Name             string `json:"name"`
+	Source           string `json:"source"`
+	External         bool   `json:"external"`
+	Paused           string `json:"paused"`
+	Message          string `json:"message"`
+	StorageTotal     string `json:"storage_total"`
+	StorageUsed      string `json:"storage_used"`
+	StorageUpdatedAt int64  `json:"storage_updated_at"`
 }
 type Manager struct {
 	mu                             sync.RWMutex
@@ -24,6 +26,10 @@ type Manager struct {
 	account                        Account
 	token, source, paused, message string
 	factory                        func(context.Context, string) (API, error)
+	accountGeneration              uint64
+	storageAttempt                 time.Time
+	storageUpdatedAt               int64
+	storageRefreshing              bool
 }
 
 func NewManager(db *store.Store) *Manager {
@@ -93,6 +99,10 @@ func (m *Manager) bind(ctx context.Context, token string, save bool) error {
 	old := m.api
 	m.api = api
 	m.account = account
+	m.accountGeneration++
+	m.storageAttempt = time.Now()
+	m.storageUpdatedAt = m.storageAttempt.Unix()
+	m.storageRefreshing = false
 	m.token = token
 	m.paused = ""
 	m.message = ""
@@ -131,7 +141,39 @@ func (m *Manager) Snapshot() (API, string) {
 func (m *Manager) Status() Status {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return Status{m.api != nil, m.account.Name, m.source, false, m.paused, m.message, m.account.Storage.Total, m.account.Storage.Used}
+	return Status{
+		Connected: m.api != nil, Name: m.account.Name, Source: m.source,
+		Paused: m.paused, Message: m.message, StorageTotal: m.account.Storage.Total,
+		StorageUsed: m.account.Storage.Used, StorageUpdatedAt: m.storageUpdatedAt,
+	}
+}
+
+// RefreshStatus reads account storage without rebinding or changing worker state.
+// Concurrent readers use the last snapshot, with at most one read per minute.
+func (m *Manager) RefreshStatus(ctx context.Context) Status {
+	m.mu.Lock()
+	if m.api == nil || m.paused == "auth" || m.storageRefreshing || time.Since(m.storageAttempt) < time.Minute {
+		m.mu.Unlock()
+		return m.Status()
+	}
+	api, generation, accountID := m.api, m.accountGeneration, m.account.ID
+	m.storageAttempt = time.Now()
+	m.storageRefreshing = true
+	m.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	account, err := api.Account(ctx)
+	m.mu.Lock()
+	if generation == m.accountGeneration {
+		m.storageRefreshing = false
+		if err == nil && account.ID == accountID {
+			m.account.Storage = account.Storage
+			m.storageUpdatedAt = time.Now().Unix()
+		}
+	}
+	m.mu.Unlock()
+	return m.Status()
 }
 func (m *Manager) Pause(e *Error) {
 	if e == nil {

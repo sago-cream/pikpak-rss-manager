@@ -10,9 +10,11 @@ Requires Docker and Docker Compose. Download [docker-compose.yml](docker-compose
 docker compose up -d
 ```
 
-On the same machine, open [http://127.0.0.1:8080](http://127.0.0.1:8080), create an administrator password, confirm the public URL, and enter a PikPak PAT in **Settings**.
+On the same machine, open [http://127.0.0.1:8080](http://127.0.0.1:8080) and follow setup: create a password, confirm the public URL, then connect a PikPak PAT. The dashboard opens after verification. Overview combines subscriptions and offline tasks. Open **Settings** or **Logs** from the account menu. Update the PAT in **Settings**.
 
 Compose listens on localhost only. For remote access, configure an HTTPS reverse proxy using the [deployment guide](docs/deployment.md), which also covers 1Panel and process settings.
+
+Forgot the password? Open **Forgot password** on the login page and follow the [recovery steps](docs/deployment.md#password-recovery). Server access is required.
 
 ### PAT permissions
 
@@ -25,9 +27,9 @@ Compose listens on localhost only. For remote access, configure an HTTPS reverse
 
 ## Use
 
-- **Subscriptions:** choose an RSS URL, destination and interval. First check establishes a baseline. **Backfill** selects whole torrents. Repeated explicit downloads are allowed.
-- **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. **Delete task** cancels incomplete downloads while preserving files. **Clear completed tasks** removes completed records only.
-- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Select a torrent filename to preview. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
+- **Subscriptions:** choose an RSS URL, destination and interval. Use the card’s play/pause control to toggle tracking. Click the card or its three-dot button for subscription and naming settings, or **Manage subscription** for checking, **Backfill** and deletion. First check establishes a baseline. Backfill selects whole torrents. Repeated explicit downloads are allowed.
+- **Offline tasks:** submit a Magnet, torrent URL or HTTP/HTTPS download URL. Click a task for status and details. The sort icon beside the heading switches between unfinished and completed first. **Delete task** cancels incomplete downloads while preserving files. In completed-first order, the trash icon removes completed records only.
+- **Renaming:** disabled by default. Regex replacement supports `$1`, `${name}` and `$$`. Nonmatches keep their names. Enabling renaming loads torrent filenames for preview. Select a filename to test the rule and use the refresh icon to reload. PikPak rejects renaming to a duplicate filename in the same folder. Resolve the name conflict before resuming the task.
 - **Destinations:** browse/create folders or enter a path. Reselect saved folders after switching accounts.
 
 ## Update
@@ -41,11 +43,16 @@ docker compose up -d
 
 ## Development
 
-Requires Go 1.27.1, GNU Make and Node.js. Run from the repository root:
+Requires Go 1.27.1, GNU Make and Node.js 24 with npm. Run from the repository root:
 
 ```sh
-make dev
+make frontend-install
+make dev             # Go service on http://127.0.0.1:8080
+# In a second terminal:
+make dev-frontend    # Vite + React on http://127.0.0.1:5173/ui/
 make verify
 ```
+
+Vite proxies the Go API for hot reload. Set `VITE_BACKEND_URL` when using a different backend URL. Keep the development site URL set to the backend origin. `make build` embeds the frontend in the Go binary, which needs no Node runtime.
 
 Use `make help` for individual targets. [Architecture/API](docs/architecture.md) · [Authentication](docs/architecture.md#authentication) · [Testing](docs/architecture.md#testing).

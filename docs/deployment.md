@@ -7,7 +7,7 @@ Use the published image and [Compose file](../docker-compose.yml). In 1Panel, cr
 1. Start with `docker compose up -d`.
 2. Configure an HTTPS reverse proxy.
 3. Open the site through a controlled connection and complete first-run setup before public access. Set the public origin, such as `https://rss.example.com`.
-4. Connect the PAT in Settings. Add subscriptions or manual tasks.
+4. Connect the PAT in the second setup step. Then add subscriptions or manual tasks. Setup resumes after login until a PAT is verified. Existing accounts with expired PATs retain dashboard access. Update the PAT in Settings.
 
 Only `APP_LISTEN` and `APP_DATA_DIR` remain optional process settings. Container defaults: `0.0.0.0:8080`, `/data`. Local defaults: `127.0.0.1:8080`, `data`.
 
@@ -52,6 +52,18 @@ docker compose start
 ```
 
 To restore, stop the service, extract the full backup into its data volume, set ownership to `65532:65532`, and restart. Protect the backup and key. Named volumes inherit the image's /data ownership. Bind mounts require matching host permissions.
+
+## Password recovery
+
+Open **Forgot password** on the login page. In the server terminal, create a one-time recovery code:
+
+```sh
+docker compose exec pikpak-rss-manager /app/pikpak-rss-manager recovery-code
+```
+
+For a local installation, run `pikpak-rss-manager recovery-code` with the same `APP_DATA_DIR` as the running service. The command requires the existing database and encryption key. It does not stop the service or reopen first-run setup.
+
+Enter the code and a new password on the recovery page. The code expires after 15 minutes. Creating another code replaces the previous one. Resetting the password ends all sessions while retaining subscriptions, tasks, site settings and the saved PikPak PAT. If you cannot access the server, contact its administrator.
 
 ## Image publishing
 
