@@ -29,13 +29,18 @@ const listing = (id = '') => ({
     account_ref: 'fixture-account',
 });
 
-function renderDraft(manual: boolean, onSaved = success) {
+function renderDraft(
+    manual: boolean,
+    onSaved: () => Promise<void> = success,
+    onRefreshError?: (error: unknown) => void
+) {
     const onClose = vi.fn<() => void>();
     const view = render(
         <Preferences>
             <SubscriptionDialog
                 manual={manual}
                 onClose={onClose}
+                onRefreshError={onRefreshError}
                 onSaved={onSaved}
                 status={{ connected: true }}
             />
@@ -61,6 +66,71 @@ async function openFolderDialog() {
 }
 
 describe('Dialog submission boundaries', () => {
+    it.each([true, false])(
+        'finishes an accepted create before a failed refresh (manual=%s)',
+        async (manual) => {
+            const fetch = vi
+                .spyOn(globalThis, 'fetch')
+                .mockResolvedValue(Response.json({ ok: true }));
+            const refresh = Promise.withResolvers<undefined>();
+            const onSaved = vi.fn(async () => {
+                await refresh.promise;
+            });
+            const onRefreshError = vi.fn<(error: unknown) => void>();
+            const { onClose } = renderDraft(manual, onSaved, onRefreshError);
+            const form = document.querySelector('#subscription-form')!;
+            fireEvent.submit(form);
+            await waitFor(() => {
+                expect(onSaved).toHaveBeenCalledOnce();
+            });
+            expect(onClose).toHaveBeenCalledOnce();
+            expect(
+                screen.getByRole('button', {
+                    name: manual ? '新增任務' : '儲存訂閱',
+                })
+            ).toHaveProperty('disabled', true);
+            fireEvent.submit(form);
+            const error = new Error('Fixture refresh failed');
+            refresh.reject(error);
+            await waitFor(() => {
+                expect(onRefreshError).toHaveBeenCalledWith(error);
+            });
+            fireEvent.submit(form);
+            expect(fetch).toHaveBeenCalledOnce();
+            expect(onClose).toHaveBeenCalledOnce();
+            expect(screen.queryByRole('alert')).toBeNull();
+        }
+    );
+    it.each([true, false])(
+        'allows retrying a rejected create without refreshing (manual=%s)',
+        async (manual) => {
+            const fetch = vi
+                .spyOn(globalThis, 'fetch')
+                .mockResolvedValueOnce(
+                    Response.json(
+                        { error: 'Fixture create failed' },
+                        { status: 400 }
+                    )
+                )
+                .mockResolvedValueOnce(Response.json({ ok: true }));
+            const onSaved = vi.fn(success);
+            const { onClose } = renderDraft(manual, onSaved);
+            fireEvent.submit(document.querySelector('#subscription-form')!);
+            await screen.findByRole('alert');
+            expect(onSaved).not.toHaveBeenCalled();
+            expect(onClose).not.toHaveBeenCalled();
+            await userEvent.click(
+                screen.getByRole('button', {
+                    name: manual ? '新增任務' : '儲存訂閱',
+                })
+            );
+            await waitFor(() => {
+                expect(onSaved).toHaveBeenCalledOnce();
+            });
+            expect(fetch).toHaveBeenCalledTimes(2);
+            expect(onClose).toHaveBeenCalledOnce();
+        }
+    );
     it.each([true, false])(
         'creates a folder without submitting the parent draft (manual=%s)',
         async (manual) => {

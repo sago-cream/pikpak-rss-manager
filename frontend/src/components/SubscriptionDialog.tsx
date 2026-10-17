@@ -22,12 +22,14 @@ export function SubscriptionDialog({
     status,
     onClose,
     onSaved,
+    onRefreshError,
 }: {
     subscription?: Subscription;
     manual?: boolean;
     status: Status;
     onClose: () => void;
     onSaved: () => Promise<void>;
+    onRefreshError?: (error: unknown) => void;
 }): JSX.Element {
     const { t } = usePreferences();
     const active = useLifetime();
@@ -45,6 +47,7 @@ export function SubscriptionDialog({
     );
     const [name, setName] = useState(subscription?.name || '');
     const [pending, setPending] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const [regex, setRegex] = useState(
         subscription?.regex ?? String.raw`\[(\d+)\]`
     );
@@ -81,7 +84,7 @@ export function SubscriptionDialog({
             noValidate
             onSubmit={(event) => {
                 event.preventDefault();
-                if (pending || !dirty) {
+                if (pending || submitted || !dirty) {
                     return;
                 }
                 const invalid = [...event.currentTarget.elements].find(
@@ -130,21 +133,28 @@ export function SubscriptionDialog({
                     !manual && subscription ? 'PUT' : 'POST',
                     payload
                 )
-                    .then(onSaved)
-                    .then(() => {
-                        if (active.current) {
-                            onClose();
+                    .then(
+                        async () => {
+                            if (active.current) {
+                                setSubmitted(true);
+                                setPending(false);
+                                onClose();
+                            }
+                            await onSaved();
+                        },
+                        (error_: unknown) => {
+                            if (active.current) {
+                                setError(errorMessage(error_));
+                                setPending(false);
+                            }
                         }
-                    })
+                    )
                     .catch((error_: unknown) => {
-                        setError(errorMessage(error_));
-                    })
-                    .finally(() => {
-                        setPending(false);
+                        onRefreshError?.(error_);
                     });
             }}
         >
-            <DirtyForm dirty={dirty || pending} />
+            <DirtyForm dirty={!submitted && (dirty || pending)} />
             <SettingsPanel
                 id='subscription-settings'
                 label={manual ? t('新增任務') : undefined}
@@ -358,7 +368,7 @@ export function SubscriptionDialog({
                 <button
                     aria-busy={pending}
                     className='button primary'
-                    disabled={pending || !dirty}
+                    disabled={pending || submitted || !dirty}
                     id='save-subscription'
                     type='submit'
                 >

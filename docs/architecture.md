@@ -6,6 +6,8 @@ The frontend uses React 19, strict TypeScript and Vite, scaffolded with `npm cre
 
 Folder creation dialogs render outside the subscription and manual-download forms. Creating a folder never submits the parent draft.
 
+Accepted subscription and manual-download saves close the draft before refreshing the workspace. Refresh failures appear in workspace feedback and cannot re-enable an accepted create request.
+
 Go `html/template` renders only the initial page and version attributes in Vite's HTML entry. React retrieves session state before exposing management flows. Development uses a loopback Vite server with an API proxy. Production serves fingerprinted assets under `/ui/`. Docker builds the frontend in a Node stage and embeds it in the Go stage.
 
 | Module | Responsibility |

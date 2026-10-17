@@ -512,6 +512,10 @@ export function Workspace({
                     }
                     manual={modal.manual}
                     onClose={close}
+                    onRefreshError={(error) => {
+                        setFeedback(errorMessage(error));
+                        setFeedbackError(true);
+                    }}
                     onSaved={refresh}
                     status={data.status}
                     subscription={modal.subscription}
