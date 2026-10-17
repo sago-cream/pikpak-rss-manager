@@ -67,6 +67,90 @@ async function openFolderDialog() {
 
 describe('Dialog submission boundaries', () => {
     it.each([true, false])(
+        'dismisses only the active folder dialog and preserves its parent draft (manual=%s)',
+        async (manual) => {
+            const fetch = vi
+                .spyOn(globalThis, 'fetch')
+                .mockResolvedValue(Response.json(listing()));
+            const confirm = vi
+                .spyOn(globalThis, 'confirm')
+                .mockReturnValue(true);
+            const { onClose } = renderDraft(manual);
+            const child = await openFolderDialog();
+            const cancel = new Event('cancel', { cancelable: true });
+            fireEvent(child, cancel);
+            expect(cancel.defaultPrevented).toBe(true);
+            expect(
+                screen.queryByRole('dialog', { name: '新增資料夾' })
+            ).toBeNull();
+            expect(onClose).not.toHaveBeenCalled();
+            expect(confirm).not.toHaveBeenCalled();
+            expect(
+                screen.getByLabelText(manual ? '下載連結' : 'RSS 連結')
+            ).toHaveProperty('value', 'https://fixture.test/source');
+            if (!manual) {
+                expect(screen.getByLabelText('訂閱名稱')).toHaveProperty(
+                    'value',
+                    'Fixture subscription'
+                );
+            }
+            expect(
+                document.querySelector('#subscription-dialog')
+            ).toHaveProperty('open', true);
+            expect(
+                fetch.mock.calls.every(
+                    ([, options]) => options?.method === 'GET'
+                )
+            ).toBe(true);
+            fireEvent(
+                document.querySelector('#subscription-dialog')!,
+                new Event('cancel', { cancelable: true })
+            );
+            expect(confirm).toHaveBeenCalledOnce();
+            expect(onClose).toHaveBeenCalledOnce();
+        }
+    );
+    it('keeps a changed child draft when discard is declined and closes only that child when accepted', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            Response.json(listing())
+        );
+        const confirm = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
+        const { onClose } = renderDraft(true);
+        const child = await openFolderDialog();
+        fireEvent.change(within(child).getByLabelText('資料夾名稱'), {
+            target: { value: 'Fixture child draft' },
+        });
+        fireEvent(child, new Event('cancel', { cancelable: true }));
+        expect(confirm).toHaveBeenCalledOnce();
+        expect(child).toHaveProperty('open', true);
+        expect(within(child).getByLabelText('資料夾名稱')).toHaveProperty(
+            'value',
+            'Fixture child draft'
+        );
+        expect(onClose).not.toHaveBeenCalled();
+        confirm.mockReturnValue(true);
+        fireEvent(child, new Event('cancel', { cancelable: true }));
+        expect(confirm).toHaveBeenCalledTimes(2);
+        expect(screen.queryByRole('dialog', { name: '新增資料夾' })).toBeNull();
+        expect(onClose).not.toHaveBeenCalled();
+        expect(screen.getByLabelText('下載連結')).toHaveProperty(
+            'value',
+            'https://fixture.test/source'
+        );
+    });
+    it('scopes a native close event to the active child dialog', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            Response.json(listing())
+        );
+        const confirm = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+        const { onClose } = renderDraft(true);
+        const child = await openFolderDialog();
+        fireEvent(child, new Event('close'));
+        expect(screen.queryByRole('dialog', { name: '新增資料夾' })).toBeNull();
+        expect(confirm).not.toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+    });
+    it.each([true, false])(
         'finishes an accepted create before a failed refresh (manual=%s)',
         async (manual) => {
             const fetch = vi

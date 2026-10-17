@@ -105,10 +105,20 @@ export function Dialog({
             className={compact ? 'compact-dialog' : undefined}
             id={id}
             onCancel={(event) => {
+                if (event.target !== event.currentTarget) {
+                    return;
+                }
                 event.preventDefault();
+                event.stopPropagation();
                 requestClose();
             }}
-            onClose={requestClose}
+            onClose={(event) => {
+                if (event.target !== event.currentTarget) {
+                    return;
+                }
+                event.stopPropagation();
+                requestClose();
+            }}
             ref={ref}
         >
             <DialogFormContext.Provider value={scope}>
